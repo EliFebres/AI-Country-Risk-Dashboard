@@ -1,91 +1,77 @@
+"""
+Shared constants for the AI Country Risk Dashboard.
 
-# World Bank REST endpoint template – fill in {code} with the ISO-2/3 country code
-# and {ind} with the indicator ID (e.g., "SP.POP.GROW"); returns a JSON series with
-# up to 60 yearly observations.
-WB_ENDPOINT = "https://api.worldbank.org/v2/country/{code}/indicator/{ind}?format=json&per_page=60"
+Only literals—no runtime imports—to avoid circular dependencies.
+"""
 
+# ---------------------------------------------------------------------------
+# External data source
+# ---------------------------------------------------------------------------
 
-# AI system prompt for evaluating geopolitical investor risk.
-AI_PROMPT = """
-You are a geopolitical risk analyst.
+WB_ENDPOINT: str = ("https://api.worldbank.org/v2/country/{code}/indicator/{ind}")
 
-You will evaluate a single country based on global investor risk. Your task is to:
+# ---------------------------------------------------------------------------
+# Economic / governance indicators (World Bank series)
+# ---------------------------------------------------------------------------
 
-1. Assess the country’s risk on a 0.0–1.0 scale, where 1.0 = maximum risk and 0.0 = lowest risk.
-2. Consider all relevant factors provided in `{prompt_points}`, such as political stability, regulatory environment, economic volatility, corruption, security, etc.
-3. (Optional) Use chain-of-thought reasoning internally to improve accuracy—do not include it in the final output.
-
-IMPORTANT: Respond only with valid JSON matching the schema below. Do **not** include any extra text, explanation, or markdown.  
-If any data is missing or cannot be assessed, return `"score": null` and `"bullet_summary": ""`.
-
-Expected schema:
-```json
-{
-  "score": float (0.00–1.00),
-  "bullet_summary": string (≤75 words)
+INDICATORS = {
+    "INFLATION":          "FP.CPI.TOTL.ZG",         # Consumer-price inflation, % y/y
+    "UNEMPLOYMENT":       "SL.UEM.TOTL.ZS",         # Unemployment rate, % labour force
+    "FDI_PCT_GDP":        "BX.KLT.DINV.WD.GD.ZS",   # FDI net inflows, % GDP
+    "POL_STABILITY":      "PV.EST",                 # Political stability (z-score)
+    "RULE_OF_LAW":        "RL.EST",                 # Rule of law (z-score)
+    "CONTROL_CORRUPTION": "CC.EST",                 # Control of corruption (z-score)
+    "GINI_INDEX":         "SI.POV.GINI",            # Income inequality (0 – 100) :contentReference[oaicite:0]{index=0}
+    "GDP_PC_GROWTH":      "NY.GDP.PCAP.KD.ZG",      # GDP per-capita growth, % y/y
+    "INT_PAYM_PCT_REV":   "GC.XPN.INTP.RV.ZS",      # Interest payments / revenue, %
 }
 
-Example:
+# ---------------------------------------------------------------------------
+# Coverage universe (50 countries: 25 Developed + 25 Emerging)
+# ---------------------------------------------------------------------------
+
+SELECTED_COUNTRIES: list[str] = [
+    # --- Developed Markets ---
+    "United States", "Canada", "Germany", "France", "United Kingdom",
+    "Japan", "Australia", "Austria", "Belgium", "Denmark",
+    "Finland", "Ireland", "Italy", "Netherlands", "New Zealand",
+    "Norway", "Portugal", "Singapore", "Spain", "Sweden",
+    "Switzerland", "Israel", "Hong Kong SAR, China", "Greece", "Luxembourg",
+    # --- Emerging Markets ---
+    "Argentina", "Brazil", "Chile", "China", "Colombia",
+    "Hungary", "India", "Indonesia", "Malaysia", "Mexico",
+    "Pakistan", "Peru", "Philippines", "Poland", "Qatar",
+    "Romania", "Saudi Arabia", "South Africa", "Thailand", "United Arab Emirates",
+    "Ukraine", "Morocco", "Kenya", "Nigeria", "Bangladesh",
+]
+
+# ---------------------------------------------------------------------------
+# System prompt fed to the LLM
+# ---------------------------------------------------------------------------
+
+AI_PROMPT: str = """
+You are a geopolitical risk analyst.
+
+Evaluate a single country's investor risk:
+
+1. Score the country on a 0.0 - 1.0 scale (1.0 = maximum risk).
+2. Consider all factors listed in `{prompt_points}` (political stability,
+   regulation, macro, corruption, security, etc.).
+
+If data is missing, return `"score": null` and an empty `"bullet_summary"`.
+
+Respond **only** with valid JSON:
+
+{
+  "score": float,          # 0.00 - 1.00 or null
+  "bullet_summary": string # ≤ 75 words
+}
+
+Example
 {
   "score": 0.72,
   "bullet_summary": "Political instability and high inflation elevate risk, though foreign reserves buffer shocks."
 }
 
 Now evaluate {country} considering {prompt_points}.
-"""
-
-# Selected 50 Countries (25 Developed / 25 Emerging Markets)
-SELECTED_COUNTRIES = [
-    # Developed Markets
-    "United States",
-    "Canada",
-    "Germany",
-    "France",
-    "United Kingdom",
-    "Japan",
-    "Australia",
-    "Austria",
-    "Belgium",
-    "Denmark",
-    "Finland",
-    "Ireland",
-    "Italy",
-    "Netherlands",
-    "New Zealand",
-    "Norway",
-    "Portugal",
-    "Singapore",
-    "Spain",
-    "Sweden",
-    "Switzerland",
-    "Israel",
-    "Hong Kong SAR, China",
-    "Greece",
-    "Luxembourg",
-    # Emerging Markets
-    "Argentina",
-    "Brazil",
-    "Chile",
-    "China",
-    "Colombia",
-    "Hungary",
-    "India",
-    "Indonesia",
-    "Malaysia",
-    "Mexico",
-    "Pakistan",
-    "Peru",
-    "Philippines",
-    "Poland",
-    "Qatar",
-    "Romania",
-    "Saudi Arabia",
-    "South Africa",
-    "Thailand",
-    "United Arab Emirates",
-    "Ukraine",
-    "Morocco",
-    "Kenya",
-    "Nigeria",
-    "Bangladesh"
-]
+""".strip()

@@ -43,7 +43,6 @@ cover/
 
 # Jupyter Notebook
 .ipynb_checkpoints
-testing.ipynb
 
 # Environments
 .env*
@@ -55,3 +54,6 @@ ENV/
 env.bak/
 venv.bak/
 
+# Other
+Data/wb_panel_wide/
+testing.ipynb
