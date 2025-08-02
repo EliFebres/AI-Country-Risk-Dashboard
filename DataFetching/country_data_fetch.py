@@ -24,7 +24,7 @@ def ingest_panel_wide(
     root: pathlib.Path,
 ) -> None:
     """
-    Persist a *wide* World-Bank panel (years × indicators) as a Parquet
+    Persist a *wide* World-Bank panel (years x indicators) as a Parquet
     dataset, partitioned by ``country_code``.
 
     Parameters
@@ -153,11 +153,11 @@ def ingest_panels_for_all_countries(
 
 
 # Fetch All Data Points for All Countries
-country_data_excel_path = r"/home/linux/Projects/AI-Country-Risk-Dashboard/Data/country_data.xlsx"
-ingest_panels_for_all_countries(
-    excel_path=pathlib.Path(country_data_excel_path),
-    root=pathlib.Path("Data/wb_panel_wide"),
-    indicators=constants.INDICATORS,
-    start=None,
-    end=None,
-)
+# country_data_excel_path = r"/home/linux/Projects/AI-Country-Risk-Dashboard/Data/country_data.xlsx"
+# ingest_panels_for_all_countries(
+#     excel_path=pathlib.Path(country_data_excel_path),
+#     root=pathlib.Path("Data/wb_panel_wide"),
+#     indicators=constants.INDICATORS,
+#     start=None,
+#     end=None,
+# )
