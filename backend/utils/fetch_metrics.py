@@ -3,7 +3,7 @@ import pandas as pd
 from tenacity import retry, wait_fixed, stop_after_attempt
 from typing import List, Dict, Tuple, Iterable, Mapping, Optional, Union, Any
 
-import DataFetching.Utility.constants as constants
+import backend.constants as constants
 
 
 @retry(wait=wait_fixed(2), stop=stop_after_attempt(3))
