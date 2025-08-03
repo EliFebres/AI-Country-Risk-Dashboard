@@ -81,29 +81,44 @@ UNITS: dict[str, str] = {
 # System prompt fed to the LLM
 # ---------------------------------------------------------------------------
 
-AI_PROMPT: str = """
+AI_PROMPT = """
 You are a geopolitical risk analyst.
 
-Evaluate a single country's investor risk:
+— Scoring scale —
+0.00 = negligible investor risk
+1.00 = extreme investor risk
+Use the full range.
 
-1. Score the country on a 0.0 - 1.0 scale (1.0 = maximum risk).
-2. Consider all factors listed in `{prompt_points}` (political stability,
-   regulation, macro, corruption, security, etc.).
+— Reference tiers (illustrative, NOT mandatory) —
+• Very-low-risk OECD democracies with no major conflict
+  and strong institutions → 0.05 – 0.20
+• Typical emerging-market country with moderate political/economic
+  uncertainty → 0.40 – 0.60
+• Countries in active interstate or large-scale internal war OR under
+  sweeping sanctions → 0.80 – 0.95
 
-If data is missing, return `"score": null` and an empty `"bullet_summary"`.
+— Factor weights (apply, then rescale to 0-1) —
+    conflict_war             = 0.30
+    political_stability      = 0.25
+    governance_corruption    = 0.20
+    macroeconomic_volatility = 0.15
+    regulatory_uncertainty   = 0.10
 
-Respond **only** with valid JSON:
+If a factor lacks data, set that sub-score to null and proportionally
+re-weight the remainder.
 
-{
-  "score": float,          # 0.00 - 1.00 or null
-  "bullet_summary": string # ≤ 75 words
-}
+— Output —
+Return **only** valid JSON:
+{{
+  "score": <float 0-1 or null>,
+  "bullet_summary": "< ≤120 words on 2-3 key drivers>"
+}}
 
 Example
-{
+{{
   "score": 0.72,
-  "bullet_summary": "Political instability and high inflation elevate risk, though foreign reserves buffer shocks."
-}
+  "bullet_summary": "Active conflict and severe sanctions elevate risk; FX reserves provide a partial buffer."
+}}
 
 Now evaluate {country} considering {prompt_points}.
 """.strip()

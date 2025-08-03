@@ -1,3 +1,5 @@
+import time
+import random
 import feedparser
 import urllib.parse
 import datetime as dt
@@ -49,32 +51,48 @@ def gnews_rss(country: str,
     url = (f"https://news.google.com/rss/search?q={q}"
            f"&hl={lang}&gl={region}&ceid={region}:{lang.split('-')[0]}")
 
-    feed = feedparser.parse(url)
+    # Add browser-like headers to bypass bot detection
+    headers = {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'Accept': 'application/rss+xml, application/xml;q=0.9, */*;q=0.8',
+        'Accept-Language': f'{lang},{lang.split("-")[0]};q=0.5',
+        'Connection': 'keep-alive',
+        'Referer': 'https://news.google.com/'
+    }
+    
+    # Google blocks rapid requests - add random delay to avoid detection
+    time.sleep(random.uniform(1.5, 3.5))  # Critical to avoid being blocked [[6]]
+    
+    # Parse feed with custom headers
+    feed = feedparser.parse(url, request_headers=headers)
+    
+    # Handle potential redirects (Google often changes URLs)
+    if feed.status in [301, 302, 307, 308] and 'location' in feed.headers:
+        feed = feedparser.parse(feed.headers['location'], request_headers=headers)
+
     cutoff = dt.datetime.utcnow() - dt.timedelta(days=days)
 
     def _to_dict(e):
         # Skip entries older than cutoff
-        pub = dt.datetime(*e.published_parsed[:6]) if "published_parsed" in e else None
-        if pub and pub < cutoff:
-            return None
+        if "published_parsed" in e:
+            pub = dt.datetime(*e.published_parsed[:6])
+            if pub < cutoff:
+                return None
         return {
             "link":      e.link,
             "title":     e.title,
-            "source":    e.get("source", {}).get("title", ""),
+            "source":    e.get("source", {}).get("title", "Unknown"),
             "published": e.published if "published" in e else "",
-            "snippet":   e.summary if "summary" in e else "",
+            "snippet":   e.get("summary", e.get("content", [{}])[0].get("value", "")) if "summary" not in e else e.summary,
         }
 
     # Fetch more than needed in case of filtered-out items
-    return [d for e in feed.entries[:n*2] if (d := _to_dict(e))][:n]
-
-
-# Code Use Demonstration
-# articles = gnews_rss(
-#        country="Argentina",
-#        n=5,
-#        days=365,     # look-back window (default is already 365)
-#        lang="en",    # UI language
-#        region="US"   # geolocation
-# )
-# articles
+    valid_entries = []
+    for e in feed.entries[:n*2]:
+        entry = _to_dict(e)
+        if entry:
+            valid_entries.append(entry)
+        if len(valid_entries) >= n:
+            break
+            
+    return valid_entries[:n]
