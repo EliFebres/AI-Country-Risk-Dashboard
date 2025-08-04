@@ -6,7 +6,7 @@ from typing import List, Dict, Optional, TYPE_CHECKING
 from dotenv import load_dotenv
 load_dotenv()
 
-from langchain.chat_models import ChatOpenAI
+from langchain_openai import ChatOpenAI
 from langchain_core.messages import SystemMessage, HumanMessage
 
 import backend.constants as constants
