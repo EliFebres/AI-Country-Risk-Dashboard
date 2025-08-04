@@ -4,22 +4,8 @@ import pathlib
 import pandas as pd
 from typing import Mapping, Optional
 
-project_root = pathlib.Path.cwd().resolve()
-while not (project_root / "backend").is_dir():
-    if project_root.parent == project_root:        # reached filesystem root
-        raise RuntimeError("Could not find project root containing 'backend/'")
-    project_root = project_root.parent
-
-if str(project_root) not in sys.path:
-    sys.path.insert(0, str(project_root))
-
 import backend.constants as constants
 import backend.utils.fetch_metrics as fetch_metrics
-
-
-BACKEND_DIR      = project_root / "backend"
-PROCESSED_DATA   = BACKEND_DIR / "data" / "wb_panel_wide"
-RAW_DATA_EXCEL   = BACKEND_DIR / "data" / "country_data.xlsx"
 
 
 def ingest_panel_wide(
@@ -37,24 +23,24 @@ def ingest_panel_wide(
     └── country_code=<CODE>/  
         └── panel.parquet
     """
-    # ---- argument validation ---------------------------------------------
+    # Input Validation
     assert isinstance(panel, pd.DataFrame) and not panel.empty, \
         "`panel` must be a non-empty DataFrame"
     assert isinstance(country_code, str) and country_code.strip(), \
         "`country_code` must be a non-empty str"
     assert isinstance(root, pathlib.Path), "`root` must be a pathlib.Path"
 
-    # ---- tidy DataFrame for DuckDB ---------------------------------------
+    # Tidy Dataframe For Duckdb
     df: pd.DataFrame = (
         panel.reset_index(names="year")          # index → 'year'
              .assign(country_code=country_code)  # partition column
     )
 
-    # ---- ensure destination exists ---------------------------------------
+    # Ensure Destination Exists
     root = root.resolve()
     root.mkdir(parents=True, exist_ok=True)
 
-    # ---- write via DuckDB -------------------------------------------------
+    # Write Via Duckdb
     con = duckdb.connect(":memory:")
     con.register("df", df)
 
@@ -83,19 +69,19 @@ def ingest_panels_for_all_countries(
     Loop through every country listed in *excel_path*, build its panel,
     and persist via :func:`ingest_panel_wide`.
     """
-    # ---- validation -------------------------------------------------------
+    # Input Validation
     assert excel_path.is_file(), f"{excel_path} does not exist"
     assert indicators, "`indicators` mapping must not be empty"
     if start is not None and end is not None:
         assert start <= end, "`start` year must be ≤ `end` year"
 
-    # ---- read country list -----------------------------------------------
+    # Read Country List
     country_df = pd.read_excel(excel_path)
     required_cols = {"Country_Name", "iso2Code"}
     if not required_cols.issubset(country_df.columns):
         raise ValueError(f"{excel_path} missing columns {required_cols}")
 
-    # ---- iterate & ingest -------------------------------------------------
+    # Iterate & Ingest
     for _, row in country_df.iterrows():
         iso_code = row["iso2Code"]
 

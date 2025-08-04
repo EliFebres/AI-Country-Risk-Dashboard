@@ -55,4 +55,4 @@ env.bak/
 venv.bak/
 
 # Other
-backend/data/wb_panel_wide/
+backend/data/wb_panel_wide
