@@ -8,7 +8,7 @@ load_dotenv()
 
 DB_URL = os.getenv("DATABASE_URL")
 
-def upsert_snapshot(payload: dict) -> None:
+def upsert_snapshot(payload: dict, country_name) -> None:
     """
     Atomically insert or update a country-level data snapshot.
 
@@ -54,7 +54,7 @@ def upsert_snapshot(payload: dict) -> None:
                     VALUES (%s, %s)
                     ON CONFLICT (iso2) DO NOTHING;
                     """,
-                    (country, country),
+                    (country, country_name),
                 )
 
                 # Indicator metadata + yearly series

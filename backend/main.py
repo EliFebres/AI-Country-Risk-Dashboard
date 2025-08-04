@@ -87,10 +87,8 @@ def main() -> None:
         )
 
         # Write Everything To Neon Db
-        data_push.upsert_snapshot({**payload, "llm_output": llm_output})
+        data_push.upsert_snapshot({**payload, "llm_output": llm_output}, country_name=country_name)
 
 
 if __name__ == "__main__":
     main()
-
-    
