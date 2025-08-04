@@ -55,5 +55,4 @@ env.bak/
 venv.bak/
 
 # Other
-Data/wb_panel_wide/
-testing.ipynb
+backend/data/wb_panel_wide/
