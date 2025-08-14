@@ -27,7 +27,7 @@ export default function Map({
       center,
       zoom,
       minZoom: 2,            // prevent zooming way out
-      maxZoom: 3.5,            // cap at country-ish zoom (no street level)
+      maxZoom: 3.5,          // cap at country-ish zoom (no street level)
       dragRotate: false,     // 2D only
       pitchWithRotate: false,
       attributionControl: false,
