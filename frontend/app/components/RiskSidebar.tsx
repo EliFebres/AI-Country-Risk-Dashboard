@@ -22,7 +22,7 @@ export default function RiskSidebar({
   open,
   onClose,
   country,
-  durationMs = 420,
+  durationMs = 500,
   easing = 'ease',
 }: Props) {
   // Close on ESC
@@ -66,7 +66,7 @@ export default function RiskSidebar({
           </button>
           <div className="title">
             <strong>{country?.name ?? '—'}</strong>
-            <span className="subtitle">Country risk overview</span>
+            <span className="subtitle">Country Risk Overview</span>
           </div>
           {country && (
             <span className="pill" title={`Risk ${country.risk.toFixed(2)}`}>
