@@ -101,7 +101,7 @@ export default function RiskSidebar({
               </section>
 
               <section className="card">
-                <h3>Last updated</h3>
+                <h3>Last updated (updated Monthly)</h3>
                 <p>End of last month (scheduled run).</p>
               </section>
             </>

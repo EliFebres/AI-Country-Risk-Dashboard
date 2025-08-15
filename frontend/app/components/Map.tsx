@@ -190,8 +190,7 @@ export default function Map({ bounds, center = [0, 20], zoom = 2.5 }: Props) {
     map.addControl(new maplibregl.NavigationControl({ visualizePitch: false }), 'top-right');
     map.addControl(
       new maplibregl.AttributionControl({
-        compact: true,
-        customAttribution: '© OpenFreeMap, © OpenMapTiles, © OpenStreetMap contributors',
+        compact: true
       }),
     );
 
@@ -264,18 +263,31 @@ export default function Map({ bounds, center = [0, 20], zoom = 2.5 }: Props) {
       applyAllTweaks();
 
       try {
-        const res = await fetch('/api/risk.json', {
+        // 1) Trigger weekly refresh and read the result (server may skip if < 7 days)
+        const r = await fetch('/api/refresh-risk', { method: 'POST' });
+        const refresh = await r.json().catch(() => ({} as any));
+        console.log('refresh-risk result:', r.status, refresh);
+
+        // 2) Build a cache-busted URL (use lastRun if present; otherwise, Date.now)
+        let riskUrl = '/api/risk.json';
+        const buster = refresh?.lastRun ?? String(Date.now());
+        riskUrl += `?v=${encodeURIComponent(buster)}`;
+
+        // 3) Load risk.json FRESH (no browser cache)
+        const res = await fetch(riskUrl, {
           signal: aborter?.signal,
-          headers: { accept: 'application/json' },
+          cache: 'no-store',
+          headers: { accept: 'application/json' }
         });
         if (!res.ok) throw new Error(`Failed to load risk.json: ${res.status}`);
         const dots: RiskDot[] = await res.json();
+        console.log(`Loaded ${dots.length} risk markers`);
 
+        // 4) Draw markers
         dots.forEach(({ name, lngLat, risk }) => {
           const el = makeDotEl(name, risk, () => {
-            // 1) Slide the map so the clicked marker is nicely positioned (accounts for sidebar)
+            // Slide camera + open sidebar
             panToMarker(lngLat);
-            // 2) Open the sidebar with that country's info
             setSelected({ name, risk, lngLat });
           });
 
@@ -290,7 +302,9 @@ export default function Map({ bounds, center = [0, 20], zoom = 2.5 }: Props) {
           markersRef.current.push(marker);
         });
       } catch (err: any) {
-        if (err?.name !== 'AbortError') console.error(err);
+        if (err?.name !== 'AbortError') {
+          console.error('Error initializing markers:', err);
+        }
       }
     });
 
