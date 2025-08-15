@@ -1,7 +1,8 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import maplibregl, { LngLatBoundsLike, Map as MapLibreMap, Marker } from 'maplibre-gl';
+import RiskSidebar from './RiskSidebar';
 
 type Props = {
   bounds?: LngLatBoundsLike;
@@ -12,20 +13,144 @@ type Props = {
 type RiskDot = {
   name: string;
   lngLat: [number, number]; // [lng, lat]
-  risk: number; // 0..1
+  risk: number;             // 0..1
 };
 
+type Selected = {
+  name: string;
+  risk: number;
+  lngLat: [number, number];
+} | null;
+
 export default function Map({ bounds, center = [0, 20], zoom = 2.5 }: Props) {
-  const ref = useRef<HTMLDivElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
 
+  // Keep the map instance stable across re-renders
+  const mapRef = useRef<MapLibreMap | null>(null);
+  const markersRef = useRef<Marker[]>([]);
+  const aborterRef = useRef<AbortController | null>(null);
+
+  const [selected, setSelected] = useState<Selected>(null);
+
+  // --- Helpers (pure) ---
+  const colorForRisk = (r: number) => {
+    if (r > 0.7) return '#ff2d55';   // red
+    if (r >= 0.5) return '#ffd60a';  // yellow
+    return '#39ff14';                // green
+  };
+
+  const makeDotEl = (title: string, risk: number, onOpen: () => void) => {
+    const size = 26;
+    const stroke = 4;
+    const fontSize = 9;
+
+    const r = (size - stroke) / 2;
+    const cx = size / 2;
+    const cy = size / 2;
+    const circumference = 2 * Math.PI * r;
+    const progress = Math.max(0, Math.min(1, risk));
+    const offset = circumference * (1 - progress);
+    const ringColor = colorForRisk(risk);
+
+    const wrap = document.createElement('div');
+    wrap.title = `${title} — Risk: ${risk.toFixed(2)}`;
+    wrap.style.cssText = [
+      `width:${size}px`,
+      `height:${size}px`,
+      `display:inline-block`,
+      `box-sizing:content-box`,
+      `pointer-events:auto`,
+      `cursor:pointer`,
+    ].join(';');
+    wrap.tabIndex = 0;
+    wrap.setAttribute('role', 'button');
+    wrap.setAttribute('aria-label', `${title} risk ${risk.toFixed(2)}`);
+
+    // Prevent map click handlers / default behaviors from firing
+    const open = (e?: Event) => {
+      if (e) {
+        e.preventDefault();
+        e.stopPropagation();
+      }
+      onOpen();
+    };
+    wrap.addEventListener('click', open);
+    wrap.addEventListener('keydown', (e: KeyboardEvent) => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        e.stopPropagation();
+        onOpen();
+      }
+    });
+
+    const svgNS = 'http://www.w3.org/2000/svg';
+    const svg = document.createElementNS(svgNS, 'svg');
+    svg.setAttribute('width', String(size));
+    svg.setAttribute('height', String(size));
+    svg.setAttribute('viewBox', `0 0 ${size} ${size}`);
+    (svg.style as any).display = 'block';
+
+    const track = document.createElementNS(svgNS, 'circle');
+    track.setAttribute('cx', String(cx));
+    track.setAttribute('cy', String(cy));
+    track.setAttribute('r', String(r));
+    track.setAttribute('fill', 'none');
+    track.setAttribute('stroke', 'rgba(255,255,255,0.15)');
+    track.setAttribute('stroke-width', String(stroke));
+
+    const arc = document.createElementNS(svgNS, 'circle');
+    arc.setAttribute('cx', String(cx));
+    arc.setAttribute('cy', String(cy));
+    arc.setAttribute('r', String(r));
+    arc.setAttribute('fill', 'none');
+    arc.setAttribute('stroke', ringColor);
+    arc.setAttribute('stroke-width', String(stroke));
+    arc.setAttribute('stroke-linecap', 'round');
+    arc.setAttribute('stroke-dasharray', `${circumference} ${circumference}`);
+    arc.setAttribute('stroke-dashoffset', `${offset}`);
+    arc.setAttribute('transform', `rotate(-90 ${cx} ${cy})`);
+
+    const inner = document.createElementNS(svgNS, 'circle');
+    inner.setAttribute('cx', String(cx));
+    inner.setAttribute('cy', String(cy));
+    inner.setAttribute('r', String(r - stroke / 2));
+    inner.setAttribute('fill', '#4a4a4a');
+    inner.setAttribute('stroke', 'rgba(255,255,255,0.25)');
+    inner.setAttribute('stroke-width', '1');
+
+    const label = document.createElementNS(svgNS, 'text');
+    label.setAttribute('x', String(cx));
+    label.setAttribute('y', String(cy));
+    label.setAttribute('text-anchor', 'middle');
+    label.setAttribute('dominant-baseline', 'middle');
+    label.setAttribute('font-size', String(fontSize));
+    label.setAttribute('font-family', 'system-ui, -apple-system, Segoe UI, Roboto, Arial, "Noto Sans", sans-serif');
+    label.setAttribute('font-weight', '700');
+    label.setAttribute('fill', '#ffffff');
+    label.setAttribute('stroke', 'rgba(0,0,0,0.6)');
+    label.setAttribute('stroke-width', '0.75');
+    label.setAttribute('paint-order', 'stroke fill');
+    label.textContent = risk.toFixed(2);
+
+    svg.appendChild(track);
+    svg.appendChild(arc);
+    svg.appendChild(inner);
+    svg.appendChild(label);
+    wrap.appendChild(svg);
+
+    return wrap;
+  };
+
+  // --- One-time map initialization (guarded) ---
   useEffect(() => {
-    if (!ref.current) return;
+    if (!containerRef.current) return;
+    if (mapRef.current) return; // prevent re-initialization on re-render / StrictMode
 
-    const aborter = new AbortController();
-    const markers: Marker[] = [];
+    aborterRef.current = new AbortController();
+    const aborter = aborterRef.current;
 
-    const map: MapLibreMap = new maplibregl.Map({
-      container: ref.current,
+    const map = new maplibregl.Map({
+      container: containerRef.current,
       style: 'https://tiles.openfreemap.org/styles/dark',
       center,
       zoom,
@@ -35,6 +160,7 @@ export default function Map({ bounds, center = [0, 20], zoom = 2.5 }: Props) {
       pitchWithRotate: false,
       attributionControl: false,
     });
+    mapRef.current = map;
 
     if (bounds) {
       map.fitBounds(bounds, { padding: 40, duration: 0 });
@@ -49,7 +175,7 @@ export default function Map({ bounds, center = [0, 20], zoom = 2.5 }: Props) {
       }),
     );
 
-    // === Post-style tweaks ===
+    // === Post-style tweaks (run on load and whenever style loads) ===
     const showOnlyCountryLabels = () => {
       const layers = (map.getStyle()?.layers ?? []) as any[];
       for (const layer of layers) {
@@ -92,7 +218,6 @@ export default function Map({ bounds, center = [0, 20], zoom = 2.5 }: Props) {
       }
     };
 
-    // Hide all roads (lines + street names) at every zoom
     const hideRoads = () => {
       const layers = (map.getStyle()?.layers ?? []) as any[];
       for (const layer of layers) {
@@ -115,135 +240,86 @@ export default function Map({ bounds, center = [0, 20], zoom = 2.5 }: Props) {
       hideRoads();
     };
 
-    const colorForRisk = (r: number) => {
-      if (r > 0.7) return '#ff2d55';   // red
-      if (r >= 0.5) return '#ffd60a';  // yellow
-      return '#39ff14';                // green
-    };
-
-    // Grey marker with colored circular progress ring + smaller numeric risk label
-    const makeDotEl = (title: string, risk: number) => {
-      const size = 26;            // overall marker size (px)
-      const stroke = 4;           // ring thickness (px)
-      const fontSize = 9;         // ↓ reduced label size
-
-      const r = (size - stroke) / 2; // ring radius fits inside the box
-      const cx = size / 2;
-      const cy = size / 2;
-      const circumference = 2 * Math.PI * r;
-      const progress = Math.max(0, Math.min(1, risk));
-      const offset = circumference * (1 - progress);
-      const ringColor = colorForRisk(risk);
-
-      const wrap = document.createElement('div');
-      wrap.title = `${title} — Risk: ${risk.toFixed(2)}`;
-      wrap.style.cssText = [
-        `width:${size}px`,
-        `height:${size}px`,
-        `display:inline-block`,
-        `box-sizing:content-box`,
-        `pointer-events:auto`,
-      ].join(';');
-
-      const svgNS = 'http://www.w3.org/2000/svg';
-      const svg = document.createElementNS(svgNS, 'svg');
-      svg.setAttribute('width', String(size));
-      svg.setAttribute('height', String(size));
-      svg.setAttribute('viewBox', `0 0 ${size} ${size}`);
-      (svg.style as any).display = 'block';
-
-      // Background ring (track)
-      const track = document.createElementNS(svgNS, 'circle');
-      track.setAttribute('cx', String(cx));
-      track.setAttribute('cy', String(cy));
-      track.setAttribute('r', String(r));
-      track.setAttribute('fill', 'none');
-      track.setAttribute('stroke', 'rgba(255,255,255,0.15)');
-      track.setAttribute('stroke-width', String(stroke));
-
-      // Progress ring
-      const arc = document.createElementNS(svgNS, 'circle');
-      arc.setAttribute('cx', String(cx));
-      arc.setAttribute('cy', String(cy));
-      arc.setAttribute('r', String(r));
-      arc.setAttribute('fill', 'none');
-      arc.setAttribute('stroke', ringColor);
-      arc.setAttribute('stroke-width', String(stroke));
-      arc.setAttribute('stroke-linecap', 'round');
-      arc.setAttribute('stroke-dasharray', `${circumference} ${circumference}`);
-      arc.setAttribute('stroke-dashoffset', `${offset}`);
-      arc.setAttribute('transform', `rotate(-90 ${cx} ${cy})`);
-
-      // Inner grey disc
-      const inner = document.createElementNS(svgNS, 'circle');
-      inner.setAttribute('cx', String(cx));
-      inner.setAttribute('cy', String(cy));
-      inner.setAttribute('r', String(r - stroke / 2));
-      inner.setAttribute('fill', '#4a4a4a');
-      inner.setAttribute('stroke', 'rgba(255,255,255,0.25)');
-      inner.setAttribute('stroke-width', '1');
-
-      // Centered numeric label
-      const label = document.createElementNS(svgNS, 'text');
-      label.setAttribute('x', String(cx));
-      label.setAttribute('y', String(cy));
-      label.setAttribute('text-anchor', 'middle');
-      label.setAttribute('dominant-baseline', 'middle');
-      label.setAttribute('font-size', String(fontSize));
-      label.setAttribute('font-family', 'system-ui, -apple-system, Segoe UI, Roboto, Arial, "Noto Sans", sans-serif');
-      label.setAttribute('font-weight', '700');
-      label.setAttribute('fill', '#ffffff');
-      label.setAttribute('stroke', 'rgba(0,0,0,0.6)');
-      label.setAttribute('stroke-width', '0.75');
-      label.setAttribute('paint-order', 'stroke fill');
-      label.textContent = risk.toFixed(2);
-
-      svg.appendChild(track);
-      svg.appendChild(arc);
-      svg.appendChild(inner);
-      svg.appendChild(label);
-      wrap.appendChild(svg);
-
-      return wrap;
-    };
-
     map.on('load', async () => {
       applyAllTweaks();
 
       try {
         const res = await fetch('/api/risk.json', {
-          // cache: 'no-store', // uncomment to hot-reload while editing JSON
-          signal: aborter.signal,
+          signal: aborter?.signal,
           headers: { accept: 'application/json' },
         });
         if (!res.ok) throw new Error(`Failed to load risk.json: ${res.status}`);
         const dots: RiskDot[] = await res.json();
 
         dots.forEach(({ name, lngLat, risk }) => {
+          const el = makeDotEl(name, risk, () => {
+            setSelected({ name, risk, lngLat });
+          });
+
           const marker = new maplibregl.Marker({
-            element: makeDotEl(name, risk),
+            element: el,
             anchor: 'center',
             offset: [0, 0],
           })
-            .setLngLat(lngLat) // expects [lng, lat]
+            .setLngLat(lngLat)
             .addTo(map);
-          markers.push(marker);
+
+          markersRef.current.push(marker);
         });
       } catch (err: any) {
-        if (err?.name !== 'AbortError') {
-          console.error(err);
-        }
+        if (err?.name !== 'AbortError') console.error(err);
       }
     });
 
+    // Close panel when clicking on bare map (not markers)
+    map.on('click', () => setSelected(null));
+
+    // Re-apply tweaks if style reloads (e.g., tiles or style switch)
     map.on('styledata', applyAllTweaks);
 
+    // Cleanup on unmount only
     return () => {
-      aborter.abort();
-      markers.forEach((m) => m.remove());
+      aborter?.abort();
+      markersRef.current.forEach((m) => m.remove());
+      markersRef.current = [];
       map.remove();
+      mapRef.current = null;
     };
-  }, [bounds, center, zoom]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // ← INIT ONCE
 
-  return <div ref={ref} style={{ width: '100vw', height: '100dvh' }} />;
+  // --- Respond to prop changes without re-creating the map ---
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+
+    // Optionally keep the view in sync with props
+    if (bounds) {
+      try {
+        map.setMaxBounds(bounds);
+        map.fitBounds(bounds, { padding: 40, duration: 0 });
+      } catch {
+        /* ignore fit errors during early load */
+      }
+    }
+
+    if (center) map.setCenter(center);
+    if (typeof zoom === 'number') map.setZoom(zoom);
+  }, [
+    // Safe-ish deps for arrays:
+    bounds ? JSON.stringify(bounds) : 'no-bounds',
+    center ? `${center[0]},${center[1]}` : 'no-center',
+    zoom ?? 'no-zoom',
+  ]);
+
+  return (
+    <div style={{ position: 'relative', width: '100vw', height: '100dvh' }}>
+      <div ref={containerRef} style={{ position: 'absolute', inset: 0 }} />
+      <RiskSidebar
+        open={!!selected}
+        country={selected ? { name: selected.name, risk: selected.risk } : null}
+        onClose={() => setSelected(null)}
+      />
+    </div>
+  );
 }
