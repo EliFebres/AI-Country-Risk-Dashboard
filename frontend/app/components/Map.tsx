@@ -39,6 +39,26 @@ export default function Map({ bounds, center = [0, 20], zoom = 2.5 }: Props) {
     return '#39ff14';                // green
   };
 
+  // Sidebar is min(420px, 25vw) — mirror of RiskSidebar
+  const getSidebarWidthPx = () => {
+    const vwWidth = typeof window !== 'undefined' ? window.innerWidth * 0.25 : 0;
+    return Math.min(420, Math.round(vwWidth || 0));
+  };
+
+  // Smoothly pan so the clicked marker ends up visually centered in the free (right) area
+  const panToMarker = (lngLat: [number, number]) => {
+    const map = mapRef.current;
+    if (!map) return;
+
+    const offsetX = Math.round(getSidebarWidthPx() / 2 + 8); // tiny extra buffer
+    map.easeTo({
+      center: lngLat,
+      duration: 650,
+      offset: [offsetX, 0], // shift the camera so the marker appears right of center
+      essential: true,
+    });
+  };
+
   const makeDotEl = (title: string, risk: number, onOpen: () => void) => {
     const size = 26;
     const stroke = 4;
@@ -155,7 +175,7 @@ export default function Map({ bounds, center = [0, 20], zoom = 2.5 }: Props) {
       center,
       zoom,
       minZoom: 2,
-      maxZoom: 4,
+      maxZoom: 4.5,
       dragRotate: false,
       pitchWithRotate: false,
       attributionControl: false,
@@ -253,6 +273,9 @@ export default function Map({ bounds, center = [0, 20], zoom = 2.5 }: Props) {
 
         dots.forEach(({ name, lngLat, risk }) => {
           const el = makeDotEl(name, risk, () => {
+            // 1) Slide the map so the clicked marker is nicely positioned (accounts for sidebar)
+            panToMarker(lngLat);
+            // 2) Open the sidebar with that country's info
             setSelected({ name, risk, lngLat });
           });
 

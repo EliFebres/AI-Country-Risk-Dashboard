@@ -6,6 +6,10 @@ type Props = {
   open: boolean;
   onClose: () => void;
   country: { name: string; risk: number } | null;
+  /** Total duration (ms) for the clip-path reveal. Default 360. */
+  durationMs?: number;
+  /** CSS easing for both clip-path and opacity transitions. Default 'ease'. */
+  easing?: string;
 };
 
 function colorForRisk(r: number) {
@@ -14,7 +18,13 @@ function colorForRisk(r: number) {
   return '#39ff14';                // green
 }
 
-export default function RiskSidebar({ open, onClose, country }: Props) {
+export default function RiskSidebar({
+  open,
+  onClose,
+  country,
+  durationMs = 420,
+  easing = 'ease',
+}: Props) {
   // Close on ESC
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -25,125 +35,166 @@ export default function RiskSidebar({ open, onClose, country }: Props) {
   }, [onClose]);
 
   const panelWidth = 'min(420px, 25vw)';
+  // Make opacity a bit shorter so it feels snappier
+  const fadeMs = Math.max(120, Math.round(durationMs * 0.6));
 
   return (
-    <aside
-      aria-hidden={!open}
-      aria-label="Country risk details"
-      style={{
-        position: 'absolute',
-        top: 0,
-        left: 0,
-        height: '100dvh',
-        width: panelWidth,
-        transform: open ? 'translateX(0)' : 'translateX(-100%)',
-        transition: 'transform 260ms ease',
-        background: 'rgba(14,14,14,0.96)',
-        color: '#fff',
-        borderRight: '1px solid rgba(255,255,255,0.08)',
-        backdropFilter: 'blur(8px)',
-        WebkitBackdropFilter: 'blur(8px)',
-        zIndex: 10,
-        display: 'flex',
-        flexDirection: 'column',
-        boxShadow: '0 0 24px rgba(0,0,0,0.35)',
-      }}
-    >
-      <header
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: 12,
-          padding: '14px 16px',
-          borderBottom: '1px solid rgba(255,255,255,0.08)',
-        }}
+    <>
+      {/* Dim backdrop */}
+      <div
+        className={`backdrop ${open ? 'open' : ''}`}
+        onClick={onClose}
+        aria-hidden={!open}
+      />
+
+      <aside
+        aria-hidden={!open}
+        aria-label="Country risk details"
+        className={`sidebar ${open ? 'open' : 'closed'}`}
+        style={
+          {
+            ['--w' as any]: panelWidth,
+            ['--revealMs' as any]: `${durationMs}ms`,
+            ['--fadeMs' as any]: `${fadeMs}ms`,
+            ['--easing' as any]: easing,
+          } as React.CSSProperties
+        }
       >
-        <button
-          onClick={onClose}
-          aria-label="Close panel"
-          style={{
-            width: 36,
-            height: 36,
-            borderRadius: 12,
-            border: '1px solid rgba(255,255,255,0.15)',
-            background: 'rgba(255,255,255,0.06)',
-            color: '#fff',
-            cursor: 'pointer',
-            fontSize: 18,
-            lineHeight: '36px',
-          }}
-        >
-          ×
-        </button>
-        <div style={{ display: 'flex', flexDirection: 'column' }}>
-          <strong style={{ fontSize: 18, lineHeight: 1.2 }}>
-            {country?.name ?? '—'}
-          </strong>
-          <span style={{ opacity: 0.7, fontSize: 12 }}>Country risk overview</span>
+        <header className="bar">
+          <button onClick={onClose} aria-label="Close panel" className="closeBtn">
+            ×
+          </button>
+          <div className="title">
+            <strong>{country?.name ?? '—'}</strong>
+            <span className="subtitle">Country risk overview</span>
+          </div>
+          {country && (
+            <span className="pill" title={`Risk ${country.risk.toFixed(2)}`}>
+              <span className="dot" style={{ background: colorForRisk(country.risk) }} />
+              {country.risk.toFixed(2)}
+            </span>
+          )}
+        </header>
+
+        <div className="content">
+          {!country ? (
+            <p className="muted">Click a country marker to see details.</p>
+          ) : (
+            <>
+              <section className="card">
+                <h3>Summary</h3>
+                <p>
+                  This is where your monthly AI summary for <b>{country.name}</b> will go.
+                  You can fetch it alongside <code>risk.json</code> or via another API route.
+                </p>
+              </section>
+
+              <section className="card">
+                <h3>Signals</h3>
+                <ul>
+                  <li>Conflict / war</li>
+                  <li>Political stability</li>
+                  <li>Governance / corruption</li>
+                  <li>Macro volatility</li>
+                  <li>Regulatory uncertainty</li>
+                </ul>
+              </section>
+
+              <section className="card">
+                <h3>Last updated</h3>
+                <p>End of last month (scheduled run).</p>
+              </section>
+            </>
+          )}
         </div>
-        {country && (
-          <span
-            title={`Risk ${country.risk.toFixed(2)}`}
-            style={{
-              marginLeft: 'auto',
-              padding: '6px 10px',
-              borderRadius: 999,
-              border: '1px solid rgba(255,255,255,0.15)',
-              background: 'rgba(255,255,255,0.06)',
-              fontWeight: 700,
-              letterSpacing: 0.2,
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: 8,
-            }}
-          >
-            <span
-              aria-hidden
-              style={{
-                display: 'inline-block',
-                width: 10,
-                height: 10,
-                borderRadius: '50%',
-                background: colorForRisk(country.risk),
-              }}
-            />
-            {country.risk.toFixed(2)}
-          </span>
-        )}
-      </header>
+      </aside>
 
-      <div style={{ padding: 16, overflowY: 'auto' }}>
-        {!country ? (
-          <p style={{ opacity: 0.7 }}>Click a country marker to see details.</p>
-        ) : (
-          <>
-            {/* Stub sections — replace with your real data as you wire it up */}
-            <section style={{ marginBottom: 16 }}>
-              <h3 style={{ margin: '0 0 8px', fontSize: 14, opacity: 0.9 }}>Summary</h3>
-              <p style={{ margin: 0, opacity: 0.85 }}>
-                This is where your monthly AI summary for <b>{country.name}</b> will go.
-                You can fetch it alongside <code>risk.json</code> or via another API route.
-              </p>
-            </section>
+      <style jsx>{`
+        :global(*) { box-sizing: border-box; }
 
-            <section style={{ marginBottom: 16 }}>
-              <h3 style={{ margin: '0 0 8px', fontSize: 14, opacity: 0.9 }}>Signals</h3>
-              <ul style={{ margin: 0, paddingLeft: 18, opacity: 0.9 }}>
-                <li>Conflict / war</li>
-                <li>Political stability</li>
-                <li>Governance / corruption</li>
-                <li>Macro volatility</li>
-                <li>Regulatory uncertainty</li>
-              </ul>
-            </section>
+        .backdrop {
+          position: absolute;
+          inset: 0;
+          background: rgba(0,0,0,0.0);
+          opacity: 0;
+          transition: opacity var(--fadeMs, 220ms) var(--easing, ease);
+          pointer-events: none;
+          z-index: 8;
+        }
+        .backdrop.open {
+          background: rgba(0,0,0,0.35);
+          opacity: 1;
+          pointer-events: auto;
+        }
 
-            <section>
-              <h3 style={{ margin: '0 0 8px', fontSize: 14, opacity: 0.9 }}>Last updated</h3>
-              <p style={{ margin: 0, opacity: 0.85 }}>End of last month (scheduled run).</p>
-            </section>
-          </>
-        )}
-      </div>
-    </aside>
+        .sidebar {
+          position: absolute;
+          top: 0;
+          left: 0;
+          height: 100dvh;
+          width: var(--w);
+          background: rgba(14,14,14,0.96);
+          color: #fff;
+          border-right: 1px solid rgba(255,255,255,0.08);
+          backdrop-filter: blur(8px);
+          -webkit-backdrop-filter: blur(8px);
+          z-index: 10;
+          display: flex;
+          flex-direction: column;
+          box-shadow: 0 0 24px rgba(0,0,0,0.35);
+          will-change: clip-path, opacity;
+          /* Applies for both open and close */
+          transition: clip-path var(--revealMs, 360ms) var(--easing, ease),
+                      opacity   var(--fadeMs, 220ms)   var(--easing, ease);
+        }
+
+        /* Reveal animation states (open & close) */
+        .sidebar.closed { clip-path: inset(0 100% 0 0); opacity: 0; }
+        .sidebar.open   { clip-path: inset(0 0 0 0);     opacity: 1; }
+
+        .bar {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          padding: 14px 16px;
+          border-bottom: 1px solid rgba(255,255,255,0.08);
+        }
+        .closeBtn {
+          width: 36px; height: 36px;
+          border-radius: 12px;
+          border: 1px solid rgba(255,255,255,0.15);
+          background: rgba(255,255,255,0.06);
+          color: #fff; cursor: pointer; font-size: 18px; line-height: 36px;
+        }
+        .title { display: flex; flex-direction: column; }
+        .title strong { font-size: 18px; line-height: 1.2; }
+        .subtitle { opacity: 0.7; font-size: 12px; }
+        .pill {
+          margin-left: auto;
+          padding: 6px 10px;
+          border-radius: 999px;
+          border: 1px solid rgba(255,255,255,0.15);
+          background: rgba(255,255,255,0.06);
+          font-weight: 700;
+          letter-spacing: 0.2px;
+          display: inline-flex;
+          align-items: center; gap: 8px;
+        }
+        .dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+
+        .content { padding: 16px; overflow-y: auto; }
+        .muted { opacity: 0.7; }
+
+        .card {
+          margin-bottom: 16px;
+          padding: 10px 12px;
+          border: 1px solid rgba(255,255,255,0.08);
+          border-radius: 12px;
+          background: rgba(255,255,255,0.03);
+        }
+        .card h3 { margin: 0 0 8px; font-size: 14px; opacity: 0.9; }
+        .card p, .card ul { margin: 0; opacity: 0.9; }
+      `}</style>
+    </>
   );
 }
