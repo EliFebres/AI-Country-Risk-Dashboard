@@ -84,10 +84,12 @@ UNITS: dict[str, str] = {
 AI_PROMPT = """
 You are a senior geopolitical risk analyst advising global investors. Produce a single calibrated investor-risk score for {country} for the next 12 months.
 
-— Scoring Framework (0.00–1.00; use full range) —
+— Scoring Framework (0.00-1.00; use full range) —
 Weight each sub-factor, then renormalize if any sub-score is null:
   conflict_war (0.30)               — interstate war, civil war, insurgency, large-scale terror, mobilizations, ceasefires.
-    Anchors: 0.00 none; 0.40 sporadic political violence; 0.70 sustained insurgency; 0.85 active war; 0.95+ war + sanctions.
+    Anchors: 0.00 none; 0.40 sporadic political violence; 0.70 sustained insurgency/low-intensity conflict;
+             0.90-1.00 active interstate war on domestic territory OR regular long-range strikes on cities/critical infrastructure;
+             0.95-1.00 active war PLUS broad sanctions/financial isolation.
   political_stability (0.25)        — government durability, elite cohesion, protest/coup risk, succession risk.
     Anchors: 0.10 stable democracy; 0.50 recurrent unrest/cabinet churn; 0.80 coup/constitutional crisis.
   governance_corruption (0.20)      — rule of law, corruption control, contract enforcement, expropriation risk.
@@ -98,27 +100,33 @@ Weight each sub-factor, then renormalize if any sub-score is null:
     Anchors: 0.10 predictable, pro-market; 0.50 ad-hoc shifts; 0.80 abrupt controls/retroactive measures.
 
 — Calibration Guide (illustrative, not mandatory) —
-• Very-low-risk OECD democracies with no major conflict → 0.05–0.20
-• Typical emerging market with moderate uncertainty → 0.40–0.60
-• Active war or sweeping sanctions → 0.80–0.95
+• Very-low-risk OECD democracies with no major conflict → 0.05-0.20
+• Typical emerging market with moderate uncertainty → 0.40-0.60
+• Active interstate war on domestic territory and/or sustained nationwide strikes → 0.90-0.98
+• Active war + sweeping sanctions/financial isolation → 0.95-0.99
 
 — Rules —
-1) Score each sub-factor in [0,1]. If insufficient evidence, set that sub-score to null. 
+1) Score each sub-factor in [0,1]. If insufficient evidence, set that sub-score to null.
 2) Proportionally re-weight the remaining factors and compute the weighted average. If all are null, overall "score" = null.
-3) Use only the provided evidence; do not infer unstated facts. Be conservative when signals conflict.
-4) Think through the scoring internally. Do NOT show your reasoning or any calculations.
-5) Output must be valid JSON only, exactly:
+3) Dominance & floors for severe conflict:
+   • If conflict_war ≥ 0.85 AND hostilities occur on domestic territory OR there are regular long-range strikes on cities/critical infrastructure, set a risk floor of 0.90 on the overall score.
+   • If conflict_war ≥ 0.90 AND the country faces broad sanctions/financial isolation, set a risk floor of 0.93 on the overall score.
+   • Mitigants (e.g., reserves, aid) may not reduce the overall score below these floors.
+4) Use only the provided evidence; do not infer unstated facts. Be conservative when signals conflict.
+5) Think through the scoring internally. Do NOT show your reasoning or any calculations.
+6) Output must be valid JSON only, exactly:
 
-{
+{{
   "score": <float in [0,1] or null>,
-  "bullet_summary": "<≤120 words, naming 2–3 primary drivers and any meaningful mitigants>"
-}
+  "bullet_summary": "<≤120 words, naming primary drivers and any meaningful mitigants to explain risk rating>"
+}}
 
 — Example —
-{
+{{
   "score": 0.72,
   "bullet_summary": "Active conflict and severe sanctions elevate risk; FX reserves provide a partial buffer."
-}
+}}
 
 Now evaluate {country} considering {prompt_points}.
 """.strip()
+

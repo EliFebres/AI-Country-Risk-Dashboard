@@ -1,16 +1,21 @@
 import os
+import re
 import json
 import logging
+from time import sleep
+from pathlib import Path
 from typing import List, Dict, Optional, TYPE_CHECKING
 
-from dotenv import load_dotenv
-load_dotenv()
+from dotenv import load_dotenv, find_dotenv
+
+# Load .env reliably
+load_dotenv(find_dotenv(), override=False)
+load_dotenv(Path(__file__).resolve().parents[1] / ".env", override=False)
 
 from langchain_openai import ChatOpenAI
 from langchain_core.messages import SystemMessage, HumanMessage
 
 import backend.constants as constants
-
 
 logger = logging.getLogger(__name__)
 _EXPECTED_KEYS = {"score", "bullet_summary"}  # JSON schema from the LLM
@@ -21,88 +26,125 @@ def _clean_keys(d: Dict) -> Dict:
     return {k.strip().lower(): v for k, v in d.items()}
 
 
+def _robust_json_loads(text: str) -> Optional[Dict]:
+    """
+    Try to parse JSON. If the model wraps JSON in prose, extract the outermost
+    {...} block and parse that.
+    """
+    try:
+        return json.loads(text)
+    except json.JSONDecodeError:
+        pass
+    m = re.search(r"\{.*\}", text, flags=re.DOTALL)
+    if m:
+        try:
+            return json.loads(m.group(0))
+        except json.JSONDecodeError:
+            return None
+    return None
+
+
 def country_llm_score(
     country: str,
     headlines: List[str],
     prompt_points: str,
     *,
+    macro_context: Optional[str] = None,   # NEW: compact table of latest values/deltas
     llm: Optional["ChatOpenAI"] = None,
-    model: str = "gpt-3.5-turbo",
-    temperature: float = 0.2,
+    model: str = "gpt-5-mini",
+    temperature: float = 1.0,
     api_key: Optional[str] = None,
+    attempts: int = 2,                     # NEW: how many times to try
+    retry_sleep: float = 0.4               # small pause between tries
 ) -> Dict[str, object]:
     """
     Return a JSON-like dict with the LLM's risk score and ≤75-word summary.
 
-    Parameters
-    ----------
-    country        : ISO-alpha country code or display name.
-    headlines      : List of recent headline strings (only first 5 are used).
-    prompt_points  : Comma-separated macro indicators shown to the LLM.
-    llm            : Optional *ChatOpenAI* instance to reuse.
-    model          : OpenAI chat model name.
-    temperature    : Sampling temperature.
-    api_key        : Explicit key overrides ``$OPENAI_API_KEY``.
-
-    Notes
-    -----
-    * If LangChain packages are missing, the function transparently falls back
-      to the official ``openai`` client (≥1.0).
-    * Any errors or schema mismatches yield ``{"score": None,
-      "bullet_summary": ""}``.
+    If the first attempt yields {"score": None, ...}, the function will retry
+    (up to `attempts`) with a lower temperature and a stronger instruction to
+    produce a numeric score using conservative inference.
     """
     # Input Validation
     assert country and isinstance(country, str)
     assert headlines and all(isinstance(h, str) for h in headlines)
     assert isinstance(prompt_points, str) and prompt_points
+    assert isinstance(attempts, int) and attempts >= 1
 
     api_key = api_key or os.getenv("OPENAI_API_KEY")
     if not api_key:
         logger.error("OPENAI_API_KEY not set (env var or api_key arg).")
         return {"score": None, "bullet_summary": ""}
 
-    # Construct Prompt
+    # Prepare common message parts
     context = "\n".join(headlines[:5])
-    sys_msg = constants.AI_PROMPT.format(prompt_points=prompt_points, country=country)
-    user_msg = f"Country: {country}\nRecent headlines:\n{context}"
+    sys_base = constants.AI_PROMPT.format(prompt_points=prompt_points, country=country)
+    sys_suffix = (
+        "\n\nReturn ONLY valid JSON with keys exactly: "
+        '{"score": <float 0-1 or null>, "bullet_summary": "<<=75 words>"}'
+    )
 
-    if llm is None:
-        llm = ChatOpenAI(
-            model_name=model,
-            temperature=temperature,
-            openai_api_key=api_key,
+    # Macro context (optional but highly recommended)
+    macro_block = f"\n\nMacro indicators (latest & deltas):\n{macro_context}" if macro_context else ""
+
+    def _one_call(_temp: float, extra_nudge: str = "") -> Dict[str, object]:
+        _llm = llm or ChatOpenAI(model_name=model, temperature=_temp, openai_api_key=api_key)
+        sys_msg = SystemMessage(content=sys_base + sys_suffix + extra_nudge)
+        user_msg = HumanMessage(
+            content=(
+                f"Country: {country}"
+                f"{macro_block}"
+                f"\n\nRecent headlines (max 5, newest first):\n{context}"
+            )
         )
-    lc_msgs = [SystemMessage(content=sys_msg), HumanMessage(content=user_msg)]
-    try:
-        resp_text = llm.invoke(lc_msgs).content.strip()
-    except Exception as exc:
-        logger.error("LangChain error: %s", exc)
-        return {"score": None, "bullet_summary": ""}
+        try:
+            resp_text = _llm.invoke([sys_msg, user_msg]).content.strip()
+        except Exception as exc:
+            logger.error("LangChain error: %s", exc)
+            return {"score": None, "bullet_summary": ""}
 
-    # Parse / Validate
-    try:
-        raw = json.loads(resp_text)
-    except json.JSONDecodeError:
-        logger.error("LLM responded with non-JSON:\n%s", resp_text)
-        return {"score": None, "bullet_summary": ""}
+        raw = _robust_json_loads(resp_text)
+        if not isinstance(raw, dict):
+            logger.error("LLM responded with non-JSON:\n%s", resp_text[:500])
+            return {"score": None, "bullet_summary": ""}
 
-    data = _clean_keys(raw)
-    if _EXPECTED_KEYS != set(data):
-        logger.error("LLM schema mismatch: %s", raw)
-        return {"score": None, "bullet_summary": ""}
+        data = _clean_keys(raw)
+        if _EXPECTED_KEYS != set(data):
+            logger.error("LLM schema mismatch: %s", raw)
+            return {"score": None, "bullet_summary": ""}
 
-    score, summary = data["score"], data["bullet_summary"]
+        score, summary = data["score"], data["bullet_summary"]
 
-    try:
-        score = None if score is None else float(score)
-    except (TypeError, ValueError):
-        logger.warning("`score` not castable to float: %s", score)
-        score = None
+        # Cast score
+        try:
+            score = None if score is None else float(score)
+        except (TypeError, ValueError):
+            logger.warning("`score` not castable to float: %s", score)
+            score = None
 
-    summary = summary if isinstance(summary, str) else ""
-    if len(summary.split()) > 75:
-        summary = " ".join(summary.split()[:75])
+        # Tighten summary length
+        summary = summary if isinstance(summary, str) else ""
+        if len(summary.split()) > 75:
+            summary = " ".join(summary.split()[:75])
 
-    result = {"score": score, "bullet_summary": summary}
-    assert set(result) == _EXPECTED_KEYS
-    return result
+        return {"score": score, "bullet_summary": summary}
+
+    # Attempt 1: your current settings
+    out = _one_call(temperature)
+    if out["score"] is not None or attempts == 1:
+        return out
+
+    # Attempts 2..N: stronger nudge + low temperature
+    nudge = (
+        "\n\nIf some quantitative inputs are missing, infer a *conservative* "
+        "0.00–1.00 score using the headlines and priors for similar countries. "
+        "Do not say 'insufficient evidence'; still return a numeric score."
+    )
+    for i in range(2, attempts + 1):
+        sleep(retry_sleep)
+        out = _one_call(_temp=0.2, extra_nudge=nudge)
+        if out["score"] is not None:
+            logger.info("LLM produced a score on retry %d.", i)
+            return out
+
+    # All attempts failed
+    return out
