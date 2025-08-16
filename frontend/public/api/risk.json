@@ -1,0 +1,402 @@
+[
+  {
+    "name": "Argentina",
+    "lngLat": [
+      -64.8816,
+      -35
+    ],
+    "risk": 0.65
+  },
+  {
+    "name": "Australia",
+    "lngLat": [
+      134.53,
+      -24.6809
+    ],
+    "risk": 0.45
+  },
+  {
+    "name": "Austria",
+    "lngLat": [
+      14.3738,
+      47.6082
+    ],
+    "risk": 0.68
+  },
+  {
+    "name": "Bangladesh",
+    "lngLat": [
+      90.0125,
+      24.5103
+    ],
+    "risk": 0.68
+  },
+  {
+    "name": "Belgium",
+    "lngLat": [
+      4.3517,
+      50.6003
+    ],
+    "risk": 0.52
+  },
+  {
+    "name": "Brazil",
+    "lngLat": [
+      -53.3,
+      -10.3
+    ],
+    "risk": 0.68
+  },
+  {
+    "name": "Canada",
+    "lngLat": [
+      -108.007,
+      60.9215
+    ],
+    "risk": 0.35
+  },
+  {
+    "name": "Chile",
+    "lngLat": [
+      -71.1,
+      -31.8
+    ],
+    "risk": 0.35
+  },
+  {
+    "name": "China",
+    "lngLat": [
+      105,
+      35
+    ],
+    "risk": 0.52
+  },
+  {
+    "name": "Colombia",
+    "lngLat": [
+      -73,
+      4
+    ],
+    "risk": 0.68
+  },
+  {
+    "name": "Denmark",
+    "lngLat": [
+      10.5683,
+      55.6761
+    ],
+    "risk": 0.15
+  },
+  {
+    "name": "Finland",
+    "lngLat": [
+      25.62,
+      63.3
+    ],
+    "risk": 0.55
+  },
+  {
+    "name": "France",
+    "lngLat": [
+      2,
+      46.6
+    ],
+    "risk": 0.63
+  },
+  {
+    "name": "Germany",
+    "lngLat": [
+      10.5,
+      51.2
+    ],
+    "risk": 0.52
+  },
+  {
+    "name": "Greece",
+    "lngLat": [
+      22.3,
+      39
+    ],
+    "risk": 0.38
+  },
+  {
+    "name": "Hong Kong SAR, China",
+    "lngLat": [
+      114.1694,
+      22.3193
+    ],
+    "risk": 0.52
+  },
+  {
+    "name": "Hungary",
+    "lngLat": [
+      19.5,
+      47.15
+    ],
+    "risk": 0.67
+  },
+  {
+    "name": "India",
+    "lngLat": [
+      78.5,
+      22.35
+    ],
+    "risk": 0.45
+  },
+  {
+    "name": "Indonesia",
+    "lngLat": [
+      118,
+      -2.5
+    ],
+    "risk": 0.45
+  },
+  {
+    "name": "Ireland",
+    "lngLat": [
+      -8,
+      52.8
+    ],
+    "risk": 0.45
+  },
+  {
+    "name": "Israel",
+    "lngLat": [
+      35,
+      31
+    ],
+    "risk": 0.68
+  },
+  {
+    "name": "Italy",
+    "lngLat": [
+      12.8,
+      42.6
+    ],
+    "risk": 0.68
+  },
+  {
+    "name": "Japan",
+    "lngLat": [
+      139.2,
+      36.5
+    ],
+    "risk": 0.42
+  },
+  {
+    "name": "Kenya",
+    "lngLat": [
+      38.52,
+      1.36
+    ],
+    "risk": 0.63
+  },
+  {
+    "name": "Luxembourg",
+    "lngLat": [
+      5.7,
+      49.85
+    ],
+    "risk": 0.18
+  },
+  {
+    "name": "Malaysia",
+    "lngLat": [
+      102.2,
+      4.5
+    ],
+    "risk": 0.35
+  },
+  {
+    "name": "Mexico",
+    "lngLat": [
+      -102,
+      23.6
+    ],
+    "risk": 0.55
+  },
+  {
+    "name": "Morocco",
+    "lngLat": [
+      -7.2,
+      31.2
+    ],
+    "risk": 0.45
+  },
+  {
+    "name": "Netherlands",
+    "lngLat": [
+      5.7,
+      52.25
+    ],
+    "risk": 0.63
+  },
+  {
+    "name": "New Zealand",
+    "lngLat": [
+      173,
+      -41.5
+    ],
+    "risk": 0.55
+  },
+  {
+    "name": "Nigeria",
+    "lngLat": [
+      8,
+      9.5
+    ],
+    "risk": 0.68
+  },
+  {
+    "name": "Norway",
+    "lngLat": [
+      8.7,
+      61.2
+    ],
+    "risk": 0.43
+  },
+  {
+    "name": "Pakistan",
+    "lngLat": [
+      71.4,
+      30.35
+    ],
+    "risk": 0.63
+  },
+  {
+    "name": "Peru",
+    "lngLat": [
+      -75,
+      -7
+    ],
+    "risk": 0.55
+  },
+  {
+    "name": "Philippines",
+    "lngLat": [
+      122.5,
+      13
+    ],
+    "risk": 0.55
+  },
+  {
+    "name": "Poland",
+    "lngLat": [
+      19,
+      52.2297
+    ],
+    "risk": 0.45
+  },
+  {
+    "name": "Portugal",
+    "lngLat": [
+      -8,
+      39.7
+    ],
+    "risk": 0.68
+  },
+  {
+    "name": "Qatar",
+    "lngLat": [
+      51.031,
+      25.2854
+    ],
+    "risk": 0.25
+  },
+  {
+    "name": "Romania",
+    "lngLat": [
+      24.9,
+      46
+    ],
+    "risk": 0.68
+  },
+  {
+    "name": "Saudi Arabia",
+    "lngLat": [
+      42.35,
+      25.56
+    ],
+    "risk": 0.52
+  },
+  {
+    "name": "Singapore",
+    "lngLat": [
+      103.8198,
+      1.3521
+    ],
+    "risk": 0.25
+  },
+  {
+    "name": "South Africa",
+    "lngLat": [
+      25,
+      -28.9
+    ],
+    "risk": 0.68
+  },
+  {
+    "name": "Spain",
+    "lngLat": [
+      -4.8,
+      39.4
+    ],
+    "risk": 0.25
+  },
+  {
+    "name": "Sweden",
+    "lngLat": [
+      14.5,
+      59.65
+    ],
+    "risk": 0.22
+  },
+  {
+    "name": "Switzerland",
+    "lngLat": [
+      8,
+      46.75
+    ],
+    "risk": 0.35
+  },
+  {
+    "name": "Thailand",
+    "lngLat": [
+      101,
+      15
+    ],
+    "risk": 0.65
+  },
+  {
+    "name": "Ukraine",
+    "lngLat": [
+      31,
+      49.5
+    ],
+    "risk": 0.63
+  },
+  {
+    "name": "United Arab Emirates",
+    "lngLat": [
+      54,
+      24
+    ],
+    "risk": 0.45
+  },
+  {
+    "name": "United Kingdom",
+    "lngLat": [
+      -3.5,
+      54.75
+    ],
+    "risk": 0.35
+  },
+  {
+    "name": "United States",
+    "lngLat": [
+      -100.5,
+      39.75
+    ],
+    "risk": 0.12
+  }
+]
