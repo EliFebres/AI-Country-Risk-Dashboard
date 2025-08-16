@@ -34,8 +34,9 @@ export default function Map({ bounds, center = [0, 20], zoom = 2.5 }: Props) {
   const [selected, setSelected] = useState<Selected>(null);
 
   // Zooms
-  const FOCUS_ZOOM = 3; // when clicking a marker
-  const DEFAULT_ZOOM = 2; // when clicking off or closing sidebar
+  const FOCUS_ZOOM = 3;      // desired zoom when clicking a marker
+  const DEFAULT_ZOOM = 2;    // when clicking off or closing sidebar
+  const LOCK_ZOOM_THRESHOLD = 3; // if current zoom > 3, don't auto-zoom-out on dismiss
 
   // --- Helpers (pure) ---
   const colorForRisk = (r: number) => {
@@ -50,27 +51,45 @@ export default function Map({ bounds, center = [0, 20], zoom = 2.5 }: Props) {
     return Math.min(420, Math.round(vwWidth || 0));
   };
 
-  // Smoothly pan+zoom so the clicked marker ends up visually centered in the free (right) area
+  // Smoothly pan so the clicked marker ends up visually centered in the free (right) area.
+  // If the current zoom is already > FOCUS_ZOOM, do NOT change the zoom (avoid zoom-out).
   const panToMarker = (lngLat: [number, number], targetZoom: number = FOCUS_ZOOM) => {
     const map = mapRef.current;
     if (!map) return;
 
     const offsetX = Math.round(getSidebarWidthPx() / 2 + 8); // tiny extra buffer
-    const z = Math.max(map.getMinZoom(), Math.min(map.getMaxZoom(), targetZoom));
 
-    map.easeTo({
+    const options: any = {
       center: lngLat,
-      zoom: z,
       duration: 650,
       offset: [offsetX, 0], // shift the camera so the marker appears right of center
       essential: true,
-    });
+    };
+
+    const currentZoom = map.getZoom();
+    if (currentZoom <= FOCUS_ZOOM) {
+      const z = Math.max(map.getMinZoom(), Math.min(map.getMaxZoom(), targetZoom));
+      options.zoom = z;
+    }
+
+    map.easeTo(options);
   };
 
-  // Reset to the default zoom (no special offset)
-  const resetZoom = () => {
+  // Reset to the default zoom (no special offset).
+  // By default, respects the "lock" and will NOT zoom out if current zoom > LOCK_ZOOM_THRESHOLD.
+  const resetZoom = (opts?: { respectHighZoom?: boolean }) => {
     const map = mapRef.current;
     if (!map) return;
+
+    const respect = opts?.respectHighZoom !== false; // default true
+    const current = map.getZoom();
+
+    if (respect && current > LOCK_ZOOM_THRESHOLD) {
+      // Keep current zoom; optionally recentre or clear offset if desired:
+      map.easeTo({ duration: 300, offset: [0, 0], essential: true });
+      return;
+    }
+
     const z = Math.max(map.getMinZoom(), Math.min(map.getMaxZoom(), DEFAULT_ZOOM));
     map.easeTo({
       zoom: z,
@@ -82,7 +101,7 @@ export default function Map({ bounds, center = [0, 20], zoom = 2.5 }: Props) {
 
   const handleCloseSidebar = () => {
     setSelected(null);
-    resetZoom();
+    resetZoom(); // respects the >3 lock
   };
 
   const makeDotEl = (title: string, risk: number, onOpen: () => void) => {
@@ -312,7 +331,7 @@ export default function Map({ bounds, center = [0, 20], zoom = 2.5 }: Props) {
         // 4) Draw markers
         dots.forEach(({ name, lngLat, risk }) => {
           const el = makeDotEl(name, risk, () => {
-            // Slide camera + zoom + open sidebar
+            // Slide camera; only zoom to FOCUS_ZOOM if current zoom ≤ 3
             panToMarker(lngLat, FOCUS_ZOOM);
             setSelected({ name, risk, lngLat });
           });
@@ -334,10 +353,10 @@ export default function Map({ bounds, center = [0, 20], zoom = 2.5 }: Props) {
       }
     });
 
-    // Close panel when clicking on bare map (not markers) and reset zoom
+    // Close panel when clicking on bare map (not markers) and reset zoom (but don't zoom out if > 3)
     map.on('click', () => {
       setSelected(null);
-      resetZoom();
+      resetZoom(); // respects LOCK_ZOOM_THRESHOLD by default
     });
 
     // Re-apply tweaks if style reloads (e.g., tiles or style switch)
@@ -388,7 +407,7 @@ export default function Map({ bounds, center = [0, 20], zoom = 2.5 }: Props) {
         open={!selected}
         onSelectCountry={(dot) => {
           // dot has { name, risk, lngLat }
-          panToMarker(dot.lngLat, FOCUS_ZOOM);
+          panToMarker(dot.lngLat, FOCUS_ZOOM); // respects the "don't zoom out if already > 3" rule
           setSelected(dot);
         }}
       />
