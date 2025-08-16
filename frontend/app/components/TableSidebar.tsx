@@ -43,7 +43,8 @@ export default function TableSidebar({
   const [sortKey, setSortKey] = useState<SortKey>('risk');
   const [sortDir, setSortDir] = useState<SortDir>('desc');
 
-  const [collapsed, setCollapsed] = useState(false);
+  // Default minimized (collapsed) on first render
+  const [collapsed, setCollapsed] = useState(true);
 
   // Fetch risk.json (cache-busted)
   useEffect(() => {
