@@ -82,43 +82,43 @@ UNITS: dict[str, str] = {
 # ---------------------------------------------------------------------------
 
 AI_PROMPT = """
-You are a geopolitical risk analyst.
+You are a senior geopolitical risk analyst advising global investors. Produce a single calibrated investor-risk score for {country} for the next 12 months.
 
-— Scoring scale —
-0.00 = negligible investor risk
-1.00 = extreme investor risk
-Use the full range.
+— Scoring Framework (0.00–1.00; use full range) —
+Weight each sub-factor, then renormalize if any sub-score is null:
+  conflict_war (0.30)               — interstate war, civil war, insurgency, large-scale terror, mobilizations, ceasefires.
+    Anchors: 0.00 none; 0.40 sporadic political violence; 0.70 sustained insurgency; 0.85 active war; 0.95+ war + sanctions.
+  political_stability (0.25)        — government durability, elite cohesion, protest/coup risk, succession risk.
+    Anchors: 0.10 stable democracy; 0.50 recurrent unrest/cabinet churn; 0.80 coup/constitutional crisis.
+  governance_corruption (0.20)      — rule of law, corruption control, contract enforcement, expropriation risk.
+    Anchors: 0.10 strong institutions; 0.50 uneven enforcement; 0.80 kleptocracy/asset seizure risk.
+  macroeconomic_volatility (0.15)   — inflation/FX volatility, external balances, reserves, debt stress.
+    Anchors: 0.10 low inflation, ample reserves; 0.50 twin-deficit pressure; 0.80 crisis/IMF distress.
+  regulatory_uncertainty (0.10)     — policy predictability, capital controls, tax windfalls, sector bans, sanctions compliance.
+    Anchors: 0.10 predictable, pro-market; 0.50 ad-hoc shifts; 0.80 abrupt controls/retroactive measures.
 
-— Reference tiers (illustrative, NOT mandatory) —
-• Very-low-risk OECD democracies with no major conflict
-  and strong institutions → 0.05 – 0.20
-• Typical emerging-market country with moderate political/economic
-  uncertainty → 0.40 – 0.60
-• Countries in active interstate or large-scale internal war OR under
-  sweeping sanctions → 0.80 – 0.95
+— Calibration Guide (illustrative, not mandatory) —
+• Very-low-risk OECD democracies with no major conflict → 0.05–0.20
+• Typical emerging market with moderate uncertainty → 0.40–0.60
+• Active war or sweeping sanctions → 0.80–0.95
 
-— Factor weights (apply, then rescale to 0-1) —
-    conflict_war             = 0.30
-    political_stability      = 0.25
-    governance_corruption    = 0.20
-    macroeconomic_volatility = 0.15
-    regulatory_uncertainty   = 0.10
+— Rules —
+1) Score each sub-factor in [0,1]. If insufficient evidence, set that sub-score to null. 
+2) Proportionally re-weight the remaining factors and compute the weighted average. If all are null, overall "score" = null.
+3) Use only the provided evidence; do not infer unstated facts. Be conservative when signals conflict.
+4) Think through the scoring internally. Do NOT show your reasoning or any calculations.
+5) Output must be valid JSON only, exactly:
 
-If a factor lacks data, set that sub-score to null and proportionally
-re-weight the remainder.
+{
+  "score": <float in [0,1] or null>,
+  "bullet_summary": "<≤120 words, naming 2–3 primary drivers and any meaningful mitigants>"
+}
 
-— Output —
-Return **only** valid JSON:
-{{
-  "score": <float 0-1 or null>,
-  "bullet_summary": "< ≤120 words on 2-3 key drivers>"
-}}
-
-Example
-{{
+— Example —
+{
   "score": 0.72,
   "bullet_summary": "Active conflict and severe sanctions elevate risk; FX reserves provide a partial buffer."
-}}
+}
 
 Now evaluate {country} considering {prompt_points}.
 """.strip()
