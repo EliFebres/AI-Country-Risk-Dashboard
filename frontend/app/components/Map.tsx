@@ -32,6 +32,10 @@ export default function Map({ bounds, center = [0, 20], zoom = 2.5 }: Props) {
 
   const [selected, setSelected] = useState<Selected>(null);
 
+  // Zooms
+  const FOCUS_ZOOM = 3; // when clicking a marker
+  const DEFAULT_ZOOM = 2; // when clicking off or closing sidebar
+
   // --- Helpers (pure) ---
   const colorForRisk = (r: number) => {
     if (r > 0.7) return '#ff2d55';   // red
@@ -45,18 +49,39 @@ export default function Map({ bounds, center = [0, 20], zoom = 2.5 }: Props) {
     return Math.min(420, Math.round(vwWidth || 0));
   };
 
-  // Smoothly pan so the clicked marker ends up visually centered in the free (right) area
-  const panToMarker = (lngLat: [number, number]) => {
+  // Smoothly pan+zoom so the clicked marker ends up visually centered in the free (right) area
+  const panToMarker = (lngLat: [number, number], targetZoom: number = FOCUS_ZOOM) => {
     const map = mapRef.current;
     if (!map) return;
 
     const offsetX = Math.round(getSidebarWidthPx() / 2 + 8); // tiny extra buffer
+    const z = Math.max(map.getMinZoom(), Math.min(map.getMaxZoom(), targetZoom));
+
     map.easeTo({
       center: lngLat,
+      zoom: z,
       duration: 650,
       offset: [offsetX, 0], // shift the camera so the marker appears right of center
       essential: true,
     });
+  };
+
+  // Reset to the default zoom (no special offset)
+  const resetZoom = () => {
+    const map = mapRef.current;
+    if (!map) return;
+    const z = Math.max(map.getMinZoom(), Math.min(map.getMaxZoom(), DEFAULT_ZOOM));
+    map.easeTo({
+      zoom: z,
+      duration: 500,
+      offset: [0, 0],
+      essential: true,
+    });
+  };
+
+  const handleCloseSidebar = () => {
+    setSelected(null);
+    resetZoom();
   };
 
   const makeDotEl = (title: string, risk: number, onOpen: () => void) => {
@@ -286,8 +311,8 @@ export default function Map({ bounds, center = [0, 20], zoom = 2.5 }: Props) {
         // 4) Draw markers
         dots.forEach(({ name, lngLat, risk }) => {
           const el = makeDotEl(name, risk, () => {
-            // Slide camera + open sidebar
-            panToMarker(lngLat);
+            // Slide camera + zoom + open sidebar
+            panToMarker(lngLat, FOCUS_ZOOM);
             setSelected({ name, risk, lngLat });
           });
 
@@ -308,8 +333,11 @@ export default function Map({ bounds, center = [0, 20], zoom = 2.5 }: Props) {
       }
     });
 
-    // Close panel when clicking on bare map (not markers)
-    map.on('click', () => setSelected(null));
+    // Close panel when clicking on bare map (not markers) and reset zoom
+    map.on('click', () => {
+      setSelected(null);
+      resetZoom();
+    });
 
     // Re-apply tweaks if style reloads (e.g., tiles or style switch)
     map.on('styledata', applyAllTweaks);
@@ -355,7 +383,7 @@ export default function Map({ bounds, center = [0, 20], zoom = 2.5 }: Props) {
       <RiskSidebar
         open={!!selected}
         country={selected ? { name: selected.name, risk: selected.risk } : null}
-        onClose={() => setSelected(null)}
+        onClose={handleCloseSidebar}
       />
     </div>
   );
