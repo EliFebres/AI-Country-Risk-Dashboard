@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import maplibregl, { LngLatBoundsLike, Map as MapLibreMap, Marker } from 'maplibre-gl';
 import RiskSidebar from './RiskSidebar';
+import TableSidebar from './TableSidebar';
 
 type Props = {
   bounds?: LngLatBoundsLike;
@@ -223,7 +224,7 @@ export default function Map({ bounds, center = [0, 20], zoom = 2.5 }: Props) {
     const showOnlyCountryLabels = () => {
       const layers = (map.getStyle()?.layers ?? []) as any[];
       for (const layer of layers) {
-        const srcLayer = layer['source-layer'] as string | undefined;
+        const srcLayer = (layer as any)['source-layer'] as string | undefined;
 
         if (layer.type === 'symbol' && srcLayer && /place|place_label/i.test(srcLayer)) {
           map.setFilter(layer.id, ['==', ['get', 'class'], 'country']);
@@ -237,7 +238,7 @@ export default function Map({ bounds, center = [0, 20], zoom = 2.5 }: Props) {
     const forceEnglishCountryNames = () => {
       const layers = (map.getStyle()?.layers ?? []) as any[];
       for (const layer of layers) {
-        const srcLayer = layer['source-layer'] as string | undefined;
+        const srcLayer = (layer as any)['source-layer'] as string | undefined;
         if (layer.type === 'symbol' && srcLayer && /place|place_label/i.test(srcLayer)) {
           map.setLayoutProperty(layer.id, 'text-field', [
             'coalesce',
@@ -254,7 +255,7 @@ export default function Map({ bounds, center = [0, 20], zoom = 2.5 }: Props) {
     const showOnlyCountryBorders = () => {
       const layers = (map.getStyle()?.layers ?? []) as any[];
       for (const layer of layers) {
-        const srcLayer = layer['source-layer'] as string | undefined;
+        const srcLayer = (layer as any)['source-layer'] as string | undefined;
         if (layer.type === 'line' && srcLayer && /boundary|admin/i.test(srcLayer)) {
           map.setFilter(layer.id, ['all', ['==', ['to-number', ['get', 'admin_level']], 2], ['!=', ['get', 'maritime'], 1]]);
           map.setLayoutProperty(layer.id, 'visibility', 'visible');
@@ -265,7 +266,7 @@ export default function Map({ bounds, center = [0, 20], zoom = 2.5 }: Props) {
     const hideRoads = () => {
       const layers = (map.getStyle()?.layers ?? []) as any[];
       for (const layer of layers) {
-        const srcLayer = layer['source-layer'] as string | undefined;
+        const srcLayer = (layer as any)['source-layer'] as string | undefined;
         if (!srcLayer) continue;
 
         if (srcLayer === 'transportation') {
@@ -379,7 +380,20 @@ export default function Map({ bounds, center = [0, 20], zoom = 2.5 }: Props) {
 
   return (
     <div style={{ position: 'relative', width: '100vw', height: '100dvh' }}>
+      {/* Map canvas */}
       <div ref={containerRef} style={{ position: 'absolute', inset: 0 }} />
+
+      {/* Persistent left sidebar — hides when RiskSidebar is open */}
+      <TableSidebar
+        open={!selected}
+        onSelectCountry={(dot) => {
+          // dot has { name, risk, lngLat }
+          panToMarker(dot.lngLat, FOCUS_ZOOM);
+          setSelected(dot);
+        }}
+      />
+
+      {/* Country detail (right) */}
       <RiskSidebar
         open={!!selected}
         country={selected ? { name: selected.name, risk: selected.risk } : null}
