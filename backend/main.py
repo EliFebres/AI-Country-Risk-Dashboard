@@ -79,15 +79,15 @@ def main() -> None:
             )
         ]
 
-        # Ask The LLM For A Risk Score
-        llm_output = langchain_llm.country_llm_score(
-            country=payload["country"],
-            headlines=headlines,
-            prompt_points=", ".join(payload["indicators"]),
-        )
+        # # Ask The LLM For A Risk Score
+        # llm_output = langchain_llm.country_llm_score(
+        #     country=payload["country"],
+        #     headlines=headlines,
+        #     prompt_points=", ".join(payload["indicators"]),
+        # )
 
         # Write Everything To Neon Db
-        data_push.upsert_snapshot({**payload, "llm_output": llm_output}, country_name=country_name)
+        # data_push.upsert_snapshot({**payload, "llm_output": llm_output}, country_name=country_name)
 
 
 if __name__ == "__main__":

@@ -1,10 +1,16 @@
 import os
 import json
 import logging
+from pathlib import Path
 from typing import List, Dict, Optional, TYPE_CHECKING
 
-from dotenv import load_dotenv
-load_dotenv()
+from dotenv import load_dotenv, find_dotenv
+
+# Load .env reliably no matter where the script is launched from:
+# 1) search upward from CWD
+load_dotenv(find_dotenv(), override=False)
+# 2) also try project root (one level above /backend)
+load_dotenv(Path(__file__).resolve().parents[1] / ".env", override=False)
 
 from langchain_openai import ChatOpenAI
 from langchain_core.messages import SystemMessage, HumanMessage
@@ -27,8 +33,8 @@ def country_llm_score(
     prompt_points: str,
     *,
     llm: Optional["ChatOpenAI"] = None,
-    model: str = "gpt-3.5-turbo",
-    temperature: float = 0.2,
+    model: str = "gpt-5-mini",
+    temperature: float = 1,
     api_key: Optional[str] = None,
 ) -> Dict[str, object]:
     """
