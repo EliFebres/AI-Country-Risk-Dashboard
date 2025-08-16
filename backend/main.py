@@ -53,6 +53,51 @@ def _clip_words(s: str, max_words: int = 600) -> str:
     parts = s.split()
     return " ".join(parts[:max_words])
 
+def _fmt(x):
+    """Pretty-print numbers; keep None as 'NA'."""
+    if x is None:
+        return "NA"
+    try:
+        # keep small floats readable, integers clean
+        return f"{float(x):.2f}".rstrip("0").rstrip(".")
+    except Exception:
+        return str(x)
+
+def build_macro_context(payload: dict, max_rows: int = 12) -> str:
+    """
+    Build a compact newline-delimited snapshot like:
+      Inflation (% y/y): 2.3 (2024; Δ1y -0.8, Δ5y +0.4)
+    Falls back gracefully if some keys are missing.
+    """
+    units = payload.get("_meta", {}).get("units", {}) or {}
+    rows = []
+    for k, info in payload.get("indicators", {}).items():
+        info = info or {}
+        # Common key variants we might have
+        val   = info.get("latest") or info.get("latest_value") or info.get("value")
+        year  = info.get("latest_year") or info.get("year")
+        d1    = info.get("delta_1y") or info.get("d1") or info.get("delta1")
+        d5    = info.get("delta_5y") or info.get("d5") or info.get("delta5")
+        unit  = units.get(k, "")
+        unit  = f" {unit}" if unit else ""
+
+        row = f"{k}: {_fmt(val)}{unit}"
+        meta_bits = []
+        if year is not None:
+            meta_bits.append(str(year))
+        if d1 is not None:
+            meta_bits.append(f"Δ1y {_fmt(d1)}")
+        if d5 is not None:
+            meta_bits.append(f"Δ5y {_fmt(d5)}")
+        if meta_bits:
+            row += f" ({'; '.join(meta_bits)})"
+        rows.append(row)
+
+    # Keep prompt small
+    if len(rows) > max_rows:
+        rows = rows[:max_rows] + [f"... (+{len(rows)-max_rows} more)"]
+    return "\n".join(rows) if rows else "NA"
+
 def main() -> None:
     """Loop countries → build payload → build rich headlines → LLM score."""
     # Map "Country_Name" → "iso2Code"
@@ -116,10 +161,14 @@ def main() -> None:
             headlines_rich = [it.get("title", "") for it in items if it.get("title")]
 
         # 3) LLM scoring
+        macro_context = build_macro_context(payload)
+
         llm_output = langchain_llm.country_llm_score(
             country=payload["country"],
             headlines=headlines_rich,
             prompt_points=prompt_points,
+            macro_context=macro_context,
+            attempts=3,
         )
 
         # 4) Upsert to DB (uncomment when ready)
