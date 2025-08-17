@@ -34,9 +34,9 @@ export default function Map({ bounds, center = [0, 20], zoom = 2.5 }: Props) {
   const [selected, setSelected] = useState<Selected>(null);
 
   // Zooms
-  const FOCUS_ZOOM = 3;      // desired zoom when clicking a marker
-  const DEFAULT_ZOOM = 2;    // when clicking off or closing sidebar
-  const LOCK_ZOOM_THRESHOLD = 3; // if current zoom > 3, don't auto-zoom-out on dismiss
+  const FOCUS_ZOOM = 3.5;      // desired zoom when clicking a marker
+  const DEFAULT_ZOOM = 2.5;    // when clicking off or closing sidebar
+  const LOCK_ZOOM_THRESHOLD = 3.5; // if current zoom > 3, don't auto-zoom-out on dismiss
 
   // --- Helpers (pure) ---
   const colorForRisk = (r: number) => {
