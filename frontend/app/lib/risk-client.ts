@@ -4,6 +4,7 @@ export type CountryRisk = {
   name: string;
   lngLat: [number, number]; // [lng, lat]
   risk: number;             // 0..1
+  iso2?: string;            // <- added (populated by weekly refresh)
 };
 
 export const RISK_JSON_PUBLIC_PATH = "/api/risk.json";

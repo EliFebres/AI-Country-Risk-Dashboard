@@ -85,13 +85,19 @@ export async function fetchJoinedLatestRisksFromDB(): Promise<JoinedLatestRisk[]
 // --------------------------- Weekly JSON refresh --------------------------
 export type RefreshOutcome =
   | { status: "skipped"; lastRun: string; nextEligible: string }
-  | { status: "updated"; lastRun: string; matchedCount: number; changedCount: number; missingInJson: string[] }
+  | {
+      status: "updated";
+      lastRun: string;
+      matchedCount: number;
+      changedCount: number;
+      missingInJson: string[];
+    }
   | { status: "error"; error: string };
 
 const ONE_WEEK_MS = 7 * 24 * 60 * 60 * 1000;
 
 type MetaFile = {
-  last_run: string;        // ISO timestamp (UTC)
+  last_run: string; // ISO timestamp (UTC)
   note?: string;
   source?: string;
 };
@@ -113,7 +119,10 @@ async function readJsonIfExists<T>(filePath: string): Promise<T | null> {
   }
 }
 
-function msUntilNextEligible(lastRunISO: string): { nextEligibleISO: string; msLeft: number } {
+function msUntilNextEligible(lastRunISO: string): {
+  nextEligibleISO: string;
+  msLeft: number;
+} {
   const last = Date.parse(lastRunISO);
   const next = last + ONE_WEEK_MS;
   const msLeft = Math.max(0, next - Date.now());
@@ -121,9 +130,11 @@ function msUntilNextEligible(lastRunISO: string): { nextEligibleISO: string; msL
 }
 
 /**
- * Refresh public/api/risk.json in-place by updating ONLY the `risk` values
- * for countries present in both the JSON and Neon. Skips if run < 7 days ago.
- * Also updates public/api/risk._meta.json with the current timestamp.
+ * Refresh public/api/risk.json by updating ONLY:
+ *  - risk score (from Neon)
+ *  - iso2 (from Neon)
+ * It preserves all existing entries and their lngLat coordinates.
+ * Skips if run < 7 days ago. Also updates public/api/risk._meta.json.
  */
 export async function refreshRiskJsonWeekly(): Promise<RefreshOutcome> {
   assertServer();
@@ -145,18 +156,23 @@ export async function refreshRiskJsonWeekly(): Promise<RefreshOutcome> {
     // 2) Read existing risk.json (source of truth for names + coords)
     const existing = await readJsonIfExists<CountryRisk[]>(riskJsonPath);
     if (!existing || existing.length === 0) {
-      return { status: "error", error: "public/api/risk.json is missing or empty; seed it first." };
+      return {
+        status: "error",
+        error: "public/api/risk.json is missing or empty; seed it first.",
+      };
     }
 
     // 3) Pull latest risks from Neon
     const joined = await fetchJoinedLatestRisksFromDB();
 
-    // 4) Build a lookup of DB scores by normalized country name
+    // 4) Build a lookup by normalized country name -> { iso2, score }
     const normalize = (s: string) => s.trim().toLowerCase();
-    const dbMap = new Map<string, number>();
-    for (const row of joined) dbMap.set(normalize(row.name), Number(row.score));
+    const dbMap = new Map<string, { iso2: string; score: number }>();
+    for (const row of joined) {
+      dbMap.set(normalize(row.name), { iso2: row.iso2, score: Number(row.score) });
+    }
 
-    // 5) Update only the risk field for countries present in JSON; keep others as-is
+    // 5) Update only `risk` and add/refresh `iso2` for matched countries; keep others as-is
     let matchedCount = 0;
     let changedCount = 0;
     const seenDb = new Set<string>();
@@ -166,9 +182,15 @@ export async function refreshRiskJsonWeekly(): Promise<RefreshOutcome> {
       if (dbMap.has(key)) {
         matchedCount++;
         seenDb.add(key);
-        const newRisk = dbMap.get(key)!;
-        if (d.risk !== newRisk) changedCount++;
-        return { ...d, risk: newRisk };
+        const rec = dbMap.get(key)!;
+
+        // Track whether any of the updated fields differ
+        const riskChanged = d.risk !== rec.score;
+        const iso2Changed = (d as any).iso2 !== rec.iso2;
+        if (riskChanged || iso2Changed) changedCount++;
+
+        // Preserve lngLat and everything else; only set risk + iso2
+        return { ...d, risk: rec.score, iso2: rec.iso2 } as CountryRisk;
       }
       return d;
     });
@@ -184,14 +206,18 @@ export async function refreshRiskJsonWeekly(): Promise<RefreshOutcome> {
 
     // 7) Write updated risk.json
     await fs.mkdir(path.dirname(riskJsonPath), { recursive: true });
-    await fs.writeFile(riskJsonPath, JSON.stringify(updated, null, 2) + "\n", "utf8");
+    await fs.writeFile(
+      riskJsonPath,
+      JSON.stringify(updated, null, 2) + "\n",
+      "utf8"
+    );
 
     // 8) Write/refresh meta file
     const now = new Date().toISOString();
     const metaOut: MetaFile = {
       last_run: now,
       source: "neon",
-      note: "Updated only risk scores; preserved existing entries and coords.",
+      note: "Updated risk scores and iso2; preserved existing entries and coords (lngLat).",
     };
     await fs.writeFile(metaJsonPath, JSON.stringify(metaOut, null, 2) + "\n", "utf8");
 

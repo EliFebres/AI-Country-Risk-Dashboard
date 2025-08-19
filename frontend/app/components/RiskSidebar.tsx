@@ -5,7 +5,8 @@ import { useEffect } from 'react';
 type Props = {
   open: boolean;
   onClose: () => void;
-  country: { name: string; risk: number } | null;
+  // Add iso2 if you want the flag to render: e.g., { name, risk, iso2: 'US' }
+  country: { name: string; risk: number; iso2?: string } | null;
   /** Total duration (ms) for the clip-path reveal. Default 360. */
   durationMs?: number;
   /** CSS easing for both clip-path and opacity transitions. Default 'ease'. */
@@ -34,9 +35,12 @@ export default function RiskSidebar({
     return () => window.removeEventListener('keydown', onKey);
   }, [onClose]);
 
-  const panelWidth = 'min(420px, 25vw)';
+  const panelWidth = 'min(600px, 40vw)';
   // Make opacity a bit shorter so it feels snappier
   const fadeMs = Math.max(120, Math.round(durationMs * 0.6));
+
+  // Build flag src only if iso2 is provided
+  const flagSrc = country?.iso2 ? `/flags/${country.iso2.toUpperCase()}.svg` : null;
 
   return (
     <>
@@ -64,16 +68,21 @@ export default function RiskSidebar({
           <button onClick={onClose} aria-label="Close panel" className="closeBtn">
             ×
           </button>
-          <div className="title">
-            <strong>{country?.name ?? '—'}</strong>
-            <span className="subtitle">Country Risk Overview</span>
+
+          {/* TITLE: country name (left) + flag (right, 10x10). No risk pill. */}
+          <div className="titleRow">
+            <strong className="countryName">{country?.name ?? '—'}</strong>
+            {flagSrc && (
+              <img
+                className="flag"
+                src={flagSrc}
+                alt={`${country?.name ?? 'Country'} flag`}
+                width={10}
+                height={10}
+                loading="eager"
+              />
+            )}
           </div>
-          {country && (
-            <span className="pill" title={`Risk ${country.risk.toFixed(2)}`}>
-              <span className="dot" style={{ background: colorForRisk(country.risk) }} />
-              {country.risk.toFixed(2)}
-            </span>
-          )}
         </header>
 
         <div className="content">
@@ -143,12 +152,10 @@ export default function RiskSidebar({
           flex-direction: column;
           box-shadow: 0 0 24px rgba(0,0,0,0.35);
           will-change: clip-path, opacity;
-          /* Applies for both open and close */
           transition: clip-path var(--revealMs, 360ms) var(--easing, ease),
                       opacity   var(--fadeMs, 220ms)   var(--easing, ease);
         }
 
-        /* Reveal animation states (open & close) */
         .sidebar.closed { clip-path: inset(0 100% 0 0); opacity: 0; }
         .sidebar.open   { clip-path: inset(0 0 0 0);     opacity: 1; }
 
@@ -166,21 +173,31 @@ export default function RiskSidebar({
           background: rgba(255,255,255,0.06);
           color: #fff; cursor: pointer; font-size: 18px; line-height: 36px;
         }
-        .title { display: flex; flex-direction: column; }
-        .title strong { font-size: 18px; line-height: 1.2; }
-        .subtitle { opacity: 0.7; font-size: 12px; }
-        .pill {
-          margin-left: auto;
-          padding: 6px 10px;
-          border-radius: 999px;
-          border: 1px solid rgba(255,255,255,0.15);
-          background: rgba(255,255,255,0.06);
-          font-weight: 700;
-          letter-spacing: 0.2px;
-          display: inline-flex;
-          align-items: center; gap: 8px;
+
+        /* Title row: name left, flag right */
+        .titleRow {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 8px;
+          flex: 1 1 auto;   /* expands between close button and right edge */
+          min-width: 0;
         }
-        .dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+        .countryName {
+          font-size: 28px;
+          line-height: 1.2;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+        }
+        .flag {
+          width: 65px;
+          height: 65px;
+          display: block;
+          border-radius: 2px; /* optional */
+          object-fit: contain;
+          flex: 0 0 auto;
+        }
 
         .content { padding: 16px; overflow-y: auto; }
         .muted { opacity: 0.7; }

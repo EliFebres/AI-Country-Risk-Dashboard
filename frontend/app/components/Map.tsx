@@ -15,12 +15,14 @@ type RiskDot = {
   name: string;
   lngLat: [number, number]; // [lng, lat]
   risk: number;             // 0..1
+  iso2?: string;            // <- optional ISO2 for flag
 };
 
 type Selected = {
   name: string;
   risk: number;
   lngLat: [number, number];
+  iso2?: string;            // <- carry ISO2 into sidebar
 } | null;
 
 export default function Map({ bounds, center = [0, 20], zoom = 2.5 }: Props) {
@@ -329,11 +331,11 @@ export default function Map({ bounds, center = [0, 20], zoom = 2.5 }: Props) {
         console.log(`Loaded ${dots.length} risk markers`);
 
         // 4) Draw markers
-        dots.forEach(({ name, lngLat, risk }) => {
+        dots.forEach(({ name, lngLat, risk, iso2 }) => {
           const el = makeDotEl(name, risk, () => {
             // Slide camera; only zoom to FOCUS_ZOOM if current zoom ≤ 3
             panToMarker(lngLat, FOCUS_ZOOM);
-            setSelected({ name, risk, lngLat });
+            setSelected({ name, risk, lngLat, iso2 }); // <- keep iso2
           });
 
           const marker = new maplibregl.Marker({
@@ -405,17 +407,21 @@ export default function Map({ bounds, center = [0, 20], zoom = 2.5 }: Props) {
       {/* Persistent left sidebar — hides when RiskSidebar is open */}
       <TableSidebar
         open={!selected}
-        onSelectCountry={(dot) => {
-          // dot has { name, risk, lngLat }
-          panToMarker(dot.lngLat, FOCUS_ZOOM); // respects the "don't zoom out if already > 3" rule
-          setSelected(dot);
+        onSelectCountry={(dot: any) => {
+          // dot may include iso2 if your table has it; if so we keep it
+          panToMarker(dot.lngLat, FOCUS_ZOOM);
+          setSelected({ name: dot.name, risk: dot.risk, lngLat: dot.lngLat, iso2: dot.iso2 });
         }}
       />
 
       {/* Country detail (right) */}
       <RiskSidebar
         open={!!selected}
-        country={selected ? { name: selected.name, risk: selected.risk } : null}
+        country={
+          selected
+            ? { name: selected.name, risk: selected.risk, iso2: selected.iso2 } // <- pass iso2 to show flag
+            : null
+        }
         onClose={handleCloseSidebar}
       />
     </div>
