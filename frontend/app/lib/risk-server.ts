@@ -188,7 +188,6 @@ export async function refreshRiskJsonWeekly(): Promise<RefreshOutcome> {
         const rec = dbMap.get(key)!;
 
         const riskChanged = d.risk !== rec.score;
-        // @ts-expect-error iso2 may not exist on older JSON entries
         const iso2Changed = (d as any).iso2 !== rec.iso2;
         if (riskChanged || iso2Changed) changedCount++;
 
