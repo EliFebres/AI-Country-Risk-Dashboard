@@ -1,6 +1,202 @@
 [
   {
+    "country_iso2": "AR",
+    "bullet_summary": "Moderate-high risk driven by economic contraction, persistent inflation pressure and rising opposition to President Milei that raises political and regulatory uncertainty; modest FDI and only moderate unemployment provide limited mitigants."
+  },
+  {
+    "country_iso2": "AU",
+    "bullet_summary": "Absence of domestic conflict and low macro volatility (moderate inflation, low unemployment, healthy FDI) drive a low investor-risk score; predictable monetary easing is a mitigant. Assessment is constrained by missing political-stability and governance z-scores."
+  },
+  {
+    "country_iso2": "AT",
+    "bullet_summary": "Low conflict risk. Primary drivers: recent five‑month political crisis now resolved by a centrist coalition (elevated political instability) and modest macro weakness (−1.68% GDP per capita, moderate unemployment/inflation). Missing governance/corruption data adds uncertainty; new government formation is a near‑term mitigant."
+  },
+  {
+    "country_iso2": "BD",
+    "bullet_summary": "Elevated political risk after a reported recent revolution and ongoing frustration drives the rating; macro pressures (10.5% inflation, low FDI, modest per-capita growth) add material volatility. Mitigants: no evidence of active interstate war or sanctions and some signs of economic recovery; governance data gaps increase uncertainty."
+  },
+  {
+    "country_iso2": "BE",
+    "bullet_summary": "Very low conflict exposure and stable inflation/unemployment keep baseline risk low. Modest macro pressure from near‑zero GDP per‑capita growth (0.26%) and large negative FDI (-5.35% GDP) plus recent diplomatic/ICC tensions raise political/regulatory uncertainty. Key governance and political‑stability metrics are missing."
+  },
+  {
+    "country_iso2": "BR",
+    "bullet_summary": "Low conflict risk and moderate macro fundamentals (4.4% inflation, ~3% per-capita growth, positive FDI) keep baseline risk low. Primary downside: targeted US sanctions and trade threats raise regulatory/political uncertainty. Limited governance/stability data remain a key information gap."
+  },
+  {
+    "country_iso2": "CA",
+    "bullet_summary": "Low overall investor risk driven by absence of armed conflict and modest inflation; primary risks are operational disruption from the Air Canada strike(s) and a mild macro slowdown (GDP per-capita -1.44%). Mitigants include low inflation (2.38%) and positive FDI inflows (2.77% of GDP). Several governance and political-stability indicators are unavailable, limiting granularity."
+  },
+  {
+    "country_iso2": "CL",
+    "bullet_summary": "Low conflict exposure; political shift (left‑wing primary) plus an inflation surprise after a rate cut raise regulatory and macro volatility risks. Solid Q1 growth, IMF attention and healthy FDI inflows are partial mitigants."
+  },
+  {
+    "country_iso2": "CN",
+    "bullet_summary": "Low direct conflict risk; key drivers are moderate macro volatility from a clear economic slowdown and weak FDI plus external tariff risk (semiconductor tariffs). Low inflation, modest unemployment and continuing positive per-capita growth are partial mitigants. Political stability and governance data are missing, increasing uncertainty."
+  },
+  {
+    "country_iso2": "CO",
+    "bullet_summary": "Moderate investor risk driven by localized political violence (shootings, unrest in Chocó) and weak macro signals — elevated inflation, high unemployment and sluggish per-capita growth. Limited governance/political data raise uncertainty; steady FDI inflows offer a partial buffer."
+  },
+  {
+    "country_iso2": "DK",
+    "bullet_summary": "Very low investor-risk: no domestic conflict and benign macro (low inflation, solid growth, strong FDI) are primary mitigants. Residual risk from limited regulatory uncertainty (EU-presidency sanctions debate) and corporate concentration around Novo. Political/governance metrics unavailable; score reflects available indicators only."
+  },
+  {
+    "country_iso2": "FI",
+    "bullet_summary": "Primary drivers: deteriorating macro (GDP per-capita -1.1%), elevated unemployment (8.26%), low FDI (0.66% GDP) and deflation risk, implying moderate macro volatility. Mitigants: no evidence in provided headlines of active domestic conflict or broad sanctions; governance/regulatory data are not provided."
+  },
+  {
+    "country_iso2": "FR",
+    "bullet_summary": "Low-rated risk primarily due to absence of domestic conflict and low inflation; moderate unemployment and weak GDP per-capita growth elevate macro vulnerability. Assessment limited by missing political and governance data."
+  },
+  {
+    "country_iso2": "DE",
+    "bullet_summary": "Very low investor-risk: no evidence of domestic conflict and low macro volatility (moderate inflation, low unemployment, modest FDI/GDP). Regulatory uncertainty appears limited. Assessment constrained by missing political-stability and governance/corruption z-scores, which are set to null."
+  },
+  {
+    "country_iso2": "GR",
+    "bullet_summary": "Low conflict risk; primary drivers are moderate political risk (dynastic politics, episodic Gaza-related protests) and governance/corruption concerns. Macroeconomic picture is broadly stable (low inflation, modest GDP per‑capita growth, FDI inflows) but high unemployment is a vulnerability."
+  },
+  {
+    "country_iso2": "HK",
+    "bullet_summary": "Low conflict and solid macro fundamentals (low inflation/unemployment, very high FDI, positive GDP per‑capita growth) keep investor risk relatively low; political centralization and messaging about 'grooming patriotic leaders' raise political and regulatory uncertainty. Governance/rule‑of‑law and corruption metrics unavailable, creating an information gap that tempers confidence."
+  },
+  {
+    "country_iso2": "HU",
+    "bullet_summary": "Elevated political risk from weakening Orbán control and allegations of Russian meddling, combined with very large negative FDI inflows and sluggish per-capita growth. Moderate inflation and low unemployment are partial mitigants; no evidence of domestic armed conflict or broad sanctions."
+  },
+  {
+    "country_iso2": "IN",
+    "bullet_summary": "Low domestic conflict and stable macro (≈5% inflation, low unemployment, ~5.5% per-capita growth) reduce risk. Primary driver: elevated regulatory/trade uncertainty from US tariff threats and Trump–Modi tensions. Missing political and governance z-scores limits assessment and adds residual uncertainty."
+  },
+  {
+    "country_iso2": "ID",
+    "bullet_summary": "Moderate investor risk driven by low macro volatility—solid GDP per-capita growth, low unemployment and steady FDI—mitigating near-term exposure; offset by moderate regulatory uncertainty from a leadership push toward China-style industrial policy and tariff-strategy shifts. Strong international engagement (World Bank, WIPO) is a further mitigant."
+  },
+  {
+    "country_iso2": "IE",
+    "bullet_summary": "Very low conflict and stable macro indicators (low inflation, low unemployment) keep investor risk minimal; primary downside is regulatory uncertainty tied to pressure on Ireland’s multinational tax model (Politico). Strong tech/AI investment is a partial mitigant."
+  },
+  {
+    "country_iso2": "IL",
+    "bullet_summary": "Elevated risk driven by ongoing conflict in Gaza and domestic military protests; political-stability concerns outweigh benign macro indicators (low inflation, low unemployment, healthy FDI). Governance and regulatory data are unavailable, adding uncertainty to the assessment."
+  },
+  {
+    "country_iso2": "IT",
+    "bullet_summary": "Low overall risk: no evidence of domestic conflict and low inflation with modest GDP per‑capita growth underpin the score. Primary upward pressure is regulatory/policy uncertainty reflected in public debate over sanctions and militarization; macro stability is the main mitigant."
+  },
+  {
+    "country_iso2": "JP",
+    "bullet_summary": "Very low geopolitical risk driven by absence of conflict, stable politics, low inflation and unemployment, and resilient exports; minor nationalist shrine visit is a symbolic political flashpoint but not systemic. Macroeconomic metrics and export strength are primary mitigants."
+  },
+  {
+    "country_iso2": "KE",
+    "bullet_summary": "Low near-term investor risk driven by minimal domestic conflict and a benign macro backdrop — low inflation, repeated rate cuts, modest GDP per‑capita growth. Key mitigants/uncertainties: a diplomatic spat with DRC over Goma and lack of available political/governance metrics (rule of law, corruption, FDI), which could elevate risk if domestic or regional tensions intensify."
+  },
+  {
+    "country_iso2": "LU",
+    "bullet_summary": "Very low investor risk driven by absence of conflict and muted macro volatility (low inflation, moderate unemployment, small GDP-per-capita contraction). Assessment limited by missing political, governance and regulatory data; headlines show only modest political/economic shifts and sanctions-related discussion, which do not materially raise near-term risk."
+  },
+  {
+    "country_iso2": "MY",
+    "bullet_summary": "Low conflict risk and benign macro indicators (low inflation, steady growth, solid FDI) keep investor risk very low; modest regulatory uncertainty from external trade/tariff exposure adds limited risk. Missing political and governance data is a material caveat."
+  },
+  {
+    "country_iso2": "MX",
+    "bullet_summary": "Elevated security risk from cartel violence and recent US moves to target cartels drive conflict exposure; historical evidence of state abuses points to rule-of-law/governance weaknesses. Macro is moderate (4.7% inflation, low unemployment, weak per-capita growth). US tariff talk raises regulatory uncertainty."
+  },
+  {
+    "country_iso2": "MA",
+    "bullet_summary": "Low near-term risk: no evidence of active conflict and inflation is low. Primary drivers are modest regulatory uncertainty (IMF urging tax-base expansion) and moderate unemployment. Diplomatic successes around Western Sahara and low inflation are mitigating factors."
+  },
+  {
+    "country_iso2": "NL",
+    "bullet_summary": "Very low conflict risk and modest macro stability (3.35% inflation, 3.6% unemployment, near‑zero GDP per‑capita growth) keep investor risk low. Near‑term regulatory/political uncertainty is elevated by government turmoil and minister bans; missing governance z‑scores limit granularity of the assessment."
+  },
+  {
+    "country_iso2": "NZ",
+    "bullet_summary": "Low investor-risk overall: primary drivers are a cooling economy (GDP per‑capita decline, emigration) and parliamentary/political friction; mitigants include low inflation, moderate unemployment, continued FDI inflow and no signs of major institutional or regulatory disruption."
+  },
+  {
+    "country_iso2": "NG",
+    "bullet_summary": "Elevated risk driven by high inflation (33.24% y/y), low FDI and modest GDP-per-capita growth; inflation easing and potential rate cuts plus GDP rebasing provide partial mitigation. Score based solely on macro indicators (political/governance/conflict data absent)."
+  },
+  {
+    "country_iso2": "NO",
+    "bullet_summary": "Very low investor risk: no evidence of domestic conflict and low macro volatility (inflation 3.15%, unemployment 3.97%, GDP per‑capita growth 1.14%). Key governance and political-stability indicators are unavailable (NA), a notable data caveat."
+  },
+  {
+    "country_iso2": "PK",
+    "bullet_summary": "Elevated investor risk from rising India–Pakistan tensions and reported covert/insurgent activity plus weak macro signals: high inflation (12.6%), low FDI (0.69% GDP) and modest per-capita growth (1.7%). Moderate unemployment (5.5%) offers limited mitigation; governance and political-stability indicators unavailable, increasing uncertainty."
+  },
+  {
+    "country_iso2": "PE",
+    "bullet_summary": "Moderate geopolitical risk driven by political instability from a controversial amnesty for security forces and weakening rule-of-law/governance, plus regulatory uncertainty (tariff impacts). Mitigants: low inflation, low unemployment and recent robust GDP growth supporting macro stability."
+  },
+  {
+    "country_iso2": "PH",
+    "bullet_summary": "Heightened geopolitical tensions (Marcos' comments on Taiwan and recent drills near the South China Sea) elevate conflict risk; mitigating factors include low inflation (3.2%), very low unemployment, solid 4.8% per-capita growth and meaningful FDI inflows, which limit near-term macro risk."
+  },
+  {
+    "country_iso2": "PL",
+    "bullet_summary": "Low macro risk (moderate inflation 3.8%, very low unemployment, positive FDI, 3.3% per-capita growth) offsets limited but notable geopolitical tension linked to Russia/Ukraine; no evidence of domestic warfare. Missing political and governance indicators raise residual uncertainty."
+  },
+  {
+    "country_iso2": "PT",
+    "bullet_summary": "Primary driver: recent collapse of Portugal’s government increases political risk and policy uncertainty. Mitigants: no conflict, low inflation, modest growth and strong FDI suggest limited macro volatility. Governance/corruption metrics are missing and represent a material data gap."
+  },
+  {
+    "country_iso2": "QA",
+    "bullet_summary": "Recent cross-border attack and rising Israel–Qatar tensions elevate conflict risk; macro picture mixed — notable -4.5% GDP per-capita contraction vs. low inflation (1.3%) and minimal unemployment (0.13%) as partial mitigants. Governance/political data are NA, adding uncertainty."
+  },
+  {
+    "country_iso2": "RO",
+    "bullet_summary": "Moderate investor risk driven by 5.7% inflation, weak GDP per‑capita growth and tax-hike/energy-cost pressures that raise macro volatility and regulatory uncertainty. No evidence of conflict lowers tail risk; missing political/governance data increases residual uncertainty."
+  },
+  {
+    "country_iso2": "SA",
+    "bullet_summary": "Low investor-risk driven by absence of domestic conflict and low macro volatility (inflation 1.69%, unemployment 3.9%). Downside: negative GDP per-capita growth (-2.8%) and limited data on political stability, governance, and regulatory risk, which raise uncertainty and could conceal higher risks."
+  },
+  {
+    "country_iso2": "SG",
+    "bullet_summary": "Very low investor-risk driven by absence of domestic conflict and strong macro indicators (low inflation, low unemployment, very high FDI). Key caveat: political, governance, and regulatory metrics are unavailable, leaving non-macro risks unquantified."
+  },
+  {
+    "country_iso2": "ZA",
+    "bullet_summary": "Moderate investor risk (0.34): primary drivers are very high unemployment, weak FDI and negative GDP per‑capita growth, plus governance/headline concerns (military controversy; US rights criticism). Mitigants: low inflation and commodity support for the rand; no active armed conflict."
+  },
+  {
+    "country_iso2": "ES",
+    "bullet_summary": "Very low conflict risk and low regulatory uncertainty; macro risk modest—low inflation (2.7%) and solid per-capita growth (2.18%) offset elevated unemployment (11.4%). Missing political- and governance z‑scores reduces confidence in the assessment; headlines on strong growth are a partial mitigant."
+  },
+  {
+    "country_iso2": "SE",
+    "bullet_summary": "Very low conflict risk and stable inflation keep geopolitical risk minimal; modest macro softness (0.7% per-capita growth, 8.5% unemployment) creates a small economic drag while strong FDI inflows are a mitigant. Several political and governance indicators are unavailable, so the rating is driven mainly by macro data."
+  },
+  {
+    "country_iso2": "CH",
+    "bullet_summary": "Moderate investor risk driven by large FDI outflows (-11.96% GDP), weak per-capita growth (-0.33%) and exposure to US tariff shocks. Partial mitigants: low inflation (1.06%) and moderate unemployment (4.11%). Note: political and governance indicators are unavailable, limiting the assessment."
+  },
+  {
+    "country_iso2": "TH",
+    "bullet_summary": "Cross-border Thailand–Cambodia armed conflict and elevated coup/elite-capture risk drive higher political and governance risk; mitigants include low inflation, very low unemployment, positive per-capita growth and steady FDI supporting economic resilience."
+  },
+  {
     "country_iso2": "UA",
     "bullet_summary": "High risk driven by an active Ukraine war; moderate inflation (6.5% y/y) and modest FDI (1.99% GDP) provide limited macro buffers. Political, governance and regulatory data are unavailable, increasing uncertainty. A conflict-derived risk floor was applied due to hostilities on domestic territory."
+  },
+  {
+    "country_iso2": "AE",
+    "bullet_summary": "Low inflation and very low unemployment point to limited macro volatility; flat per-capita growth is a mild concern. Recent warnings of attacks tied to regional tensions suggest sporadic political violence risk but no active domestic war. Overall investor risk is low-to-moderate, driven by stable macro indicators with a modest terrorism/attack risk premium."
+  },
+  {
+    "country_iso2": "GB",
+    "bullet_summary": "Very low conflict risk and modest macro volatility produce a low investor-risk score. Near-zero GDP per capita growth, modest inflation (3.27%), low FDI (0.1% GDP) and 4.11% unemployment raise some macro caution; political-stability and governance indicators were unavailable in the dataset."
+  },
+  {
+    "country_iso2": "US",
+    "bullet_summary": "Low conflict and modest macro volatility (inflation ~3%, unemployment ~4.1%, positive per-capita growth) drive a low investor-risk score. Elevated regulatory uncertainty (threatened semiconductor tariffs) raises risk. Political and governance indicators were NA and excluded from scoring."
   }
 ]

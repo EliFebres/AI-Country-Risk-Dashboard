@@ -188,6 +188,7 @@ export async function refreshRiskJsonWeekly(): Promise<RefreshOutcome> {
         const rec = dbMap.get(key)!;
 
         const riskChanged = d.risk !== rec.score;
+        // @ts-expect-error iso2 may not exist on older JSON entries
         const iso2Changed = (d as any).iso2 !== rec.iso2;
         if (riskChanged || iso2Changed) changedCount++;
 
@@ -211,7 +212,6 @@ export async function refreshRiskJsonWeekly(): Promise<RefreshOutcome> {
     await fs.writeFile(riskJsonPath, JSON.stringify(updated, null, 2) + "\n", "utf8");
 
     // 8) Build & write risk_summary.json with ALL latest summaries
-    //    Only include summaries that are non-null / non-empty.
     const summaries = joined
       .filter(r => typeof r.bullet_summary === "string" && r.bullet_summary.trim() !== "")
       .map(r => ({
@@ -236,8 +236,8 @@ export async function refreshRiskJsonWeekly(): Promise<RefreshOutcome> {
   }
 }
 
-// ----------------------- (Optional) single-country writer -----------------
-// You can keep these helpers if you still want a per-country endpoint in dev.
+// ----------------------- Merge-safe single-country writer (optional) ------
+type SummaryEntry = { country_iso2: string; bullet_summary: string };
 
 async function resolveIso2ByName(name: string): Promise<string | null> {
   const pool = await getPool();
@@ -249,21 +249,22 @@ async function resolveIso2ByName(name: string): Promise<string | null> {
 }
 
 /**
- * Writes public/api/risk_summary.json with the latest
- * { country_iso2, bullet_summary } for a SINGLE country.
- * Accepts either iso2 or name (name resolved via country table).
+ * Merge-safe writer for a SINGLE country (dev helper).
+ * Reads existing risk_summary.json (array), upserts the selected country,
+ * and writes the full array back — preserving other countries.
  */
 export async function writeRiskSummaryJson(opts: {
   iso2?: string;
   name?: string;
-}): Promise<{ country_iso2: string; bullet_summary: string } | null> {
+}): Promise<SummaryEntry | null> {
   assertServer();
 
-  const code = opts.iso2 ?? (opts.name ? await resolveIso2ByName(opts.name) : null);
+  const codeRaw = opts.iso2 ?? (opts.name ? await resolveIso2ByName(opts.name) : null);
+  const code = codeRaw?.toUpperCase();
   if (!code) return null;
 
   const pool = await getPool();
-  const { rows } = await pool.query<{ country_iso2: string; bullet_summary: string }>(
+  const { rows } = await pool.query<SummaryEntry>(
     `
     SELECT country_iso2, bullet_summary
       FROM risk_snapshot
@@ -276,12 +277,26 @@ export async function writeRiskSummaryJson(opts: {
   );
   if (rows.length === 0) return null;
 
-  const record = rows[0];
+  const record: SummaryEntry = {
+    country_iso2: code,
+    bullet_summary: rows[0].bullet_summary,
+  };
 
   const { fs, path } = await nodeFs();
-  const outPath = path.join(process.cwd(), "public", "api", "risk_summary.json");
-  await fs.mkdir(path.dirname(outPath), { recursive: true });
-  await fs.writeFile(outPath, JSON.stringify([record], null, 2) + "\n", "utf8");
+  const filePath = path.join(process.cwd(), "public", "api", "risk_summary.json");
+
+  // Read existing file (may be empty/missing)
+  const existing = await readJsonIfExists<SummaryEntry[] | SummaryEntry>(filePath);
+  const list: SummaryEntry[] = existing
+    ? (Array.isArray(existing) ? existing : [existing])
+    : [];
+
+  // Upsert by iso2
+  const idx = list.findIndex((e) => (e.country_iso2 ?? "").toUpperCase() === code);
+  if (idx >= 0) list[idx] = record; else list.push(record);
+
+  await fs.mkdir(path.dirname(filePath), { recursive: true });
+  await fs.writeFile(filePath, JSON.stringify(list, null, 2) + "\n", "utf8");
 
   return record;
 }

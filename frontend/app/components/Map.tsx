@@ -87,7 +87,6 @@ export default function Map({ bounds, center = [0, 20], zoom = 2.5 }: Props) {
     const current = map.getZoom();
 
     if (respect && current > LOCK_ZOOM_THRESHOLD) {
-      // Keep current zoom; optionally recentre or clear offset if desired:
       map.easeTo({ duration: 300, offset: [0, 0], essential: true });
       return;
     }
@@ -374,31 +373,6 @@ export default function Map({ bounds, center = [0, 20], zoom = 2.5 }: Props) {
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // ← INIT ONCE
-
-  // --- Trigger risk_summary.json write when a country is selected ---
-  useEffect(() => {
-    if (!selected) return;
-    const payload = { iso2: selected.iso2, name: selected.name };
-
-    (async () => {
-      try {
-        const res = await fetch('/api/risk-summary', {
-          method: 'POST',
-          headers: { 'content-type': 'application/json' },
-          body: JSON.stringify(payload),
-          cache: 'no-store',
-        });
-        if (!res.ok) {
-          // Not fatal for UI; just log
-          console.warn('risk-summary write failed', await res.json().catch(() => ({})));
-        } else {
-          console.log('risk-summary written');
-        }
-      } catch (e) {
-        console.error('risk-summary error', e);
-      }
-    })();
-  }, [selected?.iso2, selected?.name]);
 
   // --- Respond to prop changes without re-creating the map ---
   useEffect(() => {

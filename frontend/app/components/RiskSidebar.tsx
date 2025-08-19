@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 
 type Props = {
   open: boolean;
@@ -12,6 +12,8 @@ type Props = {
   /** CSS easing for both clip-path and opacity transitions. Default 'ease'. */
   easing?: string;
 };
+
+type SummaryEntry = { country_iso2: string; bullet_summary: string };
 
 function colorForRisk(r: number) {
   if (r > 0.7) return '#ff2d55';   // red
@@ -34,6 +36,58 @@ export default function RiskSidebar({
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   }, [onClose]);
+
+  const [summary, setSummary] = useState<string | null>(null);
+  const [sumLoading, setSumLoading] = useState(false);
+  const [sumError, setSumError] = useState<string | null>(null);
+
+  // Load the country summary (from risk_summary.json) whenever the selected country changes
+  useEffect(() => {
+    let cancelled = false;
+
+    async function load() {
+      setSumError(null);
+      setSummary(null);
+
+      // Only fetch when panel is open and we have a country
+      if (!open || !country?.iso2) return;
+
+      setSumLoading(true);
+      try {
+        const res = await fetch(`/api/risk_summary.json`, {
+          cache: 'no-store',
+          headers: { accept: 'application/json' },
+        });
+
+        if (!res.ok) {
+          // File may not exist yet or server returned 404/500 — show muted state
+          if (!cancelled) setSumError(`Summary not available (${res.status})`);
+          return;
+        }
+
+        const data = (await res.json()) as SummaryEntry[] | SummaryEntry;
+        const list = Array.isArray(data) ? data : [data];
+        const iso = country.iso2.toUpperCase();
+
+        const hit = list.find(
+          (e) => e.country_iso2?.toUpperCase() === iso && typeof e.bullet_summary === 'string'
+        );
+
+        if (!cancelled) {
+          setSummary(hit?.bullet_summary?.trim() || null);
+        }
+      } catch (e: any) {
+        if (!cancelled) setSumError('Failed to load summary');
+      } finally {
+        if (!cancelled) setSumLoading(false);
+      }
+    }
+
+    load();
+    return () => {
+      cancelled = true;
+    };
+  }, [open, country?.iso2]);
 
   const panelWidth = 'min(600px, 40vw)';
   // Make opacity a bit shorter so it feels snappier
@@ -69,7 +123,7 @@ export default function RiskSidebar({
             ×
           </button>
 
-          {/* TITLE: country name (left) + flag (right, 10x10). No risk pill. */}
+          {/* TITLE: country name (left) + flag (right). No risk pill. */}
           <div className="titleRow">
             <strong className="countryName">{country?.name ?? '—'}</strong>
             {flagSrc && (
@@ -91,12 +145,19 @@ export default function RiskSidebar({
           ) : (
             <>
               <section className="card">
-                <h3>Summary</h3>
-                <p>
-                  This is where your monthly AI summary for <b>{country.name}</b> will go.
-                  You can fetch it alongside <code>risk.json</code> or via another API route.
-                </p>
+                <h3>Ai Summary (GPT 5-mini)</h3>
+                {sumLoading ? (
+                  <p className="muted">Loading summary…</p>
+                ) : summary ? (
+                  <p>{summary}</p>
+                ) : (
+                  <p className="muted">
+                    {sumError ? sumError : 'No summary available for this country.'}
+                  </p>
+                )}
               </section>
+
+              <div className="custom-divider"></div>
 
               <section className="card">
                 <h3>Signals</h3>
@@ -107,11 +168,6 @@ export default function RiskSidebar({
                   <li>Macro volatility</li>
                   <li>Regulatory uncertainty</li>
                 </ul>
-              </section>
-
-              <section className="card">
-                <h3>Last updated (updated Monthly)</h3>
-                <p>End of last month (scheduled run).</p>
               </section>
             </>
           )}
@@ -191,8 +247,8 @@ export default function RiskSidebar({
           text-overflow: ellipsis;
         }
         .flag {
-          width: 65px;
-          height: 65px;
+          width: 65px;  /* keep your current styling; width/height attrs ensure 10x10 intrinsic */
+          height: 65px; /* adjust if you want strictly 10x10 box rendering */
           display: block;
           border-radius: 2px; /* optional */
           object-fit: contain;
@@ -205,12 +261,20 @@ export default function RiskSidebar({
         .card {
           margin-bottom: 16px;
           padding: 10px 12px;
-          border: 1px solid rgba(255,255,255,0.08);
-          border-radius: 12px;
-          background: rgba(255,255,255,0.03);
+          // border: 1px solid rgba(255,255,255,0.08);
+          // border-radius: 12px;
+          // background: rgba(255,255,255,0.03);
         }
-        .card h3 { margin: 0 0 8px; font-size: 14px; opacity: 0.9; }
+        .card h3 { margin: 0 0 8px; font-size: 18px; opacity: 0.9; font-weight: bold;}
         .card p, .card ul { margin: 0; opacity: 0.9; }
+
+        .custom-divider {
+          width: 95%;
+          height: 1px;
+          background: rgba(255,255,255,0.18);
+          margin: 16px auto; /* centers horizontally */
+        }
+
       `}</style>
     </>
   );
