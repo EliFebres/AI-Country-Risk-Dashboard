@@ -1,5 +1,5 @@
 {
-  "last_run": "2025-08-19T00:21:30.040Z",
+  "last_run": "2025-08-19T00:50:32.110Z",
   "source": "neon",
-  "note": "Updated risk scores and iso2; preserved existing entries and coords (lngLat)."
+  "note": "Updated risk scores + iso2 and wrote risk_summary.json; preserved existing coords (lngLat)."
 }

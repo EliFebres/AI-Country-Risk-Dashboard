@@ -134,6 +134,8 @@ function msUntilNextEligible(lastRunISO: string): {
  *  - risk score (from Neon)
  *  - iso2 (from Neon)
  * It preserves all existing entries and their lngLat coordinates.
+ * Also writes public/api/risk_summary.json with ALL latest
+ * { country_iso2, bullet_summary } rows (one per country, if summary is present).
  * Skips if run < 7 days ago. Also updates public/api/risk._meta.json.
  */
 export async function refreshRiskJsonWeekly(): Promise<RefreshOutcome> {
@@ -142,6 +144,7 @@ export async function refreshRiskJsonWeekly(): Promise<RefreshOutcome> {
   try {
     const { fs, path } = await nodeFs();
     const riskJsonPath = path.join(process.cwd(), "public", "api", "risk.json");
+    const riskSummaryPath = path.join(process.cwd(), "public", "api", "risk_summary.json");
     const metaJsonPath = path.join(process.cwd(), "public", "api", "risk._meta.json");
 
     // 1) Check meta to decide whether to skip
@@ -162,7 +165,7 @@ export async function refreshRiskJsonWeekly(): Promise<RefreshOutcome> {
       };
     }
 
-    // 3) Pull latest risks from Neon
+    // 3) Pull latest risks/summaries from Neon
     const joined = await fetchJoinedLatestRisksFromDB();
 
     // 4) Build a lookup by normalized country name -> { iso2, score }
@@ -184,7 +187,6 @@ export async function refreshRiskJsonWeekly(): Promise<RefreshOutcome> {
         seenDb.add(key);
         const rec = dbMap.get(key)!;
 
-        // Track whether any of the updated fields differ
         const riskChanged = d.risk !== rec.score;
         const iso2Changed = (d as any).iso2 !== rec.iso2;
         if (riskChanged || iso2Changed) changedCount++;
@@ -204,20 +206,27 @@ export async function refreshRiskJsonWeekly(): Promise<RefreshOutcome> {
       }
     }
 
-    // 7) Write updated risk.json
+    // 7) Write updated risk.json (scores + iso2; lngLat preserved)
     await fs.mkdir(path.dirname(riskJsonPath), { recursive: true });
-    await fs.writeFile(
-      riskJsonPath,
-      JSON.stringify(updated, null, 2) + "\n",
-      "utf8"
-    );
+    await fs.writeFile(riskJsonPath, JSON.stringify(updated, null, 2) + "\n", "utf8");
 
-    // 8) Write/refresh meta file
+    // 8) Build & write risk_summary.json with ALL latest summaries
+    //    Only include summaries that are non-null / non-empty.
+    const summaries = joined
+      .filter(r => typeof r.bullet_summary === "string" && r.bullet_summary.trim() !== "")
+      .map(r => ({
+        country_iso2: r.iso2,
+        bullet_summary: r.bullet_summary,
+      }));
+    await fs.mkdir(path.dirname(riskSummaryPath), { recursive: true });
+    await fs.writeFile(riskSummaryPath, JSON.stringify(summaries, null, 2) + "\n", "utf8");
+
+    // 9) Write/refresh meta file
     const now = new Date().toISOString();
     const metaOut: MetaFile = {
       last_run: now,
       source: "neon",
-      note: "Updated risk scores and iso2; preserved existing entries and coords (lngLat).",
+      note: "Updated risk scores + iso2 and wrote risk_summary.json; preserved existing coords (lngLat).",
     };
     await fs.writeFile(metaJsonPath, JSON.stringify(metaOut, null, 2) + "\n", "utf8");
 
@@ -225,4 +234,54 @@ export async function refreshRiskJsonWeekly(): Promise<RefreshOutcome> {
   } catch (err: any) {
     return { status: "error", error: String(err?.message ?? err) };
   }
+}
+
+// ----------------------- (Optional) single-country writer -----------------
+// You can keep these helpers if you still want a per-country endpoint in dev.
+
+async function resolveIso2ByName(name: string): Promise<string | null> {
+  const pool = await getPool();
+  const { rows } = await pool.query<{ iso2: string }>(
+    `SELECT iso2 FROM country WHERE LOWER(TRIM(name)) = LOWER(TRIM($1)) LIMIT 1;`,
+    [name]
+  );
+  return rows[0]?.iso2 ?? null;
+}
+
+/**
+ * Writes public/api/risk_summary.json with the latest
+ * { country_iso2, bullet_summary } for a SINGLE country.
+ * Accepts either iso2 or name (name resolved via country table).
+ */
+export async function writeRiskSummaryJson(opts: {
+  iso2?: string;
+  name?: string;
+}): Promise<{ country_iso2: string; bullet_summary: string } | null> {
+  assertServer();
+
+  const code = opts.iso2 ?? (opts.name ? await resolveIso2ByName(opts.name) : null);
+  if (!code) return null;
+
+  const pool = await getPool();
+  const { rows } = await pool.query<{ country_iso2: string; bullet_summary: string }>(
+    `
+    SELECT country_iso2, bullet_summary
+      FROM risk_snapshot
+     WHERE country_iso2 = $1
+       AND bullet_summary IS NOT NULL
+  ORDER BY as_of DESC
+     LIMIT 1;
+    `,
+    [code]
+  );
+  if (rows.length === 0) return null;
+
+  const record = rows[0];
+
+  const { fs, path } = await nodeFs();
+  const outPath = path.join(process.cwd(), "public", "api", "risk_summary.json");
+  await fs.mkdir(path.dirname(outPath), { recursive: true });
+  await fs.writeFile(outPath, JSON.stringify([record], null, 2) + "\n", "utf8");
+
+  return record;
 }
