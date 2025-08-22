@@ -49,8 +49,8 @@ export default function Map({ bounds, center = [0, 20], zoom = 2.5 }: Props) {
 
   // Sidebar is min(420px, 25vw) — mirror of RiskSidebar
   const getSidebarWidthPx = () => {
-    const vwWidth = typeof window !== 'undefined' ? window.innerWidth * 0.25 : 0;
-    return Math.min(420, Math.round(vwWidth || 0));
+    const vwWidth = typeof window !== 'undefined' ? window.innerWidth * 0.40 : 0;
+    return Math.min(600, Math.round(vwWidth || 0));
   };
 
   // Smoothly pan so the clicked marker ends up visually centered in the free (right) area.
