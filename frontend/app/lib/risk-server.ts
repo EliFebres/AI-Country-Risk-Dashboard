@@ -129,6 +129,114 @@ function msUntilNextEligible(lastRunISO: string): {
   return { nextEligibleISO: new Date(next).toISOString(), msLeft };
 }
 
+// ----------------------------- Indicator latest ---------------------------
+
+export const INDICATOR_TARGET_NAMES = [
+  "Rule of law (z-score)",
+  "Inflation (% y/y)",
+  "Interest payments (% revenue)",
+  "GDP per-capita growth (% y/y)",
+] as const;
+
+export type IndicatorTargetName = (typeof INDICATOR_TARGET_NAMES)[number];
+
+export type CountryIndicatorLatest = {
+  iso2: string;
+  name: string;
+  values: Partial<
+    Record<
+      IndicatorTargetName,
+      { year: number; value: number; unit?: string }
+    >
+  >;
+};
+
+/**
+ * Fetch each country's most recent year/value for the four target indicators.
+ * Returns one entry per country with a values map keyed by indicator name.
+ */
+export async function fetchLatestIndicatorValuesFromDB(): Promise<CountryIndicatorLatest[]> {
+  const pool = await getPool();
+
+  // DISTINCT ON picks the latest yr per (country, indicator)
+  const { rows } = await pool.query<{
+    iso2: string;
+    name: string;
+    indicator_name: IndicatorTargetName;
+    unit: string | null;
+    yr: number;
+    value: number;
+  }>(
+    `
+    WITH targets AS (
+      SELECT id, name, unit
+        FROM indicator
+       WHERE name = ANY($1::text[])
+    ),
+    latest AS (
+      SELECT DISTINCT ON (y.country_iso2, y.indicator_id)
+             y.country_iso2, y.indicator_id, y.yr, y.value
+        FROM yearly_value y
+        JOIN targets t ON t.id = y.indicator_id
+    ORDER BY y.country_iso2, y.indicator_id, y.yr DESC
+    )
+    SELECT c.iso2,
+           c.name,
+           t.name AS indicator_name,
+           t.unit,
+           l.yr,
+           l.value
+      FROM latest l
+      JOIN targets t ON t.id = l.indicator_id
+      JOIN country c ON c.iso2 = l.country_iso2
+    ORDER BY c.name, t.name;
+    `,
+    [INDICATOR_TARGET_NAMES]
+  );
+
+  const byIso2 = new Map<string, CountryIndicatorLatest>();
+  for (const r of rows) {
+    const key = (r.iso2 || "").toUpperCase();
+    let entry = byIso2.get(key);
+    if (!entry) {
+      entry = { iso2: key, name: r.name, values: {} };
+      byIso2.set(key, entry);
+    }
+    entry.values[r.indicator_name] = {
+      year: Number(r.yr),
+      value: Number(r.value),
+      unit: r.unit ?? undefined,
+    };
+  }
+  return Array.from(byIso2.values());
+}
+
+/**
+ * Writes public/api/indicator_latest.json with:
+ * [
+ *   { iso2, name, values: {
+ *       "Rule of law (z-score)": { year, value, unit? },
+ *       "Inflation (% y/y)": { ... },
+ *       "Interest payments (% revenue)": { ... },
+ *       "GDP per-capita growth (% y/y)": { ... }
+ *   }},
+ *   ...
+ * ]
+ *
+ * Returns the number of countries written.
+ */
+async function writeLatestIndicatorValuesJson(): Promise<number> {
+  const { fs, path } = await nodeFs();
+  const outPath = path.join(process.cwd(), "public", "api", "indicator_latest.json");
+
+  const payload = await fetchLatestIndicatorValuesFromDB();
+  await fs.mkdir(path.dirname(outPath), { recursive: true });
+  await fs.writeFile(outPath, JSON.stringify(payload, null, 2) + "\n", "utf8");
+  return payload.length;
+}
+
+// ------------------------- Weekly refresh main flow -----------------------
+
 /**
  * Refresh public/api/risk.json by updating ONLY:
  *  - risk score (from Neon)
@@ -137,6 +245,9 @@ function msUntilNextEligible(lastRunISO: string): {
  * Also writes public/api/risk_summary.json with ALL latest
  * { country_iso2, bullet_summary } rows (one per country, if summary is present).
  * Skips if run < 7 days ago. Also updates public/api/risk._meta.json.
+ *
+ * Additionally writes public/api/indicator_latest.json with the most recent
+ * values (and year/unit) for four target indicators per country.
  */
 export async function refreshRiskJsonWeekly(): Promise<RefreshOutcome> {
   assertServer();
@@ -228,6 +339,10 @@ export async function refreshRiskJsonWeekly(): Promise<RefreshOutcome> {
       note: "Updated risk scores + iso2 and wrote risk_summary.json; preserved existing coords (lngLat).",
     };
     await fs.writeFile(metaJsonPath, JSON.stringify(metaOut, null, 2) + "\n", "utf8");
+
+    // 10) Also write the latest indicator values snapshot (separate JSON)
+    const indicatorsWritten = await writeLatestIndicatorValuesJson();
+    console.log(`Wrote indicator_latest.json for ${indicatorsWritten} countries`);
 
     return { status: "updated", lastRun: now, matchedCount, changedCount, missingInJson };
   } catch (err: any) {
