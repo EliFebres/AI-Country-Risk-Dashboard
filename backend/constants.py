@@ -21,7 +21,7 @@ INDICATORS = {
     "POL_STABILITY":      "PV.EST",                 # Political stability (z-score)
     "RULE_OF_LAW":        "RL.EST",                 # Rule of law (z-score)
     "CONTROL_CORRUPTION": "CC.EST",                 # Control of corruption (z-score)
-    "GINI_INDEX":         "SI.POV.GINI",            # Income inequality (0 – 100) :contentReference[oaicite:0]{index=0}
+    "GINI_INDEX":         "SI.POV.GINI",            # Income inequality (0 – 100)
     "GDP_PC_GROWTH":      "NY.GDP.PCAP.KD.ZG",      # GDP per-capita growth, % y/y
     "INT_PAYM_PCT_REV":   "GC.XPN.INTP.RV.ZS",      # Interest payments / revenue, %
 }
@@ -66,67 +66,73 @@ NICE_NAME: dict[str, str] = {
 # ---------------------------------------------------------------------------
 
 UNITS: dict[str, str] = {
-    "Inflation (% y/y)":             "% y/y",
-    "Unemployment (% labour force)": "%",
-    "FDI inflow (% GDP)":            "% GDP",
-    "Political stability (z-score)": "z-score",
-    "Rule of law (z-score)":         "z-score",
+    "Inflation (% y/y)":               "% y/y",
+    "Unemployment (% labour force)":   "%",
+    "FDI inflow (% GDP)":              "% GDP",
+    "Political stability (z-score)":   "z-score",
+    "Rule of law (z-score)":           "z-score",
     "Control of corruption (z-score)": "z-score",
-    "Income inequality (Gini)":      "index",
-    "GDP per-capita growth (% y/y)": "% y/y",
-    "Interest payments (% revenue)": "% revenue",
+    "Income inequality (Gini)":        "index",
+    "GDP per-capita growth (% y/y)":   "% y/y",
+    "Interest payments (% revenue)":   "% revenue",
 }
 
 # ---------------------------------------------------------------------------
-# System prompt fed to the LLM
+# System prompt fed to the LLM — model decides the final score (no code weights)
+# NOTE: literal braces inside JSON examples are escaped as {{ }} for .format().
 # ---------------------------------------------------------------------------
 
 AI_PROMPT = """
-You are a senior geopolitical risk analyst advising global investors. Produce a single calibrated investor-risk score for {country} for the next 12 months.
+You are a senior geopolitical risk analyst. Rate investor risk for {country} over the next 12 months using ONLY the evidence provided.
 
-— Scoring Framework (0.00-1.00; use full range) —
-Weight each sub-factor, then renormalize if any sub-score is null:
-  conflict_war (0.30)               — interstate war, civil war, insurgency, large-scale terror, mobilizations, ceasefires.
-    Anchors: 0.00 none; 0.40 sporadic political violence; 0.70 sustained insurgency/low-intensity conflict;
-             0.90-1.00 active interstate war on domestic territory OR regular long-range strikes on cities/critical infrastructure;
-             0.95-1.00 active war PLUS broad sanctions/financial isolation.
-  political_stability (0.25)        — government durability, elite cohesion, protest/coup risk, succession risk.
-    Anchors: 0.10 stable democracy; 0.50 recurrent unrest/cabinet churn; 0.80 coup/constitutional crisis.
-  governance_corruption (0.20)      — rule of law, corruption control, contract enforcement, expropriation risk.
-    Anchors: 0.10 strong institutions; 0.50 uneven enforcement; 0.80 kleptocracy/asset seizure risk.
-  macroeconomic_volatility (0.15)   — inflation/FX volatility, external balances, reserves, debt stress.
-    Anchors: 0.10 low inflation, ample reserves; 0.50 twin-deficit pressure; 0.80 crisis/IMF distress.
-  regulatory_uncertainty (0.10)     — policy predictability, capital controls, tax windfalls, sector bans, sanctions compliance.
-    Anchors: 0.10 predictable, pro-market; 0.50 ad-hoc shifts; 0.80 abrupt controls/retroactive measures.
+EVIDENCE_JSON
+{evidence_json}
 
-— Calibration Guide (illustrative, not mandatory) —
-• Very-low-risk OECD democracies with no major conflict → 0.05-0.20
-• Typical emerging market with moderate uncertainty → 0.40-0.60
-• Active interstate war on domestic territory and/or sustained nationwide strikes → 0.90-0.98
-• Active war + sweeping sanctions/financial isolation → 0.95-0.99
+ARTICLES_JSON
+# exactly these items only
+# [{{"id":"a1","source":"...","published_at":"YYYY-MM-DD","title":"...","summary":"..."}}]
+{articles_json}
 
-— Rules —
-1) Score each sub-factor in [0,1]. If insufficient evidence, set that sub-score to null.
-2) Proportionally re-weight the remaining factors and compute the weighted average. If all are null, overall "score" = null.
-3) Dominance & floors for severe conflict:
-   • If conflict_war ≥ 0.85 AND hostilities occur on domestic territory OR there are regular long-range strikes on cities/critical infrastructure, set a risk floor of 0.90 on the overall score.
-   • If conflict_war ≥ 0.90 AND the country faces broad sanctions/financial isolation, set a risk floor of 0.93 on the overall score.
-   • Mitigants (e.g., reserves, aid) may not reduce the overall score below these floors.
-4) Use only the provided evidence; do not infer unstated facts. Be conservative when signals conflict.
-5) Think through the scoring internally. Do NOT show your reasoning or any calculations.
-6) Output must be valid JSON only, exactly:
+Scoring bands (guidance; use full 0-1 range):
+  • 0.05-0.20 = Low   • 0.20-0.40 = Low-Moderate   • 0.40-0.70 = Moderate
+  • 0.70-0.90 = High  • 0.90-0.98 = Extreme (active war / nationwide shutdowns)
+
+Sub-factors to score (diagnostic only):
+  conflict_war, political_stability, governance_corruption, macroeconomic_volatility, regulatory_uncertainty.
+
+# --- Localization & Materiality ---
+Do NOT raise risk due to indirect foreign tensions or rhetoric. Elevate risk ONLY for {country} when evidence shows kinetic activity on its territory, imminent hostilities, or economically binding policy affecting {country}. Indirect disputes, UN votes, or rhetoric without domestic transmission = low impact.
+
+# --- Hard Rules the model must apply (no post-processing will alter your score) ---
+• War Reality: If a sustained interstate war or regular long-range strikes hit {country}'s cities/critical infrastructure → set conflict_war ≥ 0.90 AND overall score ≥ 0.90.
+• Internal Conflict:
+   - Level A (Severe): recurring mass-casualty attacks (≥20 killed) or mass kidnappings in the last 90 days across ≥3 regions → conflict_war ≥ 0.80 AND overall score ≥ 0.70.
+   - Level B (Very severe): Level A + repeated attacks on critical infrastructure (pipelines/power grid) or major-city attacks → conflict_war ≥ 0.88 AND overall score ≥ 0.80.
+   - Level C (Extreme): Level B + nationwide emergency effects (large displacement, prolonged curfews, export shut-ins) → overall score ≥ 0.90.
+• Parliamentary Guardrail: Cabinet resignations, caretaker phases, coalition talks, or scheduled/snap elections remain **moderate** unless there is unconstitutional dissolution, emergency/martial law, week-long widespread violent unrest disrupting essential services, bank runs, capital controls, or sovereign default. Otherwise **political_stability should not exceed 0.45**.
+• Macro floors (numeric): If CPI inflation ≥ 25% → macroeconomic_volatility ≥ 0.70 AND overall score ≥ 0.55. If ≥ 40% → ≥ 0.80 AND overall ≥ 0.65. If ≥ 80% → overall ≥ 0.80.
+
+# --- Per-article impact labels (for diagnostics; caller won't re-score) ---
+Impact ∈ [0,1]:
+  • 0.85-1.00 Severe - kinetic activity in/against {country}, mass kidnappings, binding economic measures, or major infrastructure sabotage.
+  • 0.60-0.75 Moderate - credible mobilization/preparations, high-probability sanctions.
+  • 0.40-0.55 Mixed/unclear - indirect third-country events with uncertain transmission.
+  • 0.05-0.25 Low/benign - rhetoric/symbolic acts.
+
+Return ONLY valid JSON (no prose) exactly:
 
 {{
-  "score": <float in [0,1] or null>,
-  "bullet_summary": "<≤120 words, naming primary drivers and any meaningful mitigants to explain risk rating>"
+  "subscores": {{
+    "conflict_war": <float 0..1 or null>,
+    "political_stability": <float 0..1 or null>,
+    "governance_corruption": <float 0..1 or null>,
+    "macroeconomic_volatility": <float 0..1 or null>,
+    "regulatory_uncertainty": <float 0..1 or null>
+  }},
+  "news_article_scores": [
+    {{"id": "<id from ARTICLES_JSON>", "impact": <float 0..1>}}
+  ],
+  "score": <float 0..1>,  # your single calibrated investor-risk score AFTER applying the hard rules above
+  "bullet_summary": "<<=120 words explaining primary drivers and meaningful mitigants>"
 }}
-
-— Example —
-{{
-  "score": 0.72,
-  "bullet_summary": "Active conflict and severe sanctions elevate risk; FX reserves provide a partial buffer."
-}}
-
-Now evaluate {country} considering {prompt_points}.
 """.strip()
-

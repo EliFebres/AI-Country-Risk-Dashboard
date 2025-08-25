@@ -1,150 +1,205 @@
 import os
-import re
 import json
 import logging
-from time import sleep
-from pathlib import Path
-from typing import List, Dict, Optional, TYPE_CHECKING
+from datetime import datetime
+from typing import List, Dict, Optional
 
 from dotenv import load_dotenv, find_dotenv
-
-# Load .env reliably
 load_dotenv(find_dotenv(), override=False)
-load_dotenv(Path(__file__).resolve().parents[1] / ".env", override=False)
 
 from langchain_openai import ChatOpenAI
-from langchain_core.messages import SystemMessage, HumanMessage
+from langchain_core.messages import SystemMessage
 
 import backend.constants as constants
 
 logger = logging.getLogger(__name__)
-_EXPECTED_KEYS = {"score", "bullet_summary"}  # JSON schema from the LLM
 
+# -------------------------
+# Strict schema for outputs
+# -------------------------
+RISK_SCHEMA: Dict = {
+    "title": "CountryRiskAssessment",
+    "description": "Subscores, per-article impacts, a calibrated score, and a short summary.",
+    "type": "object",
+    "properties": {
+        "subscores": {
+            "title": "Subscores",
+            "type": "object",
+            "properties": {
+                "conflict_war":             {"type": ["number", "null"], "minimum": 0, "maximum": 1},
+                "political_stability":      {"type": ["number", "null"], "minimum": 0, "maximum": 1},
+                "governance_corruption":    {"type": ["number", "null"], "minimum": 0, "maximum": 1},
+                "macroeconomic_volatility": {"type": ["number", "null"], "minimum": 0, "maximum": 1},
+                "regulatory_uncertainty":   {"type": ["number", "null"], "minimum": 0, "maximum": 1}
+            },
+            "required": [
+                "conflict_war",
+                "political_stability",
+                "governance_corruption",
+                "macroeconomic_volatility",
+                "regulatory_uncertainty"
+            ],
+            "additionalProperties": False
+        },
+        "news_article_scores": {
+            "title": "NewsArticleScores",
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "id":     {"type": "string"},
+                    "impact": {"type": "number", "minimum": 0, "maximum": 1}
+                },
+                "required": ["id", "impact"],
+                "additionalProperties": False
+            }
+        },
+        "score": {"type": "number", "minimum": 0, "maximum": 1},
+        "bullet_summary": {"type": "string", "maxLength": 800}
+    },
+    "required": ["subscores", "news_article_scores", "score", "bullet_summary"],
+    "additionalProperties": False
+}
+# Schema format/requirements align with LangChain’s structured outputs helper. :contentReference[oaicite:1]{index=1}
 
-def _clean_keys(d: Dict) -> Dict:
-    """Lower-case & strip whitespace from dict keys (helps on sloppy JSON)."""
-    return {k.strip().lower(): v for k, v in d.items()}
+# -------------------------
+# Optional diagnostic metric (does not affect score)
+# -------------------------
+def _recency_weight(days_old: int) -> float:
+    if days_old <= 14: return 1.0
+    if days_old <= 60: return 0.60
+    return 0.30
 
-
-def _robust_json_loads(text: str) -> Optional[Dict]:
+def _compute_news_flow(articles_min: List[Dict], impact_by_id: Dict[str, float]) -> float:
+    """Recency-weighted mean + small corroboration boost if >=2 severe (>=0.85) events within 30 days.
+    This is purely diagnostic; it does not alter the model's score.
     """
-    Try to parse JSON. If the model wraps JSON in prose, extract the outermost
-    {...} block and parse that.
-    """
-    try:
-        return json.loads(text)
-    except json.JSONDecodeError:
-        pass
-    m = re.search(r"\{.*\}", text, flags=re.DOTALL)
-    if m:
+    num = den = 0.0
+    today = datetime.utcnow().date()
+    severe_recent = 0
+
+    for it in articles_min:
+        _id = it.get("id")
+        imp = impact_by_id.get(_id)
+        if imp is None:
+            continue
+        published_at = (it.get("published_at") or "")[:10]
         try:
-            return json.loads(m.group(0))
-        except json.JSONDecodeError:
-            return None
-    return None
+            age = (today - datetime.fromisoformat(published_at).date()).days
+        except Exception:
+            age = 9999
+        w = _recency_weight(age)
+        num += w * float(imp)
+        den += w
+        if imp >= 0.85 and age <= 30:
+            severe_recent += 1
 
+    news = (num / den) if den > 0 else 0.10
+    if severe_recent >= 2:
+        news = min(news * 1.10, 1.0)
+    return float(max(0.05, min(news, 0.95)))
 
+# -------------------------
+# Helpers for prompt I/O
+# -------------------------
+def _articles_to_json(articles: List[Dict]) -> str:
+    """Normalize article fields used in the prompt."""
+    norm = []
+    for i, it in enumerate(articles[:10]):
+        norm.append({
+            "id": f"a{i+1}",
+            "source": (it.get("source") or "").strip(),
+            "published_at": (it.get("published") or "")[:10],
+            "title": (it.get("title") or "").strip(),
+            "summary": (it.get("summary") or it.get("text") or it.get("snippet") or "").strip(),
+        })
+    return json.dumps(norm, ensure_ascii=False)
+
+def _articles_min_list(articles_json_str: str) -> List[Dict]:
+    raw = json.loads(articles_json_str) if articles_json_str else []
+    return [
+        {
+            "id": it.get("id"),
+            "title": it.get("title", ""),
+            "summary": it.get("summary", ""),
+            "source": it.get("source", ""),
+            "published_at": it.get("published_at", "")
+        }
+        for it in raw
+    ]
+
+# -------------------------
+# Main entry — no heuristic overrides, no code-side floors
+# -------------------------
 def country_llm_score(
-    country: str,
-    headlines: List[str],
-    prompt_points: str,
     *,
-    macro_context: Optional[str] = None,   # NEW: compact table of latest values/deltas
+    country_display: str,
+    payload: Dict,
+    articles: List[Dict],
     llm: Optional["ChatOpenAI"] = None,
-    model: str = "gpt-5-mini",
-    temperature: float = 1.0,
+    model: str = "gpt-4.1",   # any model supporting structured outputs
+    temperature: float = 0.0,
+    seed: int = 42,
     api_key: Optional[str] = None,
-    attempts: int = 2,                     # NEW: how many times to try
-    retry_sleep: float = 0.4               # small pause between tries
 ) -> Dict[str, object]:
     """
-    Return a JSON-like dict with the LLM's risk score and ≤75-word summary.
-
-    If the first attempt yields {"score": None, ...}, the function will retry
-    (up to `attempts`) with a lower temperature and a stronger instruction to
-    produce a numeric score using conservative inference.
+    Returns:
+      {
+        "score": float|None,        # final score (the model's score; no code-side reweighting)
+        "bullet_summary": str,
+        "subscores": {...},         # model diagnostics only
+        "news_article_scores": [...],
+        "news_flow": float,         # diagnostic only
+      }
     """
-    # Input Validation
-    assert country and isinstance(country, str)
-    assert headlines and all(isinstance(h, str) for h in headlines)
-    assert isinstance(prompt_points, str) and prompt_points
-    assert isinstance(attempts, int) and attempts >= 1
+    assert isinstance(payload, dict) and payload, "`payload` must be a non-empty dict"
+    assert isinstance(articles, list), "`articles` must be a list"
+    assert isinstance(country_display, str) and country_display.strip(), "`country_display` must be non-empty"
 
     api_key = api_key or os.getenv("OPENAI_API_KEY")
     if not api_key:
         logger.error("OPENAI_API_KEY not set (env var or api_key arg).")
-        return {"score": None, "bullet_summary": ""}
+        return {"score": None, "bullet_summary": "", "subscores": {}, "news_flow": None, "news_article_scores": []}
 
-    # Prepare common message parts
-    context = "\n".join(headlines[:5])
-    sys_base = constants.AI_PROMPT.format(prompt_points=prompt_points, country=country)
-    sys_suffix = (
-        "\n\nReturn ONLY valid JSON with keys exactly: "
-        '{"score": <float 0-1 or null>, "bullet_summary": "<<=75 words>"}'
+    evidence_json = json.dumps(payload, ensure_ascii=False)
+    articles_json = _articles_to_json(articles)
+    prompt = constants.AI_PROMPT.format(
+        country=country_display,
+        evidence_json=evidence_json,
+        articles_json=articles_json
     )
 
-    # Macro context (optional but highly recommended)
-    macro_block = f"\n\nMacro indicators (latest & deltas):\n{macro_context}" if macro_context else ""
-
-    def _one_call(_temp: float, extra_nudge: str = "") -> Dict[str, object]:
-        _llm = llm or ChatOpenAI(model_name=model, temperature=_temp, openai_api_key=api_key)
-        sys_msg = SystemMessage(content=sys_base + sys_suffix + extra_nudge)
-        user_msg = HumanMessage(
-            content=(
-                f"Country: {country}"
-                f"{macro_block}"
-                f"\n\nRecent headlines (max 5, newest first):\n{context}"
-            )
-        )
-        try:
-            resp_text = _llm.invoke([sys_msg, user_msg]).content.strip()
-        except Exception as exc:
-            logger.error("LangChain error: %s", exc)
-            return {"score": None, "bullet_summary": ""}
-
-        raw = _robust_json_loads(resp_text)
-        if not isinstance(raw, dict):
-            logger.error("LLM responded with non-JSON:\n%s", resp_text[:500])
-            return {"score": None, "bullet_summary": ""}
-
-        data = _clean_keys(raw)
-        if _EXPECTED_KEYS != set(data):
-            logger.error("LLM schema mismatch: %s", raw)
-            return {"score": None, "bullet_summary": ""}
-
-        score, summary = data["score"], data["bullet_summary"]
-
-        # Cast score
-        try:
-            score = None if score is None else float(score)
-        except (TypeError, ValueError):
-            logger.warning("`score` not castable to float: %s", score)
-            score = None
-
-        # Tighten summary length
-        summary = summary if isinstance(summary, str) else ""
-        if len(summary.split()) > 75:
-            summary = " ".join(summary.split()[:75])
-
-        return {"score": score, "bullet_summary": summary}
-
-    # Attempt 1: your current settings
-    out = _one_call(temperature)
-    if out["score"] is not None or attempts == 1:
-        return out
-
-    # Attempts 2..N: stronger nudge + low temperature
-    nudge = (
-        "\n\nIf some quantitative inputs are missing, infer a *conservative* "
-        "0.00–1.00 score using the headlines and priors for similar countries. "
-        "Do not say 'insufficient evidence'; still return a numeric score."
+    _llm = llm or ChatOpenAI(
+        model=model,
+        temperature=temperature,
+        max_retries=0,
+        api_key=api_key,
+        seed=seed,
     )
-    for i in range(2, attempts + 1):
-        sleep(retry_sleep)
-        out = _one_call(_temp=0.2, extra_nudge=nudge)
-        if out["score"] is not None:
-            logger.info("LLM produced a score on retry %d.", i)
-            return out
+    structured_llm = _llm.with_structured_output(schema=RISK_SCHEMA, strict=True)
 
-    # All attempts failed
-    return out
+    try:
+        data = structured_llm.invoke([SystemMessage(content=prompt)])
+    except Exception as exc:
+        logger.error("LangChain structured output error: %s", exc)
+        return {"score": None, "bullet_summary": "", "subscores": {}, "news_flow": None, "news_article_scores": []}
+
+    # Validate shape minimally
+    if not isinstance(data, dict) or "score" not in data or "subscores" not in data or "news_article_scores" not in data:
+        logger.error("Model returned invalid structure: %s", str(data)[:300])
+        return {"score": None, "bullet_summary": "", "subscores": {}, "news_flow": None, "news_article_scores": []}
+
+    # Diagnostics only (does not affect score)
+    try:
+        impacts = {e["id"]: float(e["impact"]) for e in data.get("news_article_scores", []) if isinstance(e, dict) and "id" in e and "impact" in e}
+    except Exception:
+        impacts = {}
+    news_flow = _compute_news_flow(_articles_min_list(articles_json), impacts)
+
+    return {
+        "score": float(data["score"]) if isinstance(data.get("score"), (int, float, str)) else None,
+        "bullet_summary": (data.get("bullet_summary") or "").strip()[:800],
+        "subscores": data.get("subscores") or {},
+        "news_article_scores": data.get("news_article_scores") or [],
+        "news_flow": news_flow,  # diagnostic
+    }
