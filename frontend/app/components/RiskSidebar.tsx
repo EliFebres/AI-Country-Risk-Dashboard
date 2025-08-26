@@ -93,7 +93,7 @@ function oneWordLabel(name: IndicatorName): string {
   switch (name) {
     case 'Rule of law (z-score)': return 'Rule of Law';
     case 'Inflation (% y/y)': return 'Inflation';
-    case 'Interest payments (% revenue)': return 'Interest';
+    case 'Interest payments (% revenue)': return 'Interest Burden';
     case 'GDP per-capita growth (% y/y)': return 'GDP';
   }
 }
@@ -131,16 +131,24 @@ function MiniGauge(props: {
   const fontSize = Math.max(11, Math.round(size * 0.22)); // scales with size
 
   return (
-    <div className="gaugeItem" title={title} aria-label={aria || title}>
-      <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} className="gaugeSvg">
-        <circle
-          cx={cx}
-          cy={cy}
-          r={r}
-          fill="none"
-          stroke={`rgba(255,255,255,${trackAlpha})`}
-          strokeWidth={stroke}
-        />
+    <div
+      className="gaugeItem"
+      title={title}
+      aria-label={aria || title}
+      style={{
+        width: 'max-content', // grow to fit caption
+        minWidth: size,       // never smaller than the circle
+        margin: '0 auto',
+      }}
+    >
+      <svg
+        width={size}
+        height={size}
+        viewBox={`0 0 ${size} ${size}`}
+        className="gaugeSvg"
+        style={{ display: 'block', margin: '0 auto' }}
+      >
+        <circle cx={cx} cy={cy} r={r} fill="none" stroke={`rgba(255,255,255,${trackAlpha})`} strokeWidth={stroke} />
         <circle
           cx={cx}
           cy={cy}
@@ -153,14 +161,7 @@ function MiniGauge(props: {
           strokeDashoffset={offset}
           transform={`rotate(-90 ${cx} ${cy})`}
         />
-        <circle
-          cx={cx}
-          cy={cy}
-          r={r - stroke / 2}
-          fill="#4a4a4a"
-          stroke="rgba(255,255,255,0.25)"
-          strokeWidth={1}
-        />
+        <circle cx={cx} cy={cy} r={r - stroke / 2} fill="#4a4a4a" stroke="rgba(255,255,255,0.25)" strokeWidth={1} />
         <text
           x={cx}
           y={cy}
@@ -177,17 +178,20 @@ function MiniGauge(props: {
           {valueText}
         </text>
       </svg>
-      {/* Inline styles ensure the caption reflects requested spacing/size tweaks */}
+
+      {/* Caption centered and confined to the same width as the circle */}
       <div
         className="gaugeCaption"
         style={{
-          width: size,
+          width: '100%',
           textAlign: 'center',
-          fontSize: 11,          // slightly smaller
-          opacity: 0.7,          // more transparent
+          fontSize: 11,
+          opacity: 0.7,
           letterSpacing: '0.2px',
-          whiteSpace: 'nowrap',
-          marginTop: 8,          // ↑ increased top margin a little
+          whiteSpace: 'nowrap',          // allow wrap so long labels don't shift visual center
+          lineHeight: 1.05,
+          overflow: 'hidden',
+          marginTop: 8,
         }}
         aria-hidden="true"
       >
@@ -422,7 +426,7 @@ export default function RiskSidebar({
               <div className="custom-divider"></div>
 
               <section className="card">
-                <h3>Ai Summary (GPT 5-mini)</h3>
+                <h3>Ai Summary (GPT 4o)</h3>
                 {sumLoading ? (
                   <p className="muted">Loading summary…</p>
                 ) : summary ? (
