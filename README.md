@@ -60,9 +60,8 @@ EXAMPLE
   "score": 0.72,
   "bullet_summary": "Active conflict and severe sanctions elevate risk; FX reserves provide a partial buffer."
 }
+Now evaluate {country} considering {prompt_points}.
 ```
-#### Now evaluate {country} considering {prompt_points}.
-
 
 ## Getting Started
 
