@@ -23,11 +23,19 @@ let INDICATOR_CACHE: CountryIndicatorLatest[] | null = null;
 /** Clamp to [0,1] */
 const clamp01 = (x: number) => Math.max(0, Math.min(1, x));
 
-/** Map-style color thresholds (higher = riskier) */
+/** Map-style color thresholds (higher = riskier) for generic progress */
 function colorForRisk(r: number) {
   if (r > 0.7) return '#ff2d55';
   if (r >= 0.5) return '#ffd60a';
   return '#39ff14';
+}
+
+/** GDP-specific color buckets using the raw value (y/y % growth) */
+function colorForGDP(val?: number): string | undefined {
+  if (typeof val !== 'number') return undefined;
+  if (val > 2) return '#39ff14';     // green
+  if (val >= 0) return '#ffd60a';    // yellow (2..0)
+  return '#ff2d55';                  // red (<0)
 }
 
 /** Heuristic normalization → progress in [0..1] (higher = worse) */
@@ -43,8 +51,8 @@ function progressForIndicator(name: IndicatorName, val: number): number {
       // 25% of revenue ~ max risk
       return clamp01(val / 25);
     case 'GDP per-capita growth (% y/y)':
-      // Better when higher; 4% OK, -6% bad
-      return clamp01((4 - val) / 10);
+      // Map +25% growth -> 0 risk, 0% -> 0.5, -25% -> 1 risk (linear), clamp outside [-25, +25]
+      return clamp01((20 - val) / 40);
     default:
       return 0.5;
   }
@@ -96,10 +104,12 @@ function MiniGauge(props: {
   size?: number;
   trackAlpha?: number;
   aria?: string;
+  ringColor?: string; // optional override for the ring color
 }) {
   const {
     title, caption, valueText, progress,
-    size = GAUGE_SIZE, trackAlpha = 0.15, aria
+    size = GAUGE_SIZE, trackAlpha = 0.15, aria,
+    ringColor: ringColorOverride,
   } = props;
 
   const stroke = 5;
@@ -108,7 +118,7 @@ function MiniGauge(props: {
   const cy = size / 2;
   const circumference = 2 * Math.PI * r;
   const offset = circumference * (1 - clamp01(progress));
-  const ringColor = colorForRisk(progress);
+  const ringColor = ringColorOverride ?? colorForRisk(progress);
   const fontSize = Math.max(11, Math.round(size * 0.22));
 
   return (
@@ -235,12 +245,19 @@ export default function RiskReadingSection({ countryName, iso2, active = true }:
           const valText = formatValue(name, snap);
           const progress =
             typeof snap?.value === 'number' ? progressForIndicator(name, snap.value) : 0.0;
+
+          const ringColor =
+            name === 'GDP per-capita growth (% y/y)'
+              ? colorForGDP(snap?.value)
+              : undefined;
+
           return {
             key: name,
             title: shortLabel(name),
             caption: oneWordLabel(name),
             valueText: valText,
             progress,
+            ringColor,
             aria: `${shortLabel(name)} ${valText}`,
           };
         })
@@ -263,6 +280,7 @@ export default function RiskReadingSection({ countryName, iso2, active = true }:
                 progress={g.progress}
                 aria={g.aria}
                 size={GAUGE_SIZE}
+                ringColor={g.ringColor}
               />
             </div>
           ))}

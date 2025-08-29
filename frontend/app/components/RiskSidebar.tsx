@@ -4,7 +4,6 @@
 import { useEffect } from 'react';
 import RiskReadingSection from './Sidebar/RiskReadingSection';
 import AiSummary from './Sidebar/AiSummary';
-import NewsSection from './Sidebar/NewsSection';
 
 
 type Props = {
