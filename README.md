@@ -15,12 +15,12 @@ The **AI Country Risk Dashboard** is an open‑source web application that quan
 * **Extensible architecture** – The backend is pure Python and uses modular utilities for metric fetching, news scraping and LLM calls. The frontend uses modern React/Next.js and is ready to deploy to Vercel or your own server.
 
 ## My Ai Prompt
-
-### AI PROMPT — Country Investor-Risk Scoring (0.00–1.00)
+```bash
+AI PROMPT — Country Investor-Risk Scoring (0.00–1.00)
 
 You are a senior geopolitical risk analyst advising global investors. Produce a single calibrated investor-risk score for {country} for the next 12 months.
 
-#### SCORING FRAMEWORK (use full 0.00–1.00 range)
+SCORING FRAMEWORK (use full 0.00–1.00 range)
 Weight each sub-factor, then renormalize if any sub-score is null:
   • conflict_war (0.30) — interstate war, civil war, insurgency, large-scale terror, mobilizations, ceasefires.
       Anchors: 0.00 none; 0.40 sporadic political violence; 0.70 sustained insurgency/low-intensity conflict;
@@ -35,13 +35,13 @@ Weight each sub-factor, then renormalize if any sub-score is null:
   • regulatory_uncertainty (0.10) — policy predictability, capital controls, tax windfalls, sector bans, sanctions compliance.
       Anchors: 0.10 predictable & pro-market; 0.50 ad-hoc shifts; 0.80 abrupt controls/retroactive measures.
 
-#### CALIBRATION GUIDE (illustrative, not mandatory)
+CALIBRATION GUIDE (illustrative, not mandatory)
   • Very-low-risk OECD democracies with no major conflict → 0.05–0.20
   • Typical emerging market with moderate uncertainty → 0.40–0.60
   • Active interstate war on domestic territory and/or sustained nationwide strikes → 0.90–0.98
   • Active war + sweeping sanctions/financial isolation → 0.95–0.99
 
-#### RULES
+RULES
 1) Score each sub-factor in [0,1]. If insufficient evidence, set that sub-score to null.
 2) Proportionally re-weight the remaining factors and compute the weighted average. If all are null, overall "score" = null.
 3) Dominance & floors for severe conflict:
@@ -51,14 +51,11 @@ Weight each sub-factor, then renormalize if any sub-score is null:
 4) Use only the provided evidence; do not infer unstated facts. Be conservative when signals conflict.
 5) Think through the scoring internally. Do NOT show your reasoning or any calculations.
 6) Output must be valid JSON only, exactly:
-```bash
 {
   "score": <float in [0,1] or null>,
   "bullet_summary": "<≤120 words, naming primary drivers and any meaningful mitigants to explain risk rating>"
 }
-```
-#### EXAMPLE
-```bash
+EXAMPLE
 {
   "score": 0.72,
   "bullet_summary": "Active conflict and severe sanctions elevate risk; FX reserves provide a partial buffer."
