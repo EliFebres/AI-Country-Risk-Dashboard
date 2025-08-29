@@ -278,7 +278,7 @@ export default function RiskReadingSection({
 
         if (!RISK_CACHE) {
           const res = await fetch('/api/risk.json', {
-            cache: 'force-cache', // okay to cache; markers already forced a fresh write/bust
+            cache: 'force-cache', /* markers already forced a fresh write/bust */
             headers: { accept: 'application/json' },
           });
           if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -324,7 +324,7 @@ export default function RiskReadingSection({
     return () => { cancelled = true; };
   }, [active, countryName, iso2, currentRiskProp, prevRiskProp]);
 
-  // --- Build gauge items (unchanged) ---
+  // --- Build gauge items ---
   const gaugeItems =
     indicators
       ? ORDER.map((name) => {
@@ -379,7 +379,7 @@ export default function RiskReadingSection({
 
   return (
     <>
-      {/* --- New Top Stats Row --- */}
+      {/* --- Top Stats Row --- */}
       <div className="statsRow" aria-label="Risk stats">
         <div className="statsCol">
           <div className="smallTitle">Current Ai Risk Rating</div>
@@ -424,7 +424,7 @@ export default function RiskReadingSection({
         </div>
       </div>
 
-      {/* --- Existing Indicators Grid --- */}
+      {/* --- Indicators Grid --- */}
       {indLoading ? (
         <p className="muted">Loading indicators…</p>
       ) : indError ? (
@@ -452,21 +452,42 @@ export default function RiskReadingSection({
       <style jsx>{`
         .muted { opacity: 0.7; }
 
-        /* Top stats row */
+        /* Top stats row — FLEX to pin left/right edges  */
         .statsRow {
-          display: grid;
-          grid-template-columns: 1fr 1fr;
-          gap: 12px;
-          align-items: start;
+          display: flex;
+          width: 100%;
+          justify-content: space-between;  /* push columns to far left/right */
+          align-items: flex-start;
+          gap: 12px;                       /* spacing between the two columns */
           margin: 6px 0 12px 0;
-        }
-        @media (max-width: 520px) {
-          .statsRow { grid-template-columns: 1fr; }
+          padding-right: 20px;
+          padding-left: 20px;
         }
         .statsCol {
-          padding: 15px 15px;
+          flex: 1 1 0;
+          padding: 15px 20px;
           padding-top: 0px;
+          display: flex;
+          flex-direction: column;
         }
+        .statsCol:last-child {
+          text-align: right;               /* right-align numbers/pills */
+          align-items: flex-end;
+        }
+
+        /* Stack on small screens */
+        @media (max-width: 520px) {
+          .statsRow { flex-direction: column; }
+          .statsCol:last-child {
+            text-align: left;
+            align-items: flex-start;
+          }
+        }
+
+        /* Optional: remove side padding so columns sit truly flush to container edges */
+        .statsCol:first-child { padding-left: 0; }
+        .statsCol:last-child  { padding-right: 0; }
+
         .smallTitle {
           font-size: 12px;
           line-height: 1;
@@ -487,8 +508,8 @@ export default function RiskReadingSection({
           padding: 4px 5px;
           font-size: 12px;
           line-height: 1;
-          // background: rgba(255,255,255,0.10);
-          // border: 1px solid rgba(255,255,255,0.12);
+          /* background: rgba(255,255,255,0.10); */
+          /* border: 1px solid rgba(255,255,255,0.12); */
           color: rgba(255,255,255,0.9);
         }
 
