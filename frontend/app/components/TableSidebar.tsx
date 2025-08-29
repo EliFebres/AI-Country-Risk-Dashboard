@@ -6,6 +6,7 @@ type RiskDot = {
   name: string;
   lngLat: [number, number];
   risk: number;
+  iso2?: string; // ← add ISO2 so we can pass flags through
 };
 
 type SortKey = 'risk' | 'name';
@@ -16,7 +17,7 @@ type TableSidebarProps = {
   durationMs?: number;            // reveal (clip-path) duration
   easing?: string;                // easing for reveal & fades
   title?: string;
-  onSelectCountry?: (dot: RiskDot) => void;
+  onSelectCountry?: (dot: RiskDot) => void; // receives iso2 when present
 };
 
 function colorForRisk(r: number) {
@@ -43,7 +44,8 @@ export default function TableSidebar({
   const [sortKey, setSortKey] = useState<SortKey>('risk');
   const [sortDir, setSortDir] = useState<SortDir>('desc');
 
-  const [collapsed, setCollapsed] = useState(false);
+  // Default minimized (collapsed) on first render
+  const [collapsed, setCollapsed] = useState(true);
 
   // Fetch risk.json (cache-busted)
   useEffect(() => {
@@ -58,7 +60,7 @@ export default function TableSidebar({
           headers: { accept: 'application/json' },
         });
         if (!res.ok) throw new Error(`Failed to load risk.json: ${res.status}`);
-        const data: RiskDot[] = await res.json();
+        const data: RiskDot[] = await res.json(); // ← includes iso2 if present
         setRows(data);
       } catch (e: any) {
         if (e?.name !== 'AbortError') setError(e?.message || 'Unknown error');
@@ -209,11 +211,11 @@ export default function TableSidebar({
                         key={r.name}
                         tabIndex={0}
                         className="row"
-                        onClick={() => onSelectCountry?.(r)}
+                        onClick={() => onSelectCountry?.(r)} // ← passes {name, lngLat, risk, iso2?}
                         onKeyDown={(e) => {
                           if (e.key === 'Enter' || e.key === ' ') {
                             e.preventDefault();
-                            onSelectCountry?.(r);
+                            onSelectCountry?.(r); // ← same here
                           }
                         }}
                       >

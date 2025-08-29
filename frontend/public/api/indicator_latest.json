@@ -1,0 +1,1267 @@
+[
+  {
+    "iso2": "AR",
+    "name": "Argentina",
+    "values": {
+      "GDP per-capita growth (% y/y)": {
+        "year": 2024,
+        "value": -2.06,
+        "unit": "% y/y"
+      },
+      "Interest payments (% revenue)": {
+        "year": 2023,
+        "value": 8.6,
+        "unit": "% revenue"
+      },
+      "Rule of law (z-score)": {
+        "year": 2023,
+        "value": -0.41,
+        "unit": "z-score"
+      }
+    }
+  },
+  {
+    "iso2": "AU",
+    "name": "Australia",
+    "values": {
+      "GDP per-capita growth (% y/y)": {
+        "year": 2024,
+        "value": -0.63,
+        "unit": "% y/y"
+      },
+      "Inflation (% y/y)": {
+        "year": 2024,
+        "value": 3.16,
+        "unit": "% y/y"
+      },
+      "Interest payments (% revenue)": {
+        "year": 2022,
+        "value": 3.08,
+        "unit": "% revenue"
+      },
+      "Rule of law (z-score)": {
+        "year": 2023,
+        "value": 1.52,
+        "unit": "z-score"
+      }
+    }
+  },
+  {
+    "iso2": "AT",
+    "name": "Austria",
+    "values": {
+      "GDP per-capita growth (% y/y)": {
+        "year": 2024,
+        "value": -1.68,
+        "unit": "% y/y"
+      },
+      "Inflation (% y/y)": {
+        "year": 2024,
+        "value": 2.94,
+        "unit": "% y/y"
+      },
+      "Interest payments (% revenue)": {
+        "year": 2023,
+        "value": 2.61,
+        "unit": "% revenue"
+      },
+      "Rule of law (z-score)": {
+        "year": 2023,
+        "value": 1.75,
+        "unit": "z-score"
+      }
+    }
+  },
+  {
+    "iso2": "BD",
+    "name": "Bangladesh",
+    "values": {
+      "GDP per-capita growth (% y/y)": {
+        "year": 2024,
+        "value": 2.96,
+        "unit": "% y/y"
+      },
+      "Inflation (% y/y)": {
+        "year": 2024,
+        "value": 10.47,
+        "unit": "% y/y"
+      },
+      "Interest payments (% revenue)": {
+        "year": 2021,
+        "value": 20.83,
+        "unit": "% revenue"
+      },
+      "Rule of law (z-score)": {
+        "year": 2023,
+        "value": -0.5,
+        "unit": "z-score"
+      }
+    }
+  },
+  {
+    "iso2": "BE",
+    "name": "Belgium",
+    "values": {
+      "GDP per-capita growth (% y/y)": {
+        "year": 2024,
+        "value": 0.26,
+        "unit": "% y/y"
+      },
+      "Inflation (% y/y)": {
+        "year": 2024,
+        "value": 3.14,
+        "unit": "% y/y"
+      },
+      "Interest payments (% revenue)": {
+        "year": 2022,
+        "value": 3.31,
+        "unit": "% revenue"
+      },
+      "Rule of law (z-score)": {
+        "year": 2023,
+        "value": 1.3,
+        "unit": "z-score"
+      }
+    }
+  },
+  {
+    "iso2": "BR",
+    "name": "Brazil",
+    "values": {
+      "GDP per-capita growth (% y/y)": {
+        "year": 2024,
+        "value": 2.98,
+        "unit": "% y/y"
+      },
+      "Inflation (% y/y)": {
+        "year": 2024,
+        "value": 4.37,
+        "unit": "% y/y"
+      },
+      "Interest payments (% revenue)": {
+        "year": 2023,
+        "value": 30.84,
+        "unit": "% revenue"
+      },
+      "Rule of law (z-score)": {
+        "year": 2023,
+        "value": -0.31,
+        "unit": "z-score"
+      }
+    }
+  },
+  {
+    "iso2": "CA",
+    "name": "Canada",
+    "values": {
+      "GDP per-capita growth (% y/y)": {
+        "year": 2024,
+        "value": -1.44,
+        "unit": "% y/y"
+      },
+      "Inflation (% y/y)": {
+        "year": 2024,
+        "value": 2.38,
+        "unit": "% y/y"
+      },
+      "Interest payments (% revenue)": {
+        "year": 2023,
+        "value": 7.44,
+        "unit": "% revenue"
+      },
+      "Rule of law (z-score)": {
+        "year": 2023,
+        "value": 1.47,
+        "unit": "z-score"
+      }
+    }
+  },
+  {
+    "iso2": "CL",
+    "name": "Chile",
+    "values": {
+      "GDP per-capita growth (% y/y)": {
+        "year": 2024,
+        "value": 2.09,
+        "unit": "% y/y"
+      },
+      "Inflation (% y/y)": {
+        "year": 2024,
+        "value": 4.3,
+        "unit": "% y/y"
+      },
+      "Interest payments (% revenue)": {
+        "year": 2023,
+        "value": 4.63,
+        "unit": "% revenue"
+      },
+      "Rule of law (z-score)": {
+        "year": 2023,
+        "value": 0.63,
+        "unit": "z-score"
+      }
+    }
+  },
+  {
+    "iso2": "CN",
+    "name": "China",
+    "values": {
+      "GDP per-capita growth (% y/y)": {
+        "year": 2024,
+        "value": 5.11,
+        "unit": "% y/y"
+      },
+      "Inflation (% y/y)": {
+        "year": 2024,
+        "value": 0.22,
+        "unit": "% y/y"
+      },
+      "Interest payments (% revenue)": {
+        "year": 2021,
+        "value": 3.44,
+        "unit": "% revenue"
+      },
+      "Rule of law (z-score)": {
+        "year": 2023,
+        "value": -0.04,
+        "unit": "z-score"
+      }
+    }
+  },
+  {
+    "iso2": "CO",
+    "name": "Colombia",
+    "values": {
+      "GDP per-capita growth (% y/y)": {
+        "year": 2024,
+        "value": 0.66,
+        "unit": "% y/y"
+      },
+      "Inflation (% y/y)": {
+        "year": 2024,
+        "value": 6.61,
+        "unit": "% y/y"
+      },
+      "Interest payments (% revenue)": {
+        "year": 2023,
+        "value": 13.82,
+        "unit": "% revenue"
+      },
+      "Rule of law (z-score)": {
+        "year": 2023,
+        "value": -0.46,
+        "unit": "z-score"
+      }
+    }
+  },
+  {
+    "iso2": "DK",
+    "name": "Denmark",
+    "values": {
+      "GDP per-capita growth (% y/y)": {
+        "year": 2024,
+        "value": 3.16,
+        "unit": "% y/y"
+      },
+      "Inflation (% y/y)": {
+        "year": 2024,
+        "value": 1.37,
+        "unit": "% y/y"
+      },
+      "Interest payments (% revenue)": {
+        "year": 2023,
+        "value": 1.21,
+        "unit": "% revenue"
+      },
+      "Rule of law (z-score)": {
+        "year": 2023,
+        "value": 1.91,
+        "unit": "z-score"
+      }
+    }
+  },
+  {
+    "iso2": "FI",
+    "name": "Finland",
+    "values": {
+      "GDP per-capita growth (% y/y)": {
+        "year": 2024,
+        "value": -1.1,
+        "unit": "% y/y"
+      },
+      "Inflation (% y/y)": {
+        "year": 2024,
+        "value": 1.57,
+        "unit": "% y/y"
+      },
+      "Interest payments (% revenue)": {
+        "year": 2023,
+        "value": 2.09,
+        "unit": "% revenue"
+      },
+      "Rule of law (z-score)": {
+        "year": 2023,
+        "value": 1.97,
+        "unit": "z-score"
+      }
+    }
+  },
+  {
+    "iso2": "FR",
+    "name": "France",
+    "values": {
+      "GDP per-capita growth (% y/y)": {
+        "year": 2024,
+        "value": 0.83,
+        "unit": "% y/y"
+      },
+      "Inflation (% y/y)": {
+        "year": 2024,
+        "value": 2,
+        "unit": "% y/y"
+      },
+      "Interest payments (% revenue)": {
+        "year": 2023,
+        "value": 3.78,
+        "unit": "% revenue"
+      },
+      "Rule of law (z-score)": {
+        "year": 2023,
+        "value": 1.18,
+        "unit": "z-score"
+      }
+    }
+  },
+  {
+    "iso2": "DE",
+    "name": "Germany",
+    "values": {
+      "GDP per-capita growth (% y/y)": {
+        "year": 2024,
+        "value": 0.23,
+        "unit": "% y/y"
+      },
+      "Inflation (% y/y)": {
+        "year": 2024,
+        "value": 2.26,
+        "unit": "% y/y"
+      },
+      "Interest payments (% revenue)": {
+        "year": 2022,
+        "value": 1.48,
+        "unit": "% revenue"
+      },
+      "Rule of law (z-score)": {
+        "year": 2023,
+        "value": 1.55,
+        "unit": "z-score"
+      }
+    }
+  },
+  {
+    "iso2": "GR",
+    "name": "Greece",
+    "values": {
+      "GDP per-capita growth (% y/y)": {
+        "year": 2024,
+        "value": 2.44,
+        "unit": "% y/y"
+      },
+      "Inflation (% y/y)": {
+        "year": 2024,
+        "value": 2.74,
+        "unit": "% y/y"
+      },
+      "Interest payments (% revenue)": {
+        "year": 2023,
+        "value": 7.46,
+        "unit": "% revenue"
+      },
+      "Rule of law (z-score)": {
+        "year": 2023,
+        "value": 0.21,
+        "unit": "z-score"
+      }
+    }
+  },
+  {
+    "iso2": "HK",
+    "name": "Hong Kong SAR, China",
+    "values": {
+      "GDP per-capita growth (% y/y)": {
+        "year": 2024,
+        "value": 2.7,
+        "unit": "% y/y"
+      },
+      "Inflation (% y/y)": {
+        "year": 2024,
+        "value": 1.73,
+        "unit": "% y/y"
+      },
+      "Rule of law (z-score)": {
+        "year": 2023,
+        "value": 1.29,
+        "unit": "z-score"
+      }
+    }
+  },
+  {
+    "iso2": "HU",
+    "name": "Hungary",
+    "values": {
+      "GDP per-capita growth (% y/y)": {
+        "year": 2024,
+        "value": 0.83,
+        "unit": "% y/y"
+      },
+      "Inflation (% y/y)": {
+        "year": 2024,
+        "value": 3.7,
+        "unit": "% y/y"
+      },
+      "Interest payments (% revenue)": {
+        "year": 2022,
+        "value": 7.14,
+        "unit": "% revenue"
+      },
+      "Rule of law (z-score)": {
+        "year": 2023,
+        "value": 0.43,
+        "unit": "z-score"
+      }
+    }
+  },
+  {
+    "iso2": "IN",
+    "name": "India",
+    "values": {
+      "GDP per-capita growth (% y/y)": {
+        "year": 2024,
+        "value": 5.54,
+        "unit": "% y/y"
+      },
+      "Inflation (% y/y)": {
+        "year": 2024,
+        "value": 4.95,
+        "unit": "% y/y"
+      },
+      "Interest payments (% revenue)": {
+        "year": 2022,
+        "value": 33.98,
+        "unit": "% revenue"
+      },
+      "Rule of law (z-score)": {
+        "year": 2023,
+        "value": 0.19,
+        "unit": "z-score"
+      }
+    }
+  },
+  {
+    "iso2": "ID",
+    "name": "Indonesia",
+    "values": {
+      "GDP per-capita growth (% y/y)": {
+        "year": 2024,
+        "value": 4.18,
+        "unit": "% y/y"
+      },
+      "Inflation (% y/y)": {
+        "year": 2023,
+        "value": 3.67,
+        "unit": "% y/y"
+      },
+      "Rule of law (z-score)": {
+        "year": 2023,
+        "value": -0.15,
+        "unit": "z-score"
+      }
+    }
+  },
+  {
+    "iso2": "IE",
+    "name": "Ireland",
+    "values": {
+      "GDP per-capita growth (% y/y)": {
+        "year": 2024,
+        "value": -0.15,
+        "unit": "% y/y"
+      },
+      "Inflation (% y/y)": {
+        "year": 2024,
+        "value": 2.11,
+        "unit": "% y/y"
+      },
+      "Interest payments (% revenue)": {
+        "year": 2022,
+        "value": 2.96,
+        "unit": "% revenue"
+      },
+      "Rule of law (z-score)": {
+        "year": 2023,
+        "value": 1.63,
+        "unit": "z-score"
+      }
+    }
+  },
+  {
+    "iso2": "IL",
+    "name": "Israel",
+    "values": {
+      "GDP per-capita growth (% y/y)": {
+        "year": 2024,
+        "value": -0.4,
+        "unit": "% y/y"
+      },
+      "Inflation (% y/y)": {
+        "year": 2024,
+        "value": 3.06,
+        "unit": "% y/y"
+      },
+      "Interest payments (% revenue)": {
+        "year": 2023,
+        "value": 9.13,
+        "unit": "% revenue"
+      },
+      "Rule of law (z-score)": {
+        "year": 2023,
+        "value": 0.78,
+        "unit": "z-score"
+      }
+    }
+  },
+  {
+    "iso2": "IT",
+    "name": "Italy",
+    "values": {
+      "GDP per-capita growth (% y/y)": {
+        "year": 2024,
+        "value": 0.74,
+        "unit": "% y/y"
+      },
+      "Inflation (% y/y)": {
+        "year": 2024,
+        "value": 0.98,
+        "unit": "% y/y"
+      },
+      "Interest payments (% revenue)": {
+        "year": 2023,
+        "value": 8.94,
+        "unit": "% revenue"
+      },
+      "Rule of law (z-score)": {
+        "year": 2023,
+        "value": 0.39,
+        "unit": "z-score"
+      }
+    }
+  },
+  {
+    "iso2": "JP",
+    "name": "Japan",
+    "values": {
+      "GDP per-capita growth (% y/y)": {
+        "year": 2024,
+        "value": 0.52,
+        "unit": "% y/y"
+      },
+      "Inflation (% y/y)": {
+        "year": 2024,
+        "value": 2.74,
+        "unit": "% y/y"
+      },
+      "Rule of law (z-score)": {
+        "year": 2023,
+        "value": 1.54,
+        "unit": "z-score"
+      }
+    }
+  },
+  {
+    "iso2": "KE",
+    "name": "Kenya",
+    "values": {
+      "GDP per-capita growth (% y/y)": {
+        "year": 2024,
+        "value": 2.47,
+        "unit": "% y/y"
+      },
+      "Inflation (% y/y)": {
+        "year": 2024,
+        "value": 4.49,
+        "unit": "% y/y"
+      },
+      "Interest payments (% revenue)": {
+        "year": 2023,
+        "value": 24.28,
+        "unit": "% revenue"
+      },
+      "Rule of law (z-score)": {
+        "year": 2023,
+        "value": -0.33,
+        "unit": "z-score"
+      }
+    }
+  },
+  {
+    "iso2": "LU",
+    "name": "Luxembourg",
+    "values": {
+      "GDP per-capita growth (% y/y)": {
+        "year": 2024,
+        "value": -0.65,
+        "unit": "% y/y"
+      },
+      "Inflation (% y/y)": {
+        "year": 2024,
+        "value": 2.05,
+        "unit": "% y/y"
+      },
+      "Interest payments (% revenue)": {
+        "year": 2023,
+        "value": 0.59,
+        "unit": "% revenue"
+      },
+      "Rule of law (z-score)": {
+        "year": 2023,
+        "value": 1.75,
+        "unit": "z-score"
+      }
+    }
+  },
+  {
+    "iso2": "MY",
+    "name": "Malaysia",
+    "values": {
+      "GDP per-capita growth (% y/y)": {
+        "year": 2024,
+        "value": 3.84,
+        "unit": "% y/y"
+      },
+      "Inflation (% y/y)": {
+        "year": 2024,
+        "value": 1.83,
+        "unit": "% y/y"
+      },
+      "Interest payments (% revenue)": {
+        "year": 2023,
+        "value": 14.71,
+        "unit": "% revenue"
+      },
+      "Rule of law (z-score)": {
+        "year": 2023,
+        "value": 0.57,
+        "unit": "z-score"
+      }
+    }
+  },
+  {
+    "iso2": "MX",
+    "name": "Mexico",
+    "values": {
+      "GDP per-capita growth (% y/y)": {
+        "year": 2024,
+        "value": 0.58,
+        "unit": "% y/y"
+      },
+      "Inflation (% y/y)": {
+        "year": 2024,
+        "value": 4.72,
+        "unit": "% y/y"
+      },
+      "Interest payments (% revenue)": {
+        "year": 2023,
+        "value": 18.55,
+        "unit": "% revenue"
+      },
+      "Rule of law (z-score)": {
+        "year": 2023,
+        "value": -0.81,
+        "unit": "z-score"
+      }
+    }
+  },
+  {
+    "iso2": "MA",
+    "name": "Morocco",
+    "values": {
+      "GDP per-capita growth (% y/y)": {
+        "year": 2023,
+        "value": 2.34,
+        "unit": "% y/y"
+      },
+      "Inflation (% y/y)": {
+        "year": 2024,
+        "value": 0.99,
+        "unit": "% y/y"
+      },
+      "Interest payments (% revenue)": {
+        "year": 2023,
+        "value": 8.01,
+        "unit": "% revenue"
+      },
+      "Rule of law (z-score)": {
+        "year": 2023,
+        "value": -0.13,
+        "unit": "z-score"
+      }
+    }
+  },
+  {
+    "iso2": "NL",
+    "name": "Netherlands",
+    "values": {
+      "GDP per-capita growth (% y/y)": {
+        "year": 2024,
+        "value": 0.32,
+        "unit": "% y/y"
+      },
+      "Inflation (% y/y)": {
+        "year": 2024,
+        "value": 3.35,
+        "unit": "% y/y"
+      },
+      "Interest payments (% revenue)": {
+        "year": 2023,
+        "value": 1.67,
+        "unit": "% revenue"
+      },
+      "Rule of law (z-score)": {
+        "year": 2023,
+        "value": 1.64,
+        "unit": "z-score"
+      }
+    }
+  },
+  {
+    "iso2": "NZ",
+    "name": "New Zealand",
+    "values": {
+      "GDP per-capita growth (% y/y)": {
+        "year": 2024,
+        "value": -1.88,
+        "unit": "% y/y"
+      },
+      "Inflation (% y/y)": {
+        "year": 2024,
+        "value": 2.92,
+        "unit": "% y/y"
+      },
+      "Interest payments (% revenue)": {
+        "year": 2022,
+        "value": 3.17,
+        "unit": "% revenue"
+      },
+      "Rule of law (z-score)": {
+        "year": 2023,
+        "value": 1.71,
+        "unit": "z-score"
+      }
+    }
+  },
+  {
+    "iso2": "NG",
+    "name": "Nigeria",
+    "values": {
+      "GDP per-capita growth (% y/y)": {
+        "year": 2024,
+        "value": 1.29,
+        "unit": "% y/y"
+      },
+      "Inflation (% y/y)": {
+        "year": 2024,
+        "value": 33.24,
+        "unit": "% y/y"
+      },
+      "Rule of law (z-score)": {
+        "year": 2023,
+        "value": -0.89,
+        "unit": "z-score"
+      }
+    }
+  },
+  {
+    "iso2": "NO",
+    "name": "Norway",
+    "values": {
+      "GDP per-capita growth (% y/y)": {
+        "year": 2024,
+        "value": 1.14,
+        "unit": "% y/y"
+      },
+      "Inflation (% y/y)": {
+        "year": 2024,
+        "value": 3.15,
+        "unit": "% y/y"
+      },
+      "Interest payments (% revenue)": {
+        "year": 2023,
+        "value": 1.03,
+        "unit": "% revenue"
+      },
+      "Rule of law (z-score)": {
+        "year": 2023,
+        "value": 1.83,
+        "unit": "z-score"
+      }
+    }
+  },
+  {
+    "iso2": "PK",
+    "name": "Pakistan",
+    "values": {
+      "GDP per-capita growth (% y/y)": {
+        "year": 2024,
+        "value": 1.69,
+        "unit": "% y/y"
+      },
+      "Inflation (% y/y)": {
+        "year": 2024,
+        "value": 12.63,
+        "unit": "% y/y"
+      },
+      "Rule of law (z-score)": {
+        "year": 2023,
+        "value": -0.86,
+        "unit": "z-score"
+      }
+    }
+  },
+  {
+    "iso2": "PE",
+    "name": "Peru",
+    "values": {
+      "GDP per-capita growth (% y/y)": {
+        "year": 2024,
+        "value": 2.18,
+        "unit": "% y/y"
+      },
+      "Inflation (% y/y)": {
+        "year": 2024,
+        "value": 2.01,
+        "unit": "% y/y"
+      },
+      "Interest payments (% revenue)": {
+        "year": 2021,
+        "value": 6.55,
+        "unit": "% revenue"
+      },
+      "Rule of law (z-score)": {
+        "year": 2023,
+        "value": -0.54,
+        "unit": "z-score"
+      }
+    }
+  },
+  {
+    "iso2": "PH",
+    "name": "Philippines",
+    "values": {
+      "GDP per-capita growth (% y/y)": {
+        "year": 2024,
+        "value": 4.82,
+        "unit": "% y/y"
+      },
+      "Inflation (% y/y)": {
+        "year": 2024,
+        "value": 3.21,
+        "unit": "% y/y"
+      },
+      "Interest payments (% revenue)": {
+        "year": 2023,
+        "value": 16.43,
+        "unit": "% revenue"
+      },
+      "Rule of law (z-score)": {
+        "year": 2023,
+        "value": -0.42,
+        "unit": "z-score"
+      }
+    }
+  },
+  {
+    "iso2": "PL",
+    "name": "Poland",
+    "values": {
+      "GDP per-capita growth (% y/y)": {
+        "year": 2024,
+        "value": 3.3,
+        "unit": "% y/y"
+      },
+      "Inflation (% y/y)": {
+        "year": 2024,
+        "value": 3.79,
+        "unit": "% y/y"
+      },
+      "Interest payments (% revenue)": {
+        "year": 2023,
+        "value": 5.22,
+        "unit": "% revenue"
+      },
+      "Rule of law (z-score)": {
+        "year": 2023,
+        "value": 0.46,
+        "unit": "z-score"
+      }
+    }
+  },
+  {
+    "iso2": "PT",
+    "name": "Portugal",
+    "values": {
+      "GDP per-capita growth (% y/y)": {
+        "year": 2024,
+        "value": 0.75,
+        "unit": "% y/y"
+      },
+      "Inflation (% y/y)": {
+        "year": 2024,
+        "value": 2.42,
+        "unit": "% y/y"
+      },
+      "Interest payments (% revenue)": {
+        "year": 2023,
+        "value": 5.49,
+        "unit": "% revenue"
+      },
+      "Rule of law (z-score)": {
+        "year": 2023,
+        "value": 1.07,
+        "unit": "z-score"
+      }
+    }
+  },
+  {
+    "iso2": "QA",
+    "name": "Qatar",
+    "values": {
+      "GDP per-capita growth (% y/y)": {
+        "year": 2024,
+        "value": -4.49,
+        "unit": "% y/y"
+      },
+      "Inflation (% y/y)": {
+        "year": 2024,
+        "value": 1.27,
+        "unit": "% y/y"
+      },
+      "Rule of law (z-score)": {
+        "year": 2023,
+        "value": 0.93,
+        "unit": "z-score"
+      }
+    }
+  },
+  {
+    "iso2": "RO",
+    "name": "Romania",
+    "values": {
+      "GDP per-capita growth (% y/y)": {
+        "year": 2024,
+        "value": 0.76,
+        "unit": "% y/y"
+      },
+      "Inflation (% y/y)": {
+        "year": 2024,
+        "value": 5.72,
+        "unit": "% y/y"
+      },
+      "Interest payments (% revenue)": {
+        "year": 2022,
+        "value": 4.63,
+        "unit": "% revenue"
+      },
+      "Rule of law (z-score)": {
+        "year": 2023,
+        "value": 0.44,
+        "unit": "z-score"
+      }
+    }
+  },
+  {
+    "iso2": "SA",
+    "name": "Saudi Arabia",
+    "values": {
+      "GDP per-capita growth (% y/y)": {
+        "year": 2024,
+        "value": -2.8,
+        "unit": "% y/y"
+      },
+      "Inflation (% y/y)": {
+        "year": 2024,
+        "value": 1.69,
+        "unit": "% y/y"
+      },
+      "Interest payments (% revenue)": {
+        "year": 2023,
+        "value": 3.12,
+        "unit": "% revenue"
+      },
+      "Rule of law (z-score)": {
+        "year": 2023,
+        "value": 0.41,
+        "unit": "z-score"
+      }
+    }
+  },
+  {
+    "iso2": "SG",
+    "name": "Singapore",
+    "values": {
+      "GDP per-capita growth (% y/y)": {
+        "year": 2024,
+        "value": 2.33,
+        "unit": "% y/y"
+      },
+      "Inflation (% y/y)": {
+        "year": 2024,
+        "value": 2.39,
+        "unit": "% y/y"
+      },
+      "Interest payments (% revenue)": {
+        "year": 2023,
+        "value": 0.42,
+        "unit": "% revenue"
+      },
+      "Rule of law (z-score)": {
+        "year": 2023,
+        "value": 1.75,
+        "unit": "z-score"
+      }
+    }
+  },
+  {
+    "iso2": "ZA",
+    "name": "South Africa",
+    "values": {
+      "GDP per-capita growth (% y/y)": {
+        "year": 2024,
+        "value": -0.67,
+        "unit": "% y/y"
+      },
+      "Inflation (% y/y)": {
+        "year": 2024,
+        "value": 4.36,
+        "unit": "% y/y"
+      },
+      "Interest payments (% revenue)": {
+        "year": 2022,
+        "value": 15.62,
+        "unit": "% revenue"
+      },
+      "Rule of law (z-score)": {
+        "year": 2023,
+        "value": 0.09,
+        "unit": "z-score"
+      }
+    }
+  },
+  {
+    "iso2": "ES",
+    "name": "Spain",
+    "values": {
+      "GDP per-capita growth (% y/y)": {
+        "year": 2024,
+        "value": 2.18,
+        "unit": "% y/y"
+      },
+      "Inflation (% y/y)": {
+        "year": 2024,
+        "value": 2.77,
+        "unit": "% y/y"
+      },
+      "Interest payments (% revenue)": {
+        "year": 2023,
+        "value": 6.37,
+        "unit": "% revenue"
+      },
+      "Rule of law (z-score)": {
+        "year": 2023,
+        "value": 0.82,
+        "unit": "z-score"
+      }
+    }
+  },
+  {
+    "iso2": "SE",
+    "name": "Sweden",
+    "values": {
+      "GDP per-capita growth (% y/y)": {
+        "year": 2024,
+        "value": 0.66,
+        "unit": "% y/y"
+      },
+      "Inflation (% y/y)": {
+        "year": 2024,
+        "value": 2.84,
+        "unit": "% y/y"
+      },
+      "Interest payments (% revenue)": {
+        "year": 2022,
+        "value": 1.37,
+        "unit": "% revenue"
+      },
+      "Rule of law (z-score)": {
+        "year": 2023,
+        "value": 1.6,
+        "unit": "z-score"
+      }
+    }
+  },
+  {
+    "iso2": "CH",
+    "name": "Switzerland",
+    "values": {
+      "GDP per-capita growth (% y/y)": {
+        "year": 2024,
+        "value": -0.33,
+        "unit": "% y/y"
+      },
+      "Inflation (% y/y)": {
+        "year": 2024,
+        "value": 1.06,
+        "unit": "% y/y"
+      },
+      "Interest payments (% revenue)": {
+        "year": 2023,
+        "value": 0.95,
+        "unit": "% revenue"
+      },
+      "Rule of law (z-score)": {
+        "year": 2023,
+        "value": 1.76,
+        "unit": "z-score"
+      }
+    }
+  },
+  {
+    "iso2": "TH",
+    "name": "Thailand",
+    "values": {
+      "GDP per-capita growth (% y/y)": {
+        "year": 2024,
+        "value": 2.58,
+        "unit": "% y/y"
+      },
+      "Inflation (% y/y)": {
+        "year": 2024,
+        "value": 1.37,
+        "unit": "% y/y"
+      },
+      "Interest payments (% revenue)": {
+        "year": 2023,
+        "value": 5.72,
+        "unit": "% revenue"
+      },
+      "Rule of law (z-score)": {
+        "year": 2023,
+        "value": 0.24,
+        "unit": "z-score"
+      }
+    }
+  },
+  {
+    "iso2": "UA",
+    "name": "Ukraine",
+    "values": {
+      "GDP per-capita growth (% y/y)": {
+        "year": 2023,
+        "value": 15.22,
+        "unit": "% y/y"
+      },
+      "Inflation (% y/y)": {
+        "year": 2024,
+        "value": 6.5,
+        "unit": "% y/y"
+      },
+      "Interest payments (% revenue)": {
+        "year": 2023,
+        "value": 8,
+        "unit": "% revenue"
+      },
+      "Rule of law (z-score)": {
+        "year": 2023,
+        "value": -0.89,
+        "unit": "z-score"
+      }
+    }
+  },
+  {
+    "iso2": "AE",
+    "name": "United Arab Emirates",
+    "values": {
+      "GDP per-capita growth (% y/y)": {
+        "year": 2024,
+        "value": 0.01,
+        "unit": "% y/y"
+      },
+      "Inflation (% y/y)": {
+        "year": 2024,
+        "value": 1.66,
+        "unit": "% y/y"
+      },
+      "Interest payments (% revenue)": {
+        "year": 2023,
+        "value": 1.92,
+        "unit": "% revenue"
+      },
+      "Rule of law (z-score)": {
+        "year": 2023,
+        "value": 0.88,
+        "unit": "z-score"
+      }
+    }
+  },
+  {
+    "iso2": "GB",
+    "name": "United Kingdom",
+    "values": {
+      "GDP per-capita growth (% y/y)": {
+        "year": 2024,
+        "value": 0.03,
+        "unit": "% y/y"
+      },
+      "Inflation (% y/y)": {
+        "year": 2024,
+        "value": 3.27,
+        "unit": "% y/y"
+      },
+      "Interest payments (% revenue)": {
+        "year": 2023,
+        "value": 9.03,
+        "unit": "% revenue"
+      },
+      "Rule of law (z-score)": {
+        "year": 2023,
+        "value": 1.4,
+        "unit": "z-score"
+      }
+    }
+  },
+  {
+    "iso2": "US",
+    "name": "United States",
+    "values": {
+      "GDP per-capita growth (% y/y)": {
+        "year": 2024,
+        "value": 1.8,
+        "unit": "% y/y"
+      },
+      "Inflation (% y/y)": {
+        "year": 2024,
+        "value": 2.95,
+        "unit": "% y/y"
+      },
+      "Interest payments (% revenue)": {
+        "year": 2023,
+        "value": 17.98,
+        "unit": "% revenue"
+      },
+      "Rule of law (z-score)": {
+        "year": 2023,
+        "value": 1.33,
+        "unit": "z-score"
+      }
+    }
+  }
+]

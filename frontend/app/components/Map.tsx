@@ -15,12 +15,16 @@ type RiskDot = {
   name: string;
   lngLat: [number, number]; // [lng, lat]
   risk: number;             // 0..1
+  prevRisk?: number;        // previous period risk if available
+  iso2?: string;            // <- optional ISO2 for flag
 };
 
 type Selected = {
   name: string;
   risk: number;
+  prevRisk?: number;
   lngLat: [number, number];
+  iso2?: string;            // <- carry ISO2 into sidebar
 } | null;
 
 export default function Map({ bounds, center = [0, 20], zoom = 2.5 }: Props) {
@@ -34,9 +38,9 @@ export default function Map({ bounds, center = [0, 20], zoom = 2.5 }: Props) {
   const [selected, setSelected] = useState<Selected>(null);
 
   // Zooms
-  const FOCUS_ZOOM = 3;      // desired zoom when clicking a marker
-  const DEFAULT_ZOOM = 2;    // when clicking off or closing sidebar
-  const LOCK_ZOOM_THRESHOLD = 3; // if current zoom > 3, don't auto-zoom-out on dismiss
+  const FOCUS_ZOOM = 3.5;      // desired zoom when clicking a marker
+  const DEFAULT_ZOOM = 2.5;    // when clicking off or closing sidebar
+  const LOCK_ZOOM_THRESHOLD = 3.5; // if current zoom > 3, don't auto-zoom-out on dismiss
 
   // --- Helpers (pure) ---
   const colorForRisk = (r: number) => {
@@ -45,24 +49,22 @@ export default function Map({ bounds, center = [0, 20], zoom = 2.5 }: Props) {
     return '#39ff14';                // green
   };
 
-  // Sidebar is min(420px, 25vw) — mirror of RiskSidebar
+  // Sidebar is min(600px, 40vw)
   const getSidebarWidthPx = () => {
-    const vwWidth = typeof window !== 'undefined' ? window.innerWidth * 0.25 : 0;
-    return Math.min(420, Math.round(vwWidth || 0));
+    const vwWidth = typeof window !== 'undefined' ? window.innerWidth * 0.40 : 0;
+    return Math.min(600, Math.round(vwWidth || 0));
   };
 
-  // Smoothly pan so the clicked marker ends up visually centered in the free (right) area.
-  // If the current zoom is already > FOCUS_ZOOM, do NOT change the zoom (avoid zoom-out).
   const panToMarker = (lngLat: [number, number], targetZoom: number = FOCUS_ZOOM) => {
     const map = mapRef.current;
     if (!map) return;
 
-    const offsetX = Math.round(getSidebarWidthPx() / 2 + 8); // tiny extra buffer
+    const offsetX = Math.round(getSidebarWidthPx() / 2 + 8);
 
     const options: any = {
       center: lngLat,
       duration: 650,
-      offset: [offsetX, 0], // shift the camera so the marker appears right of center
+      offset: [offsetX, 0],
       essential: true,
     };
 
@@ -75,8 +77,6 @@ export default function Map({ bounds, center = [0, 20], zoom = 2.5 }: Props) {
     map.easeTo(options);
   };
 
-  // Reset to the default zoom (no special offset).
-  // By default, respects the "lock" and will NOT zoom out if current zoom > LOCK_ZOOM_THRESHOLD.
   const resetZoom = (opts?: { respectHighZoom?: boolean }) => {
     const map = mapRef.current;
     if (!map) return;
@@ -85,7 +85,6 @@ export default function Map({ bounds, center = [0, 20], zoom = 2.5 }: Props) {
     const current = map.getZoom();
 
     if (respect && current > LOCK_ZOOM_THRESHOLD) {
-      // Keep current zoom; optionally recentre or clear offset if desired:
       map.easeTo({ duration: 300, offset: [0, 0], essential: true });
       return;
     }
@@ -131,7 +130,6 @@ export default function Map({ bounds, center = [0, 20], zoom = 2.5 }: Props) {
     wrap.setAttribute('role', 'button');
     wrap.setAttribute('aria-label', `${title} risk ${risk.toFixed(2)}`);
 
-    // Prevent map click handlers / default behaviors from firing
     const open = (e?: Event) => {
       if (e) {
         e.preventDefault();
@@ -209,7 +207,7 @@ export default function Map({ bounds, center = [0, 20], zoom = 2.5 }: Props) {
   // --- One-time map initialization (guarded) ---
   useEffect(() => {
     if (!containerRef.current) return;
-    if (mapRef.current) return; // prevent re-initialization on re-render / StrictMode
+    if (mapRef.current) return;
 
     aborterRef.current = new AbortController();
     const aborter = aborterRef.current;
@@ -233,18 +231,12 @@ export default function Map({ bounds, center = [0, 20], zoom = 2.5 }: Props) {
     }
 
     map.addControl(new maplibregl.NavigationControl({ visualizePitch: false }), 'top-right');
-    map.addControl(
-      new maplibregl.AttributionControl({
-        compact: true
-      }),
-    );
+    map.addControl(new maplibregl.AttributionControl({ compact: true }));
 
-    // === Post-style tweaks (run on load and whenever style loads) ===
     const showOnlyCountryLabels = () => {
       const layers = (map.getStyle()?.layers ?? []) as any[];
       for (const layer of layers) {
         const srcLayer = (layer as any)['source-layer'] as string | undefined;
-
         if (layer.type === 'symbol' && srcLayer && /place|place_label/i.test(srcLayer)) {
           map.setFilter(layer.id, ['==', ['get', 'class'], 'country']);
         }
@@ -287,13 +279,8 @@ export default function Map({ bounds, center = [0, 20], zoom = 2.5 }: Props) {
       for (const layer of layers) {
         const srcLayer = (layer as any)['source-layer'] as string | undefined;
         if (!srcLayer) continue;
-
-        if (srcLayer === 'transportation') {
-          map.setLayoutProperty(layer.id, 'visibility', 'none');
-        }
-        if (srcLayer === 'transportation_name') {
-          map.setLayoutProperty(layer.id, 'visibility', 'none');
-        }
+        if (srcLayer === 'transportation') map.setLayoutProperty(layer.id, 'visibility', 'none');
+        if (srcLayer === 'transportation_name') map.setLayoutProperty(layer.id, 'visibility', 'none');
       }
     };
 
@@ -308,17 +295,14 @@ export default function Map({ bounds, center = [0, 20], zoom = 2.5 }: Props) {
       applyAllTweaks();
 
       try {
-        // 1) Trigger weekly refresh and read the result (server may skip if < 7 days)
         const r = await fetch('/api/refresh-risk', { method: 'POST' });
         const refresh = await r.json().catch(() => ({} as any));
         console.log('refresh-risk result:', r.status, refresh);
 
-        // 2) Build a cache-busted URL (use lastRun if present; otherwise, Date.now)
         let riskUrl = '/api/risk.json';
         const buster = refresh?.lastRun ?? String(Date.now());
         riskUrl += `?v=${encodeURIComponent(buster)}`;
 
-        // 3) Load risk.json FRESH (no browser cache)
         const res = await fetch(riskUrl, {
           signal: aborter?.signal,
           cache: 'no-store',
@@ -328,12 +312,10 @@ export default function Map({ bounds, center = [0, 20], zoom = 2.5 }: Props) {
         const dots: RiskDot[] = await res.json();
         console.log(`Loaded ${dots.length} risk markers`);
 
-        // 4) Draw markers
-        dots.forEach(({ name, lngLat, risk }) => {
+        dots.forEach(({ name, lngLat, risk, iso2, prevRisk }) => {
           const el = makeDotEl(name, risk, () => {
-            // Slide camera; only zoom to FOCUS_ZOOM if current zoom ≤ 3
             panToMarker(lngLat, FOCUS_ZOOM);
-            setSelected({ name, risk, lngLat });
+            setSelected({ name, risk, prevRisk, lngLat, iso2 }); // <- keep prevRisk + iso2
           });
 
           const marker = new maplibregl.Marker({
@@ -353,16 +335,19 @@ export default function Map({ bounds, center = [0, 20], zoom = 2.5 }: Props) {
       }
     });
 
-    // Close panel when clicking on bare map (not markers) and reset zoom (but don't zoom out if > 3)
     map.on('click', () => {
       setSelected(null);
-      resetZoom(); // respects LOCK_ZOOM_THRESHOLD by default
+      resetZoom();
     });
 
-    // Re-apply tweaks if style reloads (e.g., tiles or style switch)
-    map.on('styledata', applyAllTweaks);
+    map.on('styledata', () => {
+      // re-apply tweaks on style changes
+      showOnlyCountryLabels();
+      forceEnglishCountryNames();
+      showOnlyCountryBorders();
+      hideRoads();
+    });
 
-    // Cleanup on unmount only
     return () => {
       aborter?.abort();
       markersRef.current.forEach((m) => m.remove());
@@ -370,7 +355,6 @@ export default function Map({ bounds, center = [0, 20], zoom = 2.5 }: Props) {
       map.remove();
       mapRef.current = null;
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // ← INIT ONCE
 
   // --- Respond to prop changes without re-creating the map ---
@@ -378,20 +362,17 @@ export default function Map({ bounds, center = [0, 20], zoom = 2.5 }: Props) {
     const map = mapRef.current;
     if (!map) return;
 
-    // Optionally keep the view in sync with props
     if (bounds) {
       try {
         map.setMaxBounds(bounds);
         map.fitBounds(bounds, { padding: 40, duration: 0 });
       } catch {
-        /* ignore fit errors during early load */
+        /* ignore */
       }
     }
-
     if (center) map.setCenter(center);
     if (typeof zoom === 'number') map.setZoom(zoom);
   }, [
-    // Safe-ish deps for arrays:
     bounds ? JSON.stringify(bounds) : 'no-bounds',
     center ? `${center[0]},${center[1]}` : 'no-center',
     zoom ?? 'no-zoom',
@@ -405,17 +386,26 @@ export default function Map({ bounds, center = [0, 20], zoom = 2.5 }: Props) {
       {/* Persistent left sidebar — hides when RiskSidebar is open */}
       <TableSidebar
         open={!selected}
-        onSelectCountry={(dot) => {
-          // dot has { name, risk, lngLat }
-          panToMarker(dot.lngLat, FOCUS_ZOOM); // respects the "don't zoom out if already > 3" rule
-          setSelected(dot);
+        onSelectCountry={(dot: any) => {
+          panToMarker(dot.lngLat, FOCUS_ZOOM);
+          setSelected({
+            name: dot.name,
+            risk: dot.risk,
+            prevRisk: dot.prevRisk,
+            lngLat: dot.lngLat,
+            iso2: dot.iso2
+          });
         }}
       />
 
       {/* Country detail (right) */}
       <RiskSidebar
         open={!!selected}
-        country={selected ? { name: selected.name, risk: selected.risk } : null}
+        country={
+          selected
+            ? { name: selected.name, risk: selected.risk, prevRisk: selected.prevRisk, iso2: selected.iso2 }
+            : null
+        }
         onClose={handleCloseSidebar}
       />
     </div>
