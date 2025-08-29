@@ -1,9 +1,9 @@
-// app/lib/risk-client.ts
 
 export type CountryRisk = {
   name: string;
   lngLat: [number, number]; // [lng, lat]
-  risk: number;             // 0..1
+  risk: number;             // 0..1 (current risk)
+  prevRisk?: number;        // previous period's risk (from DB)
   iso2?: string;            // populated by weekly refresh
 };
 

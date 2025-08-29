@@ -17,6 +17,8 @@ export type JoinedLatestRisk = {
   as_of: string;
   score: number;
   bullet_summary: string;
+  prev_as_of?: string | null;
+  prev_score?: number | null;
 };
 
 declare global {
@@ -65,19 +67,52 @@ export async function fetchLatestRiskSnapshotsFromDB(): Promise<DBRiskSnapshot[]
   return rows;
 }
 
+/**
+ * Returns latest and previous risk snapshot per country.
+ * - Latest = rn = 1 (max as_of)
+ * - Previous = rn = 2 (the period immediately before the latest)
+ */
 export async function fetchJoinedLatestRisksFromDB(): Promise<JoinedLatestRisk[]> {
   const pool = await getPool();
   const { rows } = await pool.query<JoinedLatestRisk>(
-    `WITH latest AS (
-       SELECT DISTINCT ON (country_iso2)
-              country_iso2, as_of, score, bullet_summary
-         FROM risk_snapshot
-     ORDER BY country_iso2, as_of DESC
+    `
+    WITH ranked AS (
+      SELECT
+        rs.country_iso2,
+        rs.as_of,
+        rs.score,
+        rs.bullet_summary,
+        ROW_NUMBER() OVER (
+          PARTITION BY rs.country_iso2
+          ORDER BY rs.as_of DESC
+        ) AS rn
+      FROM risk_snapshot rs
+    ),
+    latest AS (
+      SELECT country_iso2, as_of, score, bullet_summary
+      FROM ranked
+      WHERE rn = 1
+    ),
+    prev AS (
+      SELECT country_iso2, as_of AS prev_as_of, score AS prev_score
+      FROM ranked
+      WHERE rn = 2
     )
-    SELECT c.iso2, c.name, l.as_of, l.score, l.bullet_summary
-      FROM latest l
-      JOIN country c ON c.iso2 = l.country_iso2
-    ORDER BY c.name ASC;`
+    SELECT
+      c.iso2,
+      c.name,
+      l.as_of,
+      l.score,
+      l.bullet_summary,
+      p.prev_as_of,
+      p.prev_score
+    FROM latest l
+    LEFT JOIN prev p
+      ON p.country_iso2 = l.country_iso2
+    JOIN country c
+      ON c.iso2 = l.country_iso2
+    ORDER BY c.name ASC;
+    `
   );
   return rows;
 }
@@ -212,18 +247,7 @@ export async function fetchLatestIndicatorValuesFromDB(): Promise<CountryIndicat
 }
 
 /**
- * Writes public/api/indicator_latest.json with:
- * [
- *   { iso2, name, values: {
- *       "Rule of law (z-score)": { year, value, unit? },
- *       "Inflation (% y/y)": { ... },
- *       "Interest payments (% revenue)": { ... },
- *       "GDP per-capita growth (% y/y)": { ... }
- *   }},
- *   ...
- * ]
- *
- * Returns the number of countries written.
+ * Writes public/api/indicator_latest.json … (omitted for brevity above)
  */
 async function writeLatestIndicatorValuesJson(): Promise<number> {
   const { fs, path } = await nodeFs();
@@ -239,15 +263,11 @@ async function writeLatestIndicatorValuesJson(): Promise<number> {
 
 /**
  * Refresh public/api/risk.json by updating ONLY:
- *  - risk score (from Neon)
- *  - iso2 (from Neon)
- * It preserves all existing entries and their lngLat coordinates.
- * Also writes public/api/risk_summary.json with ALL latest
- * { country_iso2, bullet_summary } rows (one per country, if summary is present).
- * Skips if run < 7 days ago. Also updates public/api/risk._meta.json.
- *
- * Additionally writes public/api/indicator_latest.json with the most recent
- * values (and year/unit) for four target indicators per country.
+ *  - risk (latest DB score)
+ *  - iso2 (DB)
+ *  - prevRisk (DB score from the period immediately before the latest as_of)
+ * Preserves lngLat and other fields. Also writes risk_summary.json (latest
+ * summaries only) and indicator_latest.json. Skips if run < 7 days ago.
  */
 export async function refreshRiskJsonWeekly(): Promise<RefreshOutcome> {
   assertServer();
@@ -276,22 +296,26 @@ export async function refreshRiskJsonWeekly(): Promise<RefreshOutcome> {
       };
     }
 
-    // 3) Pull latest risks/summaries from Neon
+    // 3) Pull latest + previous risks/summaries from Neon
     const joined = await fetchJoinedLatestRisksFromDB();
 
-    // 4) Build a lookup by normalized country name -> { iso2, score }
+    // 4) Build a lookup by normalized country name -> { iso2, score, prevScore }
     const normalize = (s: string) => s.trim().toLowerCase();
-    const dbMap = new Map<string, { iso2: string; score: number }>();
+    const dbMap = new Map<string, { iso2: string; score: number; prevScore: number | null }>();
     for (const row of joined) {
-      dbMap.set(normalize(row.name), { iso2: row.iso2, score: Number(row.score) });
+      dbMap.set(normalize(row.name), {
+        iso2: row.iso2,
+        score: Number(row.score),
+        prevScore: row.prev_score == null ? null : Number(row.prev_score),
+      });
     }
 
-    // 5) Update only `risk` and add/refresh `iso2` for matched countries; keep others as-is
+    // 5) Update risk/iso2 and set prevRisk from DB's previous snapshot
     let matchedCount = 0;
     let changedCount = 0;
     const seenDb = new Set<string>();
 
-    const updated = existing.map((d) => {
+    const updated: CountryRisk[] = existing.map((d) => {
       const key = normalize(d.name);
       if (dbMap.has(key)) {
         matchedCount++;
@@ -302,8 +326,14 @@ export async function refreshRiskJsonWeekly(): Promise<RefreshOutcome> {
         const iso2Changed = (d as any).iso2 !== rec.iso2;
         if (riskChanged || iso2Changed) changedCount++;
 
-        // Preserve lngLat and everything else; only set risk + iso2
-        return { ...d, risk: rec.score, iso2: rec.iso2 } as CountryRisk;
+        const out: any = { ...d, risk: rec.score, iso2: rec.iso2 };
+        if (rec.prevScore != null && Number.isFinite(rec.prevScore)) {
+          out.prevRisk = rec.prevScore;
+        } else {
+          // Ensure we don't carry stale prevRisk if DB has no previous row.
+          delete out.prevRisk;
+        }
+        return out as CountryRisk;
       }
       return d;
     });
@@ -317,7 +347,7 @@ export async function refreshRiskJsonWeekly(): Promise<RefreshOutcome> {
       }
     }
 
-    // 7) Write updated risk.json (scores + iso2; lngLat preserved)
+    // 7) Write updated risk.json
     await fs.mkdir(path.dirname(riskJsonPath), { recursive: true });
     await fs.writeFile(riskJsonPath, JSON.stringify(updated, null, 2) + "\n", "utf8");
 
@@ -336,11 +366,12 @@ export async function refreshRiskJsonWeekly(): Promise<RefreshOutcome> {
     const metaOut: MetaFile = {
       last_run: now,
       source: "neon",
-      note: "Updated risk scores + iso2 and wrote risk_summary.json; preserved existing coords (lngLat).",
+      note:
+        "Updated risk + iso2 and prevRisk (from previous DB snapshot) and wrote risk_summary.json; preserved lngLat.",
     };
     await fs.writeFile(metaJsonPath, JSON.stringify(metaOut, null, 2) + "\n", "utf8");
 
-    // 10) Also write the latest indicator values snapshot (separate JSON)
+    // 10) Also write the latest indicator values snapshot
     const indicatorsWritten = await writeLatestIndicatorValuesJson();
     console.log(`Wrote indicator_latest.json for ${indicatorsWritten} countries`);
 
