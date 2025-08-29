@@ -1,22 +1,17 @@
+// /components/Sidebar/RiskSidebar.tsx
 'use client';
 
 import { useEffect } from 'react';
+import RiskReadingSection from './Sidebar/RiskReadingSection';
+import AiSummary from './Sidebar/AiSummary';
 
 type Props = {
   open: boolean;
   onClose: () => void;
-  country: { name: string; risk: number } | null;
-  /** Total duration (ms) for the clip-path reveal. Default 360. */
+  country: { name: string; risk: number; prevRisk?: number; iso2?: string } | null;
   durationMs?: number;
-  /** CSS easing for both clip-path and opacity transitions. Default 'ease'. */
   easing?: string;
 };
-
-function colorForRisk(r: number) {
-  if (r > 0.7) return '#ff2d55';   // red
-  if (r >= 0.5) return '#ffd60a';  // yellow
-  return '#39ff14';                // green
-}
 
 export default function RiskSidebar({
   open,
@@ -34,18 +29,13 @@ export default function RiskSidebar({
     return () => window.removeEventListener('keydown', onKey);
   }, [onClose]);
 
-  const panelWidth = 'min(420px, 25vw)';
-  // Make opacity a bit shorter so it feels snappier
+  const panelWidth = 'min(600px, 40vw)';
   const fadeMs = Math.max(120, Math.round(durationMs * 0.6));
+  const flagSrc = country?.iso2 ? `/flags/${country.iso2.toUpperCase()}.svg` : null;
 
   return (
     <>
-      {/* Dim backdrop */}
-      <div
-        className={`backdrop ${open ? 'open' : ''}`}
-        onClick={onClose}
-        aria-hidden={!open}
-      />
+      <div className={`backdrop ${open ? 'open' : ''}`} onClick={onClose} aria-hidden={!open} />
 
       <aside
         aria-hidden={!open}
@@ -64,16 +54,19 @@ export default function RiskSidebar({
           <button onClick={onClose} aria-label="Close panel" className="closeBtn">
             ×
           </button>
-          <div className="title">
-            <strong>{country?.name ?? '—'}</strong>
-            <span className="subtitle">Country Risk Overview</span>
+          <div className="titleRow">
+            <strong className="countryName">{country?.name ?? '—'}</strong>
+            {flagSrc && (
+              <img
+                className="flag"
+                src={flagSrc}
+                alt={`${country?.name ?? 'Country'} flag`}
+                width={10}
+                height={10}
+                loading="eager"
+              />
+            )}
           </div>
-          {country && (
-            <span className="pill" title={`Risk ${country.risk.toFixed(2)}`}>
-              <span className="dot" style={{ background: colorForRisk(country.risk) }} />
-              {country.risk.toFixed(2)}
-            </span>
-          )}
         </header>
 
         <div className="content">
@@ -82,27 +75,21 @@ export default function RiskSidebar({
           ) : (
             <>
               <section className="card">
-                <h3>Summary</h3>
-                <p>
-                  This is where your monthly AI summary for <b>{country.name}</b> will go.
-                  You can fetch it alongside <code>risk.json</code> or via another API route.
-                </p>
+                <h3></h3>
+                <RiskReadingSection
+                  countryName={country?.name}
+                  iso2={country?.iso2}
+                  currentRisk={country?.risk}
+                  prevRisk={country?.prevRisk}
+                  active={open}
+                />
               </section>
 
-              <section className="card">
-                <h3>Signals</h3>
-                <ul>
-                  <li>Conflict / war</li>
-                  <li>Political stability</li>
-                  <li>Governance / corruption</li>
-                  <li>Macro volatility</li>
-                  <li>Regulatory uncertainty</li>
-                </ul>
-              </section>
+              <div className="custom-divider" />
 
               <section className="card">
-                <h3>Last updated (updated Monthly)</h3>
-                <p>End of last month (scheduled run).</p>
+                <h3>Ai Summary (GPT 4o)</h3>
+                <AiSummary iso2={country?.iso2} active={open} />
               </section>
             </>
           )}
@@ -113,87 +100,50 @@ export default function RiskSidebar({
         :global(*) { box-sizing: border-box; }
 
         .backdrop {
-          position: absolute;
-          inset: 0;
-          background: rgba(0,0,0,0.0);
-          opacity: 0;
+          position: absolute; inset: 0;
+          background: rgba(0, 0, 0, 0.0); opacity: 0;
           transition: opacity var(--fadeMs, 220ms) var(--easing, ease);
-          pointer-events: none;
-          z-index: 8;
+          pointer-events: none; z-index: 8;
         }
-        .backdrop.open {
-          background: rgba(0,0,0,0.35);
-          opacity: 1;
-          pointer-events: auto;
-        }
+        .backdrop.open { background: rgba(0, 0, 0, 0.35); opacity: 1; pointer-events: auto; }
 
         .sidebar {
-          position: absolute;
-          top: 0;
-          left: 0;
-          height: 100dvh;
-          width: var(--w);
-          background: rgba(14,14,14,0.96);
-          color: #fff;
-          border-right: 1px solid rgba(255,255,255,0.08);
-          backdrop-filter: blur(8px);
-          -webkit-backdrop-filter: blur(8px);
-          z-index: 10;
-          display: flex;
-          flex-direction: column;
-          box-shadow: 0 0 24px rgba(0,0,0,0.35);
+          position: absolute; top: 0; left: 0; height: 100dvh; width: var(--w);
+          background: rgba(14, 14, 14, 0.96); color: #fff;
+          border-right: 1px solid rgba(255, 255, 255, 0.08);
+          backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+          z-index: 10; display: flex; flex-direction: column;
+          box-shadow: 0 0 24px rgba(0, 0, 0, 0.35);
           will-change: clip-path, opacity;
-          /* Applies for both open and close */
           transition: clip-path var(--revealMs, 360ms) var(--easing, ease),
-                      opacity   var(--fadeMs, 220ms)   var(--easing, ease);
+                      opacity var(--fadeMs, 220ms) var(--easing, ease);
         }
-
-        /* Reveal animation states (open & close) */
         .sidebar.closed { clip-path: inset(0 100% 0 0); opacity: 0; }
-        .sidebar.open   { clip-path: inset(0 0 0 0);     opacity: 1; }
+        .sidebar.open   { clip-path: inset(0 0 0 0);   opacity: 1; }
 
-        .bar {
-          display: flex;
-          align-items: center;
-          gap: 12px;
-          padding: 14px 16px;
-          border-bottom: 1px solid rgba(255,255,255,0.08);
-        }
+        .bar { display: flex; align-items: center; gap: 12px; padding: 14px 16px;
+               border-bottom: 1px solid rgba(255, 255, 255, 0.08); }
         .closeBtn {
-          width: 36px; height: 36px;
-          border-radius: 12px;
-          border: 1px solid rgba(255,255,255,0.15);
-          background: rgba(255,255,255,0.06);
-          color: #fff; cursor: pointer; font-size: 18px; line-height: 36px;
+          width: 36px; height: 36px; border-radius: 12px;
+          border: 1px solid rgba(255, 255, 255, 0.15);
+          background: rgba(255, 255, 255, 0.06); color: #fff;
+          cursor: pointer; font-size: 18px; line-height: 36px;
         }
-        .title { display: flex; flex-direction: column; }
-        .title strong { font-size: 18px; line-height: 1.2; }
-        .subtitle { opacity: 0.7; font-size: 12px; }
-        .pill {
-          margin-left: auto;
-          padding: 6px 10px;
-          border-radius: 999px;
-          border: 1px solid rgba(255,255,255,0.15);
-          background: rgba(255,255,255,0.06);
-          font-weight: 700;
-          letter-spacing: 0.2px;
-          display: inline-flex;
-          align-items: center; gap: 8px;
-        }
-        .dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+
+        .titleRow { display: flex; align-items: center; justify-content: space-between;
+                    gap: 8px; flex: 1 1 auto; min-width: 0; }
+        .countryName { font-size: 28px; line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .flag { width: 65px; height: 65px; display: block; border-radius: 2px; object-fit: contain; flex: 0 0 auto; }
 
         .content { padding: 16px; overflow-y: auto; }
         .muted { opacity: 0.7; }
 
-        .card {
-          margin-bottom: 16px;
-          padding: 10px 12px;
-          border: 1px solid rgba(255,255,255,0.08);
-          border-radius: 12px;
-          background: rgba(255,255,255,0.03);
+        .card { margin-bottom: 16px; padding: 10px 12px; }
+        .card h3 { margin: 0 0 8px; font-size: 18px; opacity: 0.9; font-weight: bold; }
+
+        .custom-divider {
+          width: 95%; height: 1px; background: rgba(255, 255, 255, 0.18); margin: 16px auto;
         }
-        .card h3 { margin: 0 0 8px; font-size: 14px; opacity: 0.9; }
-        .card p, .card ul { margin: 0; opacity: 0.9; }
       `}</style>
     </>
   );
