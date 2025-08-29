@@ -1,6 +1,6 @@
 # AI Country Risk Dashboard
 
-
+![AI Risk Dashboard](/assets/ai-risk-dashboard.gif)
 
 ## Overview
 
