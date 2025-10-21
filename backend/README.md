@@ -71,6 +71,31 @@ CREATE TABLE risk_snapshot (
     bullet_summary TEXT,
     PRIMARY KEY (country_iso2, as_of)
 );
+
+CREATE TABLE risk_snapshot_article (
+    id            BIGSERIAL PRIMARY KEY,
+    country_iso2  CHAR(2)      NOT NULL REFERENCES country(iso2),
+    as_of         DATE         NOT NULL,
+    rank          SMALLINT     NOT NULL CHECK (rank BETWEEN 1 AND 3),
+
+    url           TEXT         NOT NULL,
+    title         TEXT,
+    source        TEXT,
+    published_at  TIMESTAMPTZ,
+    impact        DOUBLE PRECISION,
+    summary       TEXT,
+
+    created_at    TIMESTAMPTZ  NOT NULL DEFAULT now(),
+    updated_at    TIMESTAMPTZ  NOT NULL DEFAULT now(),
+
+    UNIQUE (country_iso2, as_of, rank),
+    FOREIGN KEY (country_iso2, as_of)
+        REFERENCES risk_snapshot (country_iso2, as_of)
+        ON DELETE CASCADE
+);
+
+CREATE INDEX idx_risk_snapshot_article_country_date
+    ON risk_snapshot_article (country_iso2, as_of);
 ```
 
 ---
