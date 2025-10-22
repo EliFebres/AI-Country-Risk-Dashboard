@@ -1,8 +1,8 @@
 import sys
 import pathlib
-import json
 import pandas as pd
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timezone
+
 
 # --- Resolve project root so "backend/" is importable ------------------------
 project_root = pathlib.Path.cwd().resolve()
@@ -14,20 +14,19 @@ while not (project_root / "backend").is_dir():
 if str(project_root) not in sys.path:
     sys.path.insert(0, str(project_root))
 
+
 # --- Imports after sys.path tweak -------------------------------------------
-from backend.utils import fetch_metrics, fetch_links
-from backend import constants, data_retrieval, data_push
-from backend.utils import country_data_fetch
 from backend.ai import langchain_llm
+from backend.utils import fetch_links
+from backend.utils import country_data_fetch
+from backend import constants, data_retrieval, data_push
+
 
 # --- Paths ------------------------------------------------------------------
 BACKEND_DIR    = project_root / "backend"
 PROCESSED_DATA = BACKEND_DIR / "data" / "wb_panel_wide"
 RAW_DATA_EXCEL = BACKEND_DIR / "data" / "country_data.xlsx"
 
-# Optional: read the country list (not strictly needed below)
-country_data_df: pd.DataFrame = pd.read_excel(RAW_DATA_EXCEL)
-countries: list[str] = country_data_df["Country_Name"].values.tolist()
 
 # --- Ensure processed World Bank panel exists -------------------------------
 panel_dir = PROCESSED_DATA
@@ -41,21 +40,21 @@ if not panel_dir.is_dir():
         end=None,
     )
 
+
 # --- Helpers ----------------------------------------------------------------
-def _parse_iso(s: str):
-    if not s:
-        return None
-    try:
-        return datetime.fromisoformat(s.replace("Z", "+00:00"))
-    except Exception:
-        return None
+def _news_query_for(country_name: str) -> str:
+    return f'"{country_name}" (economy OR inflation OR policy OR protest OR sanctions OR war OR coup OR corruption OR central bank OR IMF)'
 
-def _clip_words(s: str, max_words: int = 600) -> str:
-    parts = s.split()
-    return " ".join(parts[:max_words])
+def _to_utc_iso(dt: datetime) -> str:
+    if dt.tzinfo is None:
+        dt = dt.replace(tzinfo=timezone.utc)
+    return dt.astimezone(timezone.utc).strftime("%Y-%m-%dT%H:%MZ")
 
+
+# --- Main function ----------------------------------------------------------------
 def main() -> None:
-    """Loop countries → build payload → fetch news → LLM classify → deterministic aggregate."""
+    """Loop countries → build payload → fetch news → LLM classify → deterministic aggregate → push data to NeonDB."""
+    print(f"=== AI Country Risk run started at {_to_utc_iso(datetime.now(timezone.utc))} UTC ===")
     # Map "Country_Name" → "iso2Code"
     df_countries: pd.DataFrame = pd.read_excel(RAW_DATA_EXCEL)
     country_map = (
@@ -66,68 +65,76 @@ def main() -> None:
     )
 
     for country_name, iso2 in country_map.items():
-        # 1) Macro payload (pretty, JSON-serializable)
-        payload = data_retrieval.prepare_llm_payload_pretty(
-            country_iso=iso2,
-            indicators=constants.INDICATORS,
-            since=2015,
-            lookback=10,
-            deltas=(1, 5),
-        )
+        try:
+            # 1) Macro payload for this country
+            payload = data_retrieval.prepare_llm_payload_pretty(
+                country_iso=iso2,
+                indicators=constants.INDICATORS,
+                since=2015,
+                lookback=10,
+                deltas=(1, 5),
+            )
 
-        # 2) Google News (expanded with extracted article text)
-        DAYS = 365
-        query = f'{country_name} (economy OR politics OR conflict OR sanctions OR inflation OR war)'
+            # 2) Google News items
+            query = _news_query_for(country_name or iso2)
+            items = fetch_links.gnews_rss(
+                query=query,
+                max_results=25,
+                expand=True,
+                extract_chars=24000,
+                build_summary=True,
+                summary_words=240,
+            )
+            # Assign stable ids for each article item ("a1","a2",...)
+            for i, it in enumerate(items, start=1):
+                it["id"] = f"a{i}"
 
-        items = fetch_links.gnews_rss(
-            query=query,
-            max_results=10,
-            expand=True,        # fetch & extract article body
-            extract_chars=3500, # cap per-article text
-            lang="en",
-            country="US",
-            build_summary=True,
-            summary_words=240,
-        )
+            # 3) LLM scoring
+            llm_output = langchain_llm.country_llm_score(
+                country_display=country_name,
+                payload=payload,
+                articles=items,
+                model="gpt-4o-2024-08-06",
+                temperature=0.0,
+                seed=42,
+            )
+            # Derive top-3 links by LLM per-article impact
+            try:
+                imp_map = {
+                    (e.get("id") or ""): float(e.get("impact") or 0.0)
+                    for e in (llm_output.get("news_article_scores") or [])
+                    if isinstance(e, dict)
+                }
+            except Exception:
+                imp_map = {}
+            items_by_id = {it.get("id"): it for it in items if isinstance(it, dict) and it.get("id")}
+            ranked = sorted(((imp_map.get(iid, 0.0), items_by_id[iid]) for iid in items_by_id), key=lambda t: t[0], reverse=True)
 
-        # 2a) Filter by recency
-        cutoff = datetime.now(timezone.utc) - timedelta(days=DAYS)
-        items = [
-            it for it in items
-            if (dt := _parse_iso(it.get("published") or "")) is None or dt >= cutoff
-        ]
+            top_articles = []
+            for r, (impact, it) in enumerate(ranked[:3] or [(0.0, it) for it in items[:3]], start=1):
+                top_articles.append({
+                    "rank": r,
+                    "id": it.get("id"),
+                    "url": it.get("link") or "",
+                    "title": it.get("title") or "",
+                    "source": it.get("source") or "",
+                    "published_at": it.get("published") or None,
+                    "impact": float(impact) if impact is not None else None,
+                    "summary": it.get("summary") or it.get("snippet") or "",
+                })
 
-        # 2b) Deduplicate by title & trim summaries
-        dedup = []
-        seen_titles = set()
-        for it in items:
-            title = (it.get("title") or "").strip()
-            if not title or title in seen_titles:
-                continue
-            seen_titles.add(title)
-            # prefer extracted text; fallback to snippet
-            body = (it.get("summary") or it.get("text") or it.get("snippet") or "").strip()
-            it2 = dict(it)
-            it2["summary"] = _clip_words(body, max_words=240)
-            dedup.append(it2)
-        items = dedup[:10]  # ensure max 10
+            # 4) Upsert to DB (payload, llm_output, and top_articles)
+            data_push.upsert_snapshot({**payload, "llm_output": llm_output, "top_articles": top_articles}, country_name=country_name)
 
-        # 3) LLM: classify qualitative subscores + per-article impacts (schema-locked)
-        llm_output = langchain_llm.country_llm_score(
-            country_display=country_name,
-            payload=payload,
-            articles=items,
-            model="gpt-4o-2024-08-06",
-            temperature=0.0,
-            seed=42,
-        )
+            # Progress print
+            sc = llm_output.get("score")
+            print(f"{country_name} [{iso2}] score={sc} news_flow={llm_output.get('news_flow')}")
+        
+        except Exception as e:
+            print(f"[{iso2}] ERROR: {e}")
 
-        # 4) Upsert to DB (keep original payload and the computed result)
-        data_push.upsert_snapshot({**payload, "llm_output": llm_output}, country_name=country_name)
+    print(f"=== Run finished at {_to_utc_iso(datetime.now(timezone.utc))} UTC ===")
 
-        # Optional: simple progress print
-        sc = llm_output.get("score")
-        print(f"[{country_name}] score={sc} news_flow={llm_output.get('news_flow')}")
 
 if __name__ == "__main__":
     main()

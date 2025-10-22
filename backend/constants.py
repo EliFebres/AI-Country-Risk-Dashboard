@@ -94,8 +94,8 @@ ARTICLES_JSON
 {articles_json}
 
 Scoring bands (guidance; use full 0-1 range):
-  • 0.05-0.20 = Low   • 0.20-0.40 = Low-Moderate   • 0.40-0.70 = Moderate
-  • 0.70-0.90 = High  • 0.90-0.98 = Extreme (active war / nationwide shutdowns)
+  • 0.05-0.20 = Low   • 0.20-0.40 = Low-Moderate   • 0.40-0.75 = Moderate
+  • 0.75-0.90 = High  • 0.90-0.98 = Extreme (active war / nationwide shutdowns)
 
 Sub-factors to score (diagnostic only):
   conflict_war, political_stability, governance_corruption, macroeconomic_volatility, regulatory_uncertainty.
