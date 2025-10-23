@@ -3,8 +3,8 @@ import datetime
 import psycopg2
 import psycopg2.extras as extras
 
-from dotenv import load_dotenv
 from typing import Dict, Any, Optional, List, Tuple
+from dotenv import load_dotenv
 
 load_dotenv()
 
@@ -40,25 +40,28 @@ def _to_ts_or_none(s: Optional[str]) -> Optional[datetime.datetime]:
 
 def upsert_snapshot(payload: Dict[str, Any], country_name: str) -> None:
     """
-    Atomically insert or update a country-level snapshot and (minimal change)
-    also write the top 3 links for that (country, as_of) into risk_snapshot_article.
+    Atomically insert or update a country-level snapshot.
 
-    New in this version:
-      - Ensures a parent row exists in `country` (INSERT ... ON CONFLICT DO NOTHING)
-        so the FK on risk_snapshot.country_iso2 never fails after a fresh DB reset.
+    Writes to:
+      • country                 (ensures parent row for FK)
+      • indicator               (upsert by name, keeps unit updated)
+      • yearly_value            (upsert by (country_iso2, indicator_id, yr))
+      • risk_snapshot           (upsert by (country_iso2, as_of))
+      • risk_snapshot_article   (top-3 links for this snapshot; optional)
 
-    Expects:
-      payload["country"] -> ISO-2 (e.g., "IN")
-      payload["_meta"]["generated_at"] -> ISO string (used to compute as_of DATE)
-      payload["llm_output"]["score"], payload["llm_output"]["bullet_summary"]
+    Expects in `payload`:
+      - country (str ISO-2)
+      - _meta.generated_at (ISO datetime string)
+      - _meta.units (dict: indicator_name -> unit)
+      - indicators (dict: indicator_name -> {"series": {year: value or None}})
+      - llm_output.score, llm_output.bullet_summary
 
     Optional:
-      payload["top_articles"] -> list of up to 3 dicts:
+      - top_articles: list of dicts with
           {rank, url, title, source, published_at (ISO), impact, summary}
     """
     if not DB_URL:
         raise RuntimeError("DATABASE_URL is not set in the environment")
-
     if not isinstance(payload, dict):
         raise TypeError("payload must be a dict")
 
@@ -71,8 +74,15 @@ def upsert_snapshot(payload: Dict[str, Any], country_name: str) -> None:
     gen_at = meta.get("generated_at")
     if not gen_at or not isinstance(gen_at, str):
         raise ValueError("payload['_meta']['generated_at'] must be a string ISO timestamp")
+    units = meta.get("units") or {}
+    if not isinstance(units, dict):
+        raise ValueError("payload['_meta']['units'] must be a dict of indicator -> unit")
 
     as_of: datetime.date = _to_date_from_iso(gen_at)
+
+    indicators = payload.get("indicators") or {}
+    if not isinstance(indicators, dict) or not indicators:
+        raise ValueError("payload['indicators'] must be a non-empty dict")
 
     llm_out = payload.get("llm_output") or {}
     if not (isinstance(llm_out, dict) and {"score", "bullet_summary"} <= set(llm_out.keys())):
@@ -88,7 +98,6 @@ def upsert_snapshot(payload: Dict[str, Any], country_name: str) -> None:
         conn.autocommit = False
         with conn.cursor() as cur:
             # 0) Ensure the parent 'country' row exists for the FK
-            # If your table/columns differ (e.g., iso2/name), adjust here.
             cur.execute(
                 """
                 INSERT INTO country (iso2, name)
@@ -98,7 +107,52 @@ def upsert_snapshot(payload: Dict[str, Any], country_name: str) -> None:
                 (country, country_name),
             )
 
-            # 1) Upsert the risk snapshot (existing behavior)
+            # 1) Indicators + yearly series
+            #    Upsert each indicator by NAME, get its id, then upsert yearly values.
+            for ind_name, ind_data in indicators.items():
+                unit = units[ind_name]  # rely on your existing contract; raises if missing
+
+                # 1a) Upsert indicator row, capture its id
+                cur.execute(
+                    """
+                    INSERT INTO indicator (name, unit)
+                    VALUES (%s, %s)
+                    ON CONFLICT (name)
+                    DO UPDATE SET unit = EXCLUDED.unit
+                    RETURNING id;
+                    """,
+                    (ind_name, unit),
+                )
+                ind_id = cur.fetchone()[0]
+
+                # 1b) Prepare yearly rows (skip nulls)
+                series = (ind_data or {}).get("series", {}) or {}
+                rows_yv: List[Tuple[str, int, int, float]] = []
+                for year, val in series.items():
+                    if val is None:
+                        continue
+                    try:
+                        yr_int = int(year)
+                        val_f = float(val)
+                    except Exception:
+                        continue
+                    rows_yv.append((country, ind_id, yr_int, val_f))
+
+                if rows_yv:
+                    # Requires a UNIQUE index/PK on (country_iso2, indicator_id, yr)
+                    extras.execute_values(
+                        cur,
+                        """
+                        INSERT INTO yearly_value (country_iso2, indicator_id, yr, value)
+                        VALUES %s
+                        ON CONFLICT (country_iso2, indicator_id, yr)
+                        DO UPDATE SET value = EXCLUDED.value
+                        """,
+                        rows_yv,
+                        page_size=1000,
+                    )
+
+            # 2) Risk snapshot (latest AI score for the run date)
             cur.execute(
                 """
                 INSERT INTO risk_snapshot (country_iso2, as_of, score, bullet_summary)
@@ -111,8 +165,8 @@ def upsert_snapshot(payload: Dict[str, Any], country_name: str) -> None:
                 (country, as_of, llm_out["score"], llm_out["bullet_summary"]),
             )
 
-            # 2) Minimal addition: write the top-3 links for this snapshot
-            rows: List[Tuple] = []
+            # 3) Optional: write the top-3 links for this snapshot
+            rows_art: List[Tuple] = []
             for a in top_articles:
                 if not isinstance(a, dict):
                     continue
@@ -120,7 +174,7 @@ def upsert_snapshot(payload: Dict[str, Any], country_name: str) -> None:
                 url = (a.get("url") or "").strip()
                 if not url or rank not in (1, 2, 3):
                     continue
-                rows.append(
+                rows_art.append(
                     (
                         country,                           # country_iso2
                         as_of,                             # as_of (DATE)
@@ -134,7 +188,7 @@ def upsert_snapshot(payload: Dict[str, Any], country_name: str) -> None:
                     )
                 )
 
-            if rows:
+            if rows_art:
                 extras.execute_values(
                     cur,
                     """
@@ -151,7 +205,7 @@ def upsert_snapshot(payload: Dict[str, Any], country_name: str) -> None:
                       summary      = EXCLUDED.summary,
                       updated_at   = now()
                     """,
-                    rows,
+                    rows_art,
                     page_size=10,
                 )
 
