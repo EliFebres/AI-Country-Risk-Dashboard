@@ -1,7 +1,7 @@
 // /components/Sidebar/RiskSidebar.tsx
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useMemo } from 'react';
 import RiskReadingSection from './Sidebar/RiskReadingSection';
 import AiSummary from './Sidebar/AiSummary';
 
@@ -9,6 +9,8 @@ type Props = {
   open: boolean;
   onClose: () => void;
   country: { name: string; risk: number; prevRisk?: number; iso2?: string } | null;
+  /** When the current risk data was generated/pulled. Accepts Date, ISO string, or epoch ms. */
+  dataTimestamp?: Date | string | number | null;
   durationMs?: number;
   easing?: string;
 };
@@ -17,6 +19,7 @@ export default function RiskSidebar({
   open,
   onClose,
   country,
+  dataTimestamp,
   durationMs = 500,
   easing = 'ease',
 }: Props) {
@@ -32,6 +35,25 @@ export default function RiskSidebar({
   const panelWidth = 'min(600px, 40vw)';
   const fadeMs = Math.max(120, Math.round(durationMs * 0.6));
   const flagSrc = country?.iso2 ? `/flags/${country.iso2.toUpperCase()}.svg` : null;
+
+  // --- Data age (days) ---
+  const { daysOld, lastUpdatedLocal } = useMemo(() => {
+    if (dataTimestamp == null) return { daysOld: null as number | null, lastUpdatedLocal: null as string | null };
+    const dt = dataTimestamp instanceof Date ? dataTimestamp : new Date(dataTimestamp);
+    if (isNaN(dt.getTime())) return { daysOld: null, lastUpdatedLocal: null };
+    const ms = Date.now() - dt.getTime();
+    const d = Math.max(0, Math.floor(ms / (1000 * 60 * 60 * 24)));
+    const local = dt.toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' });
+    return { daysOld: d, lastUpdatedLocal: local };
+  }, [dataTimestamp]);
+
+  const isFresh = typeof daysOld === 'number' ? daysOld < 2 : null;
+
+  // Tooltip copy for the numeric badge
+  const ageTitle =
+    typeof daysOld === 'number'
+      ? `Time since last data refresh. ${daysOld}d means ${daysOld === 0 ? 'updated today' : `updated ${daysOld} day${daysOld === 1 ? '' : 's'} ago`}.${lastUpdatedLocal ? ` Last update: ${lastUpdatedLocal}.` : ''}`
+      : undefined;
 
   return (
     <>
@@ -61,6 +83,28 @@ export default function RiskSidebar({
               </span>
             )}
             <strong className="countryName">{country?.name ?? '—'}</strong>
+
+            {typeof daysOld === 'number' && (
+              <span
+                className="dataTracker"
+                title={`${lastUpdatedLocal ? ` Last update: ${lastUpdatedLocal}` : ''}`}
+                aria-label={`Data age ${daysOld} day${daysOld === 1 ? '' : 's'}`}
+              >
+                {/* PERFECT CIRCLE VIA SVG */}
+                <svg
+                  className={`statusDot ${isFresh ? 'fresh' : 'stale'}`}
+                  viewBox="0 0 10 10"
+                  aria-hidden="true"
+                  focusable="false"
+                >
+                  <circle cx="5" cy="5" r="5" />
+                </svg>
+                <span className="liveLabel">LIVE</span>
+                <span className="ageBox" title={ageTitle} aria-label={ageTitle}>
+                  {daysOld}d
+                </span>
+              </span>
+            )}
           </div>
         </header>
 
@@ -126,29 +170,69 @@ export default function RiskSidebar({
         .bar {
           display: flex; align-items: center;
           padding: 14px 16px 14px calc(16px + 12px);
-          /* divider handled by .header-divider below */
         }
 
-        /* Shared responsive scale for title/flag; 1cqw = 1% of sidebar width */
+        /* Full-width row so freshness docks right */
         .titleRow {
-          display: inline-flex; align-items: center; gap: 10px;
-          min-width: 0;                 /* allow text ellipsis */
+          display: flex; align-items: center; gap: 10px;
+          min-width: 0;
+          width: 100%;
           font-size: clamp(20px, 2.4cqw, 34px);
-          line-height: 1;               /* 1em line box */
-          padding: 0.6em 0;             /* vertical padding as requested */
+          line-height: 1;
+          padding: 0.6em 0;
         }
 
-        /* Country name matches requested size */
         .countryName {
           font-size: 1.3em;
           line-height: 1;
           white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+          flex: 1 1 auto;      /* let name grow/shrink; enables ellipsis */
+          min-width: 0;
         }
 
-        /* Square flag box at the same height as the title (1.3em) */
+        /* --- Data tracker (right-aligned) --- */
+        .dataTracker {
+          display: inline-flex;
+          align-items: center;
+          gap: 6px;
+          font-size: 0.75em;          /* slightly smaller than title */
+          opacity: 0.85;
+          letter-spacing: 0.02em;
+          flex: 0 0 auto;
+          margin-inline-start: auto;  /* push to the right edge */
+        }
+
+        /* SVG dot: fixed px size to avoid font rounding */
+        .statusDot {
+          width: 8px; height: 8px;
+          flex: 0 0 10px; display: inline-block;
+        }
+        .statusDot circle { fill: rgba(255, 255, 255, 0.28); } /* default = grey */
+        .statusDot.fresh circle { fill: #ff2d55; }             /* red */
+        .statusDot.fresh { filter: drop-shadow(0 0 6px rgba(255, 45, 85, 0.55)); }
+
+        .liveLabel {
+          text-transform: uppercase;
+          font-weight: 700;
+          opacity: 0.9;
+        }
+        .ageBox {
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          padding: 0.15em 0.4em;
+          border-radius: 4px;
+          background: rgba(0, 0, 0, 0.28);
+          border: 1px solid rgba(255, 255, 255, 0.06);
+          font-weight: 600;
+          line-height: 1;
+          min-width: 2.1em;
+          text-align: center;
+        }
+
         .flagBox {
           width: 2.1em;
-          height: 1.3em;
+          height: 1.2em;
           display: inline-flex;
           align-items: center;
           justify-content: center;
@@ -157,10 +241,9 @@ export default function RiskSidebar({
           background: rgba(255,255,255,0.06);
           box-shadow: inset 0 0 0 1px rgba(255,255,255,0.08);
           flex: 0 0 auto;
-          margin-inline-end: 0.4em;
+          margin-inline-end: 0.3em;
         }
 
-        /* Image fits the square without distortion */
         .flag {
           width: 100%;
           height: 100%;

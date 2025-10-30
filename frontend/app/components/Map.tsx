@@ -37,6 +37,9 @@ export default function Map({ bounds, center = [0, 20], zoom = 2.5 }: Props) {
 
   const [selected, setSelected] = useState<Selected>(null);
 
+  // NEW: data freshness timestamp for RiskSidebar ("LIVE 3d")
+  const [dataTimestamp, setDataTimestamp] = useState<Date | string | number | null>(null);
+
   // Zooms
   const FOCUS_ZOOM = 3.5;      // desired zoom when clicking a marker
   const DEFAULT_ZOOM = 2.5;    // when clicking off or closing sidebar
@@ -299,6 +302,10 @@ export default function Map({ bounds, center = [0, 20], zoom = 2.5 }: Props) {
         const refresh = await r.json().catch(() => ({} as any));
         console.log('refresh-risk result:', r.status, refresh);
 
+        // NEW: capture freshness timestamp (prefer server's lastRun, else "now")
+        const stamp = refresh?.lastRun ?? Date.now();
+        setDataTimestamp(stamp);
+
         let riskUrl = '/api/risk.json';
         const buster = refresh?.lastRun ?? String(Date.now());
         riskUrl += `?v=${encodeURIComponent(buster)}`;
@@ -398,7 +405,7 @@ export default function Map({ bounds, center = [0, 20], zoom = 2.5 }: Props) {
         }}
       />
 
-      {/* Country detail (right) */}
+      {/* Country detail (left) */}
       <RiskSidebar
         open={!!selected}
         country={
@@ -406,6 +413,7 @@ export default function Map({ bounds, center = [0, 20], zoom = 2.5 }: Props) {
             ? { name: selected.name, risk: selected.risk, prevRisk: selected.prevRisk, iso2: selected.iso2 }
             : null
         }
+        dataTimestamp={dataTimestamp}   // ← feeds "LIVE 3d" tracker
         onClose={handleCloseSidebar}
       />
     </div>
