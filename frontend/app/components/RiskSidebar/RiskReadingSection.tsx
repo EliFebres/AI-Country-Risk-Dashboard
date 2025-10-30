@@ -193,7 +193,7 @@ export default function RiskReadingSection({
       <div className="statsRow" aria-label="Risk stats">
         {/* LEFT: Current + Avg with superscript delta */}
         <div className="statsCol">
-          <div className="bigTitle">Current Risk</div>
+          <div className="bigTitle">Risk Rating</div>
           {statsLoading ? (
             <div className="bigValue muted">Loading…</div>
           ) : statsError ? (

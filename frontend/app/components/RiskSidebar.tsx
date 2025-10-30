@@ -73,6 +73,7 @@ export default function RiskSidebar({
             ['--revealMs' as any]: `${durationMs}ms`,
             ['--fadeMs' as any]: `${fadeMs}ms`,
             ['--easing' as any]: easing,
+            ['--livePulseMs' as any]: '2200ms', // tweak to speed up / slow down the LIVE blink
           } as React.CSSProperties
         }
       >
@@ -129,7 +130,7 @@ export default function RiskSidebar({
 
                 {/* Economic Indicators */}
                 <div className="economicSection">
-                  <h4 className="sectionTitle">Economic Indicators</h4>
+                  {/* <h4 className="sectionTitle">Economic Indicators</h4> */}
                   <EconomicGaugeSection
                     countryName={country?.name}
                     iso2={country?.iso2}
@@ -202,8 +203,24 @@ export default function RiskSidebar({
         }
         .statusDot { width: 8px; height: 8px; flex: 0 0 10px; display: inline-block; }
         .statusDot circle { fill: rgba(255, 255, 255, 0.28); }
-        .statusDot.fresh circle { fill: #ff2d55; }
+
+        /* ON (fresh) — red with a slow pulse */
+        .statusDot.fresh circle { fill: #ff2d55; animation: dotPulse var(--livePulseMs, 2200ms) ease-in-out infinite; }
         .statusDot.fresh { filter: drop-shadow(0 0 6px rgba(255, 45, 85, 0.55)); }
+
+        /* OFF (stale) — muted gray, no animation */
+        .statusDot.stale circle { fill: rgba(255, 255, 255, 0.28); }
+
+        /* Respect reduced motion */
+        @media (prefers-reduced-motion: reduce) {
+          .statusDot.fresh circle { animation: none; }
+        }
+
+        /* Keyframes for a gentle blink / breathing effect */
+        @keyframes dotPulse {
+          0%, 100% { opacity: 0.55; }
+          50%      { opacity: 1; }
+        }
 
         .liveLabel { text-transform: uppercase; font-weight: 700; opacity: 0.9; }
         .ageBox {
@@ -228,7 +245,7 @@ export default function RiskSidebar({
         .card { margin-bottom: 16px; padding: 10px 12px; }
         .card h3 { margin: 0 0 8px; font-size: 18px; opacity: 0.9; font-weight: bold; }
 
-        /* ⬇️ New: subtle spacing + sub-title styling for Economic Gauges */
+        /* ⬇️ Subtle spacing + sub-title styling for Economic Gauges */
         .economicSection { margin-top: 1.5em; }
         .sectionTitle {
           margin: 10px 0 6px;
