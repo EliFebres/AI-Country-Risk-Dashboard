@@ -382,7 +382,7 @@ export default function RiskReadingSection({
       {/* --- Top Stats Row --- */}
       <div className="statsRow" aria-label="Risk stats">
         <div className="statsCol">
-          <div className="smallTitle">Current Ai Risk Rating</div>
+          <div className="smallTitle">Current Risk Rating</div>
           {statsLoading ? (
             <div className="bigValue muted">Loading…</div>
           ) : statsError ? (
@@ -393,7 +393,7 @@ export default function RiskReadingSection({
                 {typeof stats?.currentRisk === 'number' ? stats.currentRisk.toFixed(2) : '—'}
               </div>
               <div className="pill" aria-label="Average current risk">
-                Avg Ai Risk Rating:&nbsp;
+                Avg Risk Rating:&nbsp;
                 <strong>{typeof stats?.avgCurrent === 'number' ? stats.avgCurrent.toFixed(2) : '—'}</strong>
               </div>
             </>
@@ -401,7 +401,7 @@ export default function RiskReadingSection({
         </div>
 
         <div className="statsCol">
-          <div className="smallTitle">Change in Ai Risk Rating</div>
+          <div className="smallTitle">Change in Risk Rating</div>
           {statsLoading ? (
             <div className="bigValue muted">Loading…</div>
           ) : statsError ? (

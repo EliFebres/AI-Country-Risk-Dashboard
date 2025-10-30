@@ -35,9 +35,12 @@ export default function RiskSidebar({
 
   return (
     <>
+      {/* Click anywhere off the panel to close */}
       <div className={`backdrop ${open ? 'open' : ''}`} onClick={onClose} aria-hidden={!open} />
 
       <aside
+        role="dialog"
+        aria-modal="true"
         aria-hidden={!open}
         aria-label="Country risk details"
         className={`sidebar ${open ? 'open' : 'closed'}`}
@@ -51,23 +54,18 @@ export default function RiskSidebar({
         }
       >
         <header className="bar">
-          <button onClick={onClose} aria-label="Close panel" className="closeBtn">
-            ×
-          </button>
           <div className="titleRow">
-            <strong className="countryName">{country?.name ?? '—'}</strong>
             {flagSrc && (
-              <img
-                className="flag"
-                src={flagSrc}
-                alt={`${country?.name ?? 'Country'} flag`}
-                width={10}
-                height={10}
-                loading="eager"
-              />
+              <span className="flagBox" aria-hidden="true">
+                <img className="flag" src={flagSrc} alt="" loading="eager" />
+              </span>
             )}
+            <strong className="countryName">{country?.name ?? '—'}</strong>
           </div>
         </header>
+
+        {/* Header divider aligned with content column, same look as .custom-divider */}
+        <div className="custom-divider header-divider" role="separator" aria-hidden="true" />
 
         <div className="content">
           {!country ? (
@@ -117,23 +115,59 @@ export default function RiskSidebar({
           will-change: clip-path, opacity;
           transition: clip-path var(--revealMs, 360ms) var(--easing, ease),
                       opacity var(--fadeMs, 220ms) var(--easing, ease);
+          /* Enable container queries so sizes respond to sidebar width */
+          container-type: inline-size;
         }
         .sidebar.closed { clip-path: inset(0 100% 0 0); opacity: 0; }
         .sidebar.open   { clip-path: inset(0 0 0 0);   opacity: 1; }
 
-        .bar { display: flex; align-items: center; gap: 12px; padding: 14px 16px;
-               border-bottom: 1px solid rgba(255, 255, 255, 0.08); }
-        .closeBtn {
-          width: 36px; height: 36px; border-radius: 12px;
-          border: 1px solid rgba(255, 255, 255, 0.15);
-          background: rgba(255, 255, 255, 0.06); color: #fff;
-          cursor: pointer; font-size: 18px; line-height: 36px;
+        /* Align header content's left edge with the text inside sections:
+           16px (.content) + 12px (.card horizontal padding) = 28px */
+        .bar {
+          display: flex; align-items: center;
+          padding: 14px 16px 14px calc(16px + 12px);
+          /* divider handled by .header-divider below */
         }
 
-        .titleRow { display: flex; align-items: center; justify-content: space-between;
-                    gap: 8px; flex: 1 1 auto; min-width: 0; }
-        .countryName { font-size: 28px; line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .flag { width: 65px; height: 65px; display: block; border-radius: 2px; object-fit: contain; flex: 0 0 auto; }
+        /* Shared responsive scale for title/flag; 1cqw = 1% of sidebar width */
+        .titleRow {
+          display: inline-flex; align-items: center; gap: 10px;
+          min-width: 0;                 /* allow text ellipsis */
+          font-size: clamp(20px, 2.4cqw, 34px);
+          line-height: 1;               /* 1em line box */
+          padding: 0.6em 0;             /* vertical padding as requested */
+        }
+
+        /* Country name matches requested size */
+        .countryName {
+          font-size: 1.3em;
+          line-height: 1;
+          white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+        }
+
+        /* Square flag box at the same height as the title (1.3em) */
+        .flagBox {
+          width: 2.1em;
+          height: 1.3em;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          border-radius: 3px;
+          overflow: hidden;
+          background: rgba(255,255,255,0.06);
+          box-shadow: inset 0 0 0 1px rgba(255,255,255,0.08);
+          flex: 0 0 auto;
+          margin-inline-end: 0.4em;
+        }
+
+        /* Image fits the square without distortion */
+        .flag {
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+          object-position: 50% 50%;
+          display: block;
+        }
 
         .content { padding: 16px; overflow-y: auto; }
         .muted { opacity: 0.7; }
@@ -141,8 +175,20 @@ export default function RiskSidebar({
         .card { margin-bottom: 16px; padding: 10px 12px; }
         .card h3 { margin: 0 0 8px; font-size: 18px; opacity: 0.9; font-weight: bold; }
 
+        /* Existing section divider */
         .custom-divider {
-          width: 95%; height: 1px; background: rgba(255, 255, 255, 0.18); margin: 16px auto;
+          width: 95%;
+          height: 1px;
+          background: rgba(255, 255, 255, 0.18);
+          margin: 16px auto;
+        }
+
+        /* Header variant: same look, aligned to content text column */
+        .custom-divider.header-divider {
+          background: rgba(255, 255, 255, 0.18);
+          height: 1px;
+          width: calc(100% - (16px + 12px) - 16px); /* left: 28px, right: 16px */
+          margin: 0 16px 0 calc(16px + 12px);
         }
       `}</style>
     </>
