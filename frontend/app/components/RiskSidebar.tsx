@@ -53,7 +53,7 @@ export default function RiskSidebar({
   // Tooltip copy for the numeric badge
   const ageTitle =
     typeof daysOld === 'number'
-      ? `This is the time since the last data refresh. Last update: ${lastUpdatedLocal ?? 'unknown'}`
+      ? `Last update: ${lastUpdatedLocal ?? 'unknown'}`
       : undefined;
 
   return (
