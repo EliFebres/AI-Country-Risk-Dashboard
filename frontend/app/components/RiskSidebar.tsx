@@ -118,7 +118,6 @@ export default function RiskSidebar({
           ) : (
             <>
               <section className="card">
-                <h3></h3>
                 {/* Top stats */}
                 <RiskReadingSection
                   countryName={country?.name}
@@ -127,12 +126,16 @@ export default function RiskSidebar({
                   prevRisk={country?.prevRisk}
                   active={open}
                 />
-                {/* Economic gauges */}
-                <EconomicGaugeSection
-                  countryName={country?.name}
-                  iso2={country?.iso2}
-                  active={open}
-                />
+
+                {/* Economic Indicators */}
+                <div className="economicSection">
+                  <h4 className="sectionTitle">Economic Indicators</h4>
+                  <EconomicGaugeSection
+                    countryName={country?.name}
+                    iso2={country?.iso2}
+                    active={open}
+                  />
+                </div>
               </section>
 
               <div className="custom-divider" />
@@ -224,6 +227,16 @@ export default function RiskSidebar({
 
         .card { margin-bottom: 16px; padding: 10px 12px; }
         .card h3 { margin: 0 0 8px; font-size: 18px; opacity: 0.9; font-weight: bold; }
+
+        /* ⬇️ New: subtle spacing + sub-title styling for Economic Gauges */
+        .economicSection { margin-top: 1.5em; }
+        .sectionTitle {
+          margin: 10px 0 6px;
+          font-size: 15px;
+          font-weight: 700;
+          letter-spacing: 0.02em;
+          opacity: 0.9;
+        }
 
         .custom-divider {
           width: 95%;

@@ -215,7 +215,7 @@ export default function RiskReadingSection({
                 )}
               </div>
               <div className="pill" aria-label="Average current risk">
-                Average World Risk:&nbsp;
+                World Average:&nbsp;
                 <strong>{typeof stats?.avgCurrent === 'number' ? stats.avgCurrent.toFixed(2) : '—'}</strong>
               </div>
             </>
@@ -230,7 +230,7 @@ export default function RiskReadingSection({
             <div className="bigValue muted">—</div>
           ) : chartData.length > 0 ? (
             <div className="chartWrap">
-              <ResponsiveContainer width="100%" height={84}>
+              <ResponsiveContainer width="100%" height={120}>
                 <AreaChart data={chartData} margin={{ left: 0, right: 0, top: 8, bottom: 0 }}>
                   <defs>
                     <linearGradient id={gradId} x1="0" y1="0" x2="0" y2="1">
