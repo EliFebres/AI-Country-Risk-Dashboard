@@ -1,3 +1,4 @@
+// /components/Sidebar/EconomicGaugeSection.tsx
 'use client';
 
 import { useEffect, useState } from 'react';
@@ -19,6 +20,23 @@ type CountryIndicatorLatest = {
 
 /** Cache to avoid refetch storms */
 let INDICATOR_CACHE: CountryIndicatorLatest[] | null = null;
+
+/** ------------------------------------------------------------------------ */
+/** HOVER TEXT DICTIONARY — edit here to change tooltip copy for each gauge. */
+/** ------------------------------------------------------------------------ */
+type IndicatorHoverText = Record<IndicatorName, string>;
+
+const INDICATOR_TOOLTIPS: IndicatorHoverText = {
+  'Rule of law (z-score)':
+    'Measures quality of contract enforcement, property rights, police, and courts. World Bank estimate (≈ −2.5 to +2.5). Higher is better.',
+  'Inflation (% y/y)':
+    'Year-over-year consumer price inflation. Lower is generally better (2-3% is typical target).',
+  'Interest payments (% revenue)':
+    'Government interest costs as % of revenue. Higher indicates greater debt burden.',
+  'GDP per-capita growth (% y/y)':
+    'Real GDP per person (y/y). Negative growth implies economic contraction.',
+};
+/** ------------------------------------------------------------------------ */
 
 /** utils */
 const clamp01 = (x: number) => Math.max(0, Math.min(1, x));
@@ -107,11 +125,13 @@ function MiniGauge(props: {
   trackAlpha?: number;
   aria?: string;
   ringColor?: string; // optional override for the ring color
+  tooltip?: string;   // ← dictionary-provided hover text
 }) {
   const {
     title, caption, valueText, progress,
     size = GAUGE_SIZE, trackAlpha = 0.15, aria,
     ringColor: ringColorOverride,
+    tooltip,
   } = props;
 
   const stroke = 5;
@@ -126,7 +146,7 @@ function MiniGauge(props: {
   return (
     <div
       className="gaugeItem"
-      title={title}
+      title={tooltip ?? title}
       aria-label={aria || title}
       style={{ width: 'max-content', minWidth: size, margin: '0 auto' }}
     >
@@ -259,6 +279,7 @@ export default function EconomicGaugeSection({
             progress,
             ringColor,
             aria: `${shortLabel(name)} ${valText}`,
+            tooltip: INDICATOR_TOOLTIPS[name], // ← use dictionary hover text
           };
         })
       : [];
@@ -280,6 +301,7 @@ export default function EconomicGaugeSection({
                 progress={g.progress}
                 aria={g.aria}
                 ringColor={g.ringColor}
+                tooltip={g.tooltip}
               />
             </div>
           ))}
