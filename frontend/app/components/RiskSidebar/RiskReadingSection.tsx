@@ -40,7 +40,7 @@ type Props = {
   prevRisk?: number | null;
 };
 
-/** Top stats row: left = Current/Avg; right = modern area chart (no labels) */
+/** Top stats row: left = Current/Avg (with superscript delta); right = modern area chart */
 export default function RiskReadingSection({
   countryName,
   iso2,
@@ -54,6 +54,7 @@ export default function RiskReadingSection({
     currentRisk: number | null;
     avgCurrent: number | null;
     history: number[]; // oldest→newest inclusive of current
+    delta: number | null; // current - previous
   } | null>(null);
 
   // unique gradient id to avoid collisions if multiple sidebars mount
@@ -110,34 +111,49 @@ export default function RiskReadingSection({
         // Build history: [...prevRiskSeries reversed, risk]
         let history: number[] = [];
         let currentRisk: number | null = null;
+        let delta: number | null = null;
 
         if (entry) {
           const prior = (entry.prevRiskSeries ?? []).slice().reverse(); // oldest→newest
           const latest = entry.risk;
           history = [...prior, latest].filter((v) => typeof v === 'number' && Number.isFinite(v));
           currentRisk = typeof latest === 'number' ? latest : null;
+
+          // delta = latest - previous (immediate predecessor)
+          const prevImmediate =
+            prior.length > 0
+              ? prior[prior.length - 1]
+              : (typeof entry.prevRisk === 'number' ? entry.prevRisk : null);
+          if (typeof latest === 'number' && typeof prevImmediate === 'number') {
+            delta = latest - prevImmediate;
+          }
         } else {
           // fallback to props if entry not found
           const cr =
             (currentRiskProp ?? undefined) !== undefined
               ? (currentRiskProp as number | null)
               : null;
-          currentRisk = typeof cr === 'number' ? cr : null;
-          history = typeof cr === 'number' ? [cr] : [];
           const pr =
             (prevRiskProp ?? undefined) !== undefined
               ? (prevRiskProp as number | null)
               : null;
-          if (typeof pr === 'number') history.unshift(pr);
+
+          currentRisk = typeof cr === 'number' ? cr : null;
+          if (typeof cr === 'number') history = [cr];
+          if (typeof pr === 'number') {
+            history = [pr, ...history];
+            if (typeof cr === 'number') delta = cr - pr;
+          }
         }
 
+        // Averages across all countries (current)
         const values = (RISK_CACHE ?? [])
           .map((r) => r.risk)
           .filter((v) => Number.isFinite(v)) as number[];
         const avgCurrent = values.length ? values.reduce((a, b) => a + b, 0) / values.length : null;
 
         if (!cancelled) {
-          setStats({ currentRisk, avgCurrent, history });
+          setStats({ currentRisk, avgCurrent, history, delta });
         }
       } catch {
         if (!cancelled) setStatsError('Failed to load risk stats');
@@ -159,10 +175,23 @@ export default function RiskReadingSection({
     [stats?.history]
   );
 
+  const deltaClass =
+    stats?.delta == null
+      ? 'flat'
+      : stats.delta > 0
+      ? 'up'
+      : stats.delta < 0
+      ? 'down'
+      : 'flat';
+
+  const deltaSign = stats?.delta != null && stats.delta < 0 ? '−' : '+'; // U+2212 minus for better kerning
+  const deltaText =
+    stats?.delta == null ? null : `${deltaSign}\u2009${Math.abs(stats.delta).toFixed(2)}`; // U+2009 thin space
+
   return (
     <>
       <div className="statsRow" aria-label="Risk stats">
-        {/* LEFT: Current + Avg */}
+        {/* LEFT: Current + Avg with superscript delta */}
         <div className="statsCol">
           <div className="bigTitle">Current Risk</div>
           {statsLoading ? (
@@ -171,11 +200,22 @@ export default function RiskReadingSection({
             <div className="bigValue muted">—</div>
           ) : (
             <>
-              <div className="bigValue" style={{ color: currentColor }}>
-                {typeof stats?.currentRisk === 'number' ? stats.currentRisk.toFixed(2) : '—'}
+              <div className="bigValue">
+                <span style={{ color: currentColor }}>
+                  {typeof stats?.currentRisk === 'number' ? stats.currentRisk.toFixed(2) : '—'}
+                </span>
+                {deltaText && (
+                  <sup
+                    className={`delta ${deltaClass}`}
+                    aria-label={`Change since previous reading ${deltaText}`}
+                    title={`Change since previous reading: ${deltaText}`}
+                  >
+                    {deltaText}
+                  </sup>
+                )}
               </div>
               <div className="pill" aria-label="Average current risk">
-                Avg Risk Rating:&nbsp;
+                Average World Risk:&nbsp;
                 <strong>{typeof stats?.avgCurrent === 'number' ? stats.avgCurrent.toFixed(2) : '—'}</strong>
               </div>
             </>
@@ -191,10 +231,7 @@ export default function RiskReadingSection({
           ) : chartData.length > 0 ? (
             <div className="chartWrap">
               <ResponsiveContainer width="100%" height={84}>
-                <AreaChart
-                  data={chartData}
-                  margin={{ left: 0, right: 0, top: 8, bottom: 0 }}
-                >
+                <AreaChart data={chartData} margin={{ left: 0, right: 0, top: 8, bottom: 0 }}>
                   <defs>
                     <linearGradient id={gradId} x1="0" y1="0" x2="0" y2="1">
                       <stop offset="0%" stopColor={currentColor} stopOpacity={0.45} />
@@ -202,11 +239,7 @@ export default function RiskReadingSection({
                     </linearGradient>
                   </defs>
 
-                  <CartesianGrid
-                    stroke="rgba(255,255,255,0.12)"
-                    vertical={false}
-                    strokeDasharray="3 5"
-                  />
+                  <CartesianGrid stroke="rgba(255,255,255,0.12)" vertical={false} strokeDasharray="3 5" />
                   <XAxis dataKey="idx" hide />
                   <YAxis domain={[0, 1]} hide />
 
@@ -264,9 +297,7 @@ export default function RiskReadingSection({
           text-align: right;
           align-items: stretch;
         }
-        .chartWrap {
-          width: 100%;
-        }
+        .chartWrap { width: 100%; }
 
         @media (max-width: 520px) {
           .statsRow { flex-direction: column; }
@@ -284,6 +315,9 @@ export default function RiskReadingSection({
           margin-bottom: 0.1em;
         }
         .bigValue {
+          display: inline-flex;
+          align-items: baseline;
+          gap: 6px;
           font-size: 3em;
           font-weight: 800;
           line-height: 1.1;
@@ -291,6 +325,17 @@ export default function RiskReadingSection({
           color: rgba(255,255,255,0.95);
           text-shadow: 0 0 6px rgba(0,0,0,0.3);
         }
+        .delta {
+          font-size: 0.35em;     /* superscript scale */
+          font-weight: 800;
+          vertical-align: super; /* ensure superscript position */
+          line-height: 1;
+          opacity: 0.95;
+          transform: translateY(-1em);
+        }
+        .delta.up   { color: #ff2d55; }  /* worse (up) */
+        .delta.down { color: #39ff14; }  /* better (down) */
+        .delta.flat { color: rgba(255,255,255,0.7); }
         .pill {
           display: inline-block;
           padding: 4px 5px;
