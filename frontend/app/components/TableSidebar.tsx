@@ -1,23 +1,20 @@
 'use client';
 
 import React, { useEffect, useMemo, useState } from 'react';
-
-type RiskDot = {
-  name: string;
-  lngLat: [number, number];
-  risk: number;
-  iso2?: string; // ← add ISO2 so we can pass flags through
-};
+// ⬇️ Make sure this path matches your project layout
+import type { CountryRisk } from '../lib/risk-client';
+import { loadRisksClient } from '../lib/risk-client';
 
 type SortKey = 'risk' | 'name';
 type SortDir = 'desc' | 'asc';
 
 type TableSidebarProps = {
-  open?: boolean;                 // hidden entirely when false (e.g., RiskSidebar open)
-  durationMs?: number;            // reveal (clip-path) duration
-  easing?: string;                // easing for reveal & fades
+  open?: boolean;                  // hidden entirely when false (e.g., RiskSidebar open)
+  durationMs?: number;             // reveal (clip-path) duration
+  easing?: string;                 // easing for reveal & fades
   title?: string;
-  onSelectCountry?: (dot: RiskDot) => void; // receives iso2 when present
+  data?: CountryRisk[];            // ⬅️ new: pass the SAME array your map/RiskSidebar use
+  onSelectCountry?: (dot: CountryRisk) => void; // includes prevRisk + iso2
 };
 
 function colorForRisk(r: number) {
@@ -31,14 +28,15 @@ export default function TableSidebar({
   durationMs = 500,
   easing = 'ease',
   title = 'Table',
+  data,                             // ⬅️ prefer parent-provided data
   onSelectCountry,
 }: TableSidebarProps) {
   const panelWidth = 'min(420px, 25vw)'; // expanded width
   const fadeMs = Math.max(120, Math.round(durationMs * 0.6));
   const collapseMs = 260; // expand/collapse slide duration
 
-  const [rows, setRows] = useState<RiskDot[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
+  const [rows, setRows] = useState<CountryRisk[]>(data ?? []);
+  const [loading, setLoading] = useState<boolean>(!data);
   const [error, setError] = useState<string | null>(null);
 
   const [sortKey, setSortKey] = useState<SortKey>('risk');
@@ -47,21 +45,25 @@ export default function TableSidebar({
   // Default minimized (collapsed) on first render
   const [collapsed, setCollapsed] = useState(true);
 
-  // Fetch risk.json (cache-busted)
+  // Keep rows in sync with parent-provided data
   useEffect(() => {
+    if (data) {
+      setRows(data);
+      setLoading(false);
+      setError(null);
+    }
+  }, [data]);
+
+  // Fallback: self-load using the SAME loader as the rest of the app
+  useEffect(() => {
+    if (data) return; // parent is the source of truth
     const ctrl = new AbortController();
     (async () => {
       try {
         setLoading(true);
         setError(null);
-        const res = await fetch(`/api/risk.json?v=${Date.now()}`, {
-          signal: ctrl.signal,
-          cache: 'no-store',
-          headers: { accept: 'application/json' },
-        });
-        if (!res.ok) throw new Error(`Failed to load risk.json: ${res.status}`);
-        const data: RiskDot[] = await res.json(); // ← includes iso2 if present
-        setRows(data);
+        const result = await loadRisksClient(ctrl.signal);
+        setRows(result);
       } catch (e: any) {
         if (e?.name !== 'AbortError') setError(e?.message || 'Unknown error');
       } finally {
@@ -69,7 +71,7 @@ export default function TableSidebar({
       }
     })();
     return () => ctrl.abort();
-  }, []);
+  }, [data]);
 
   const sorted = useMemo(() => {
     const arr = [...rows].sort((a, b) => {
@@ -208,14 +210,14 @@ export default function TableSidebar({
                   ) : (
                     sorted.map((r, i) => (
                       <tr
-                        key={r.name}
+                        key={r.iso2 ?? r.name}
                         tabIndex={0}
                         className="row"
-                        onClick={() => onSelectCountry?.(r)} // ← passes {name, lngLat, risk, iso2?}
+                        onClick={() => onSelectCountry?.(r)} // {name, lngLat, risk, prevRisk?, iso2?}
                         onKeyDown={(e) => {
                           if (e.key === 'Enter' || e.key === ' ') {
                             e.preventDefault();
-                            onSelectCountry?.(r); // ← same here
+                            onSelectCountry?.(r);
                           }
                         }}
                       >

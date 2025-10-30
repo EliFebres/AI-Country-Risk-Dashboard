@@ -5,9 +5,9 @@
       -64.8816,
       -35
     ],
-    "risk": 0.65,
+    "risk": 0.8,
     "iso2": "AR",
-    "prevRisk": 0.58
+    "prevRisk": 0.8
   },
   {
     "name": "Australia",
@@ -15,9 +15,9 @@
       134.53,
       -24.6809
     ],
-    "risk": 0.35,
+    "risk": 0.4,
     "iso2": "AU",
-    "prevRisk": 0.059
+    "prevRisk": 0.38
   },
   {
     "name": "Austria",
@@ -25,9 +25,9 @@
       14.3738,
       47.6082
     ],
-    "risk": 0.55,
+    "risk": 0.42,
     "iso2": "AT",
-    "prevRisk": 0.25
+    "prevRisk": 0.42
   },
   {
     "name": "Bangladesh",
@@ -35,9 +35,9 @@
       90.0125,
       24.5103
     ],
-    "risk": 0.45,
+    "risk": 0.55,
     "iso2": "BD",
-    "prevRisk": 0.384
+    "prevRisk": 0.65
   },
   {
     "name": "Belgium",
@@ -47,7 +47,7 @@
     ],
     "risk": 0.38,
     "iso2": "BE",
-    "prevRisk": 0.073
+    "prevRisk": 0.38
   },
   {
     "name": "Brazil",
@@ -55,9 +55,9 @@
       -53.3,
       -10.3
     ],
-    "risk": 0.5,
+    "risk": 0.45,
     "iso2": "BR",
-    "prevRisk": 0.13
+    "prevRisk": 0.55
   },
   {
     "name": "Canada",
@@ -65,9 +65,9 @@
       -108.007,
       60.9215
     ],
-    "risk": 0.38,
+    "risk": 0.45,
     "iso2": "CA",
-    "prevRisk": 0.12
+    "prevRisk": 0.45
   },
   {
     "name": "Chile",
@@ -75,9 +75,9 @@
       -71.1,
       -31.8
     ],
-    "risk": 0.45,
+    "risk": 0.38,
     "iso2": "CL",
-    "prevRisk": 0.16
+    "prevRisk": 0.38
   },
   {
     "name": "China",
@@ -85,9 +85,9 @@
       105,
       35
     ],
-    "risk": 0.65,
+    "risk": 0.45,
     "iso2": "CN",
-    "prevRisk": 0.2
+    "prevRisk": 0.55
   },
   {
     "name": "Colombia",
@@ -95,9 +95,9 @@
       -73,
       4
     ],
-    "risk": 0.8,
+    "risk": 0.55,
     "iso2": "CO",
-    "prevRisk": 0.57
+    "prevRisk": 0.55
   },
   {
     "name": "Denmark",
@@ -105,9 +105,9 @@
       10.5683,
       55.6761
     ],
-    "risk": 0.28,
+    "risk": 0.38,
     "iso2": "DK",
-    "prevRisk": 0.05
+    "prevRisk": 0.3
   },
   {
     "name": "Finland",
@@ -117,7 +117,7 @@
     ],
     "risk": 0.55,
     "iso2": "FI",
-    "prevRisk": 0.13
+    "prevRisk": 0.45
   },
   {
     "name": "France",
@@ -125,9 +125,9 @@
       2,
       46.6
     ],
-    "risk": 0.5,
+    "risk": 0.45,
     "iso2": "FR",
-    "prevRisk": 0.083
+    "prevRisk": 0.5
   },
   {
     "name": "Germany",
@@ -135,9 +135,9 @@
       10.5,
       51.2
     ],
-    "risk": 0.45,
+    "risk": 0.38,
     "iso2": "DE",
-    "prevRisk": 0.045
+    "prevRisk": 0.45
   },
   {
     "name": "Greece",
@@ -145,9 +145,9 @@
       22.3,
       39
     ],
-    "risk": 0.35,
+    "risk": 0.28,
     "iso2": "GR",
-    "prevRisk": 0.21
+    "prevRisk": 0.35
   },
   {
     "name": "Hong Kong SAR, China",
@@ -155,9 +155,9 @@
       114.1694,
       22.3193
     ],
-    "risk": 0.32,
+    "risk": 0.28,
     "iso2": "HK",
-    "prevRisk": 0.19
+    "prevRisk": 0.28
   },
   {
     "name": "Hungary",
@@ -165,9 +165,9 @@
       19.5,
       47.15
     ],
-    "risk": 0.55,
+    "risk": 0.65,
     "iso2": "HU",
-    "prevRisk": 0.29
+    "prevRisk": 0.5
   },
   {
     "name": "India",
@@ -175,9 +175,9 @@
       78.5,
       22.35
     ],
-    "risk": 0.45,
+    "risk": 0.5,
     "iso2": "IN",
-    "prevRisk": 0.087
+    "prevRisk": 0.45
   },
   {
     "name": "Indonesia",
@@ -185,9 +185,9 @@
       118,
       -2.5
     ],
-    "risk": 0.45,
+    "risk": 0.38,
     "iso2": "ID",
-    "prevRisk": 0.27
+    "prevRisk": 0.35
   },
   {
     "name": "Ireland",
@@ -195,9 +195,9 @@
       -8,
       52.8
     ],
-    "risk": 0.4,
+    "risk": 0.38,
     "iso2": "IE",
-    "prevRisk": 0.09
+    "prevRisk": 0.35
   },
   {
     "name": "Israel",
@@ -205,9 +205,9 @@
       35,
       31
     ],
-    "risk": 0.9,
+    "risk": 0.8,
     "iso2": "IL",
-    "prevRisk": 0.583
+    "prevRisk": 0.45
   },
   {
     "name": "Italy",
@@ -215,9 +215,9 @@
       12.8,
       42.6
     ],
-    "risk": 0.38,
+    "risk": 0.45,
     "iso2": "IT",
-    "prevRisk": 0.091
+    "prevRisk": 0.48
   },
   {
     "name": "Japan",
@@ -225,9 +225,9 @@
       139.2,
       36.5
     ],
-    "risk": 0.35,
+    "risk": 0.38,
     "iso2": "JP",
-    "prevRisk": 0.073
+    "prevRisk": 0.38
   },
   {
     "name": "Kenya",
@@ -235,9 +235,9 @@
       38.52,
       1.36
     ],
-    "risk": 0.7,
+    "risk": 0.45,
     "iso2": "KE",
-    "prevRisk": 0.1
+    "prevRisk": 0.4
   },
   {
     "name": "Luxembourg",
@@ -245,9 +245,9 @@
       5.7,
       49.85
     ],
-    "risk": 0.35,
+    "risk": 0.25,
     "iso2": "LU",
-    "prevRisk": 0.04
+    "prevRisk": 0.28
   },
   {
     "name": "Malaysia",
@@ -255,9 +255,9 @@
       102.2,
       4.5
     ],
-    "risk": 0.28,
+    "risk": 0.35,
     "iso2": "MY",
-    "prevRisk": 0.055
+    "prevRisk": 0.42
   },
   {
     "name": "Mexico",
@@ -267,7 +267,7 @@
     ],
     "risk": 0.55,
     "iso2": "MX",
-    "prevRisk": 0.43
+    "prevRisk": 0.55
   },
   {
     "name": "Morocco",
@@ -277,7 +277,7 @@
     ],
     "risk": 0.35,
     "iso2": "MA",
-    "prevRisk": 0.142
+    "prevRisk": 0.3
   },
   {
     "name": "Netherlands",
@@ -287,7 +287,7 @@
     ],
     "risk": 0.35,
     "iso2": "NL",
-    "prevRisk": 0.13
+    "prevRisk": 0.35
   },
   {
     "name": "New Zealand",
@@ -295,9 +295,9 @@
       173,
       -41.5
     ],
-    "risk": 0.45,
+    "risk": 0.55,
     "iso2": "NZ",
-    "prevRisk": 0.09
+    "prevRisk": 0.55
   },
   {
     "name": "Nigeria",
@@ -305,9 +305,9 @@
       8,
       9.5
     ],
-    "risk": 0.7,
+    "risk": 0.6,
     "iso2": "NG",
-    "prevRisk": 0.78
+    "prevRisk": 0.6
   },
   {
     "name": "Norway",
@@ -315,9 +315,9 @@
       8.7,
       61.2
     ],
-    "risk": 0.25,
+    "risk": 0.28,
     "iso2": "NO",
-    "prevRisk": 0.04
+    "prevRisk": 0.3
   },
   {
     "name": "Pakistan",
@@ -327,7 +327,7 @@
     ],
     "risk": 0.55,
     "iso2": "PK",
-    "prevRisk": 0.62
+    "prevRisk": 0.55
   },
   {
     "name": "Peru",
@@ -335,9 +335,9 @@
       -75,
       -7
     ],
-    "risk": 0.5,
+    "risk": 0.45,
     "iso2": "PE",
-    "prevRisk": 0.368
+    "prevRisk": 0.45
   },
   {
     "name": "Philippines",
@@ -345,9 +345,9 @@
       122.5,
       13
     ],
-    "risk": 0.7,
+    "risk": 0.4,
     "iso2": "PH",
-    "prevRisk": 0.21
+    "prevRisk": 0.38
   },
   {
     "name": "Poland",
@@ -355,9 +355,9 @@
       19,
       52.2297
     ],
-    "risk": 0.55,
+    "risk": 0.35,
     "iso2": "PL",
-    "prevRisk": 0.12
+    "prevRisk": 0.38
   },
   {
     "name": "Portugal",
@@ -365,9 +365,9 @@
       -8,
       39.7
     ],
-    "risk": 0.55,
+    "risk": 0.35,
     "iso2": "PT",
-    "prevRisk": 0.23
+    "prevRisk": 0.38
   },
   {
     "name": "Qatar",
@@ -375,9 +375,9 @@
       51.031,
       25.2854
     ],
-    "risk": 0.9,
+    "risk": 0.35,
     "iso2": "QA",
-    "prevRisk": 0.4
+    "prevRisk": 0.35
   },
   {
     "name": "Romania",
@@ -387,7 +387,7 @@
     ],
     "risk": 0.55,
     "iso2": "RO",
-    "prevRisk": 0.214
+    "prevRisk": 0.55
   },
   {
     "name": "Saudi Arabia",
@@ -395,9 +395,9 @@
       42.35,
       25.56
     ],
-    "risk": 0.38,
+    "risk": 0.55,
     "iso2": "SA",
-    "prevRisk": 0.083
+    "prevRisk": 0.38
   },
   {
     "name": "Singapore",
@@ -407,7 +407,7 @@
     ],
     "risk": 0.18,
     "iso2": "SG",
-    "prevRisk": 0.033
+    "prevRisk": 0.18
   },
   {
     "name": "South Africa",
@@ -417,7 +417,7 @@
     ],
     "risk": 0.55,
     "iso2": "ZA",
-    "prevRisk": 0.34
+    "prevRisk": 0.6
   },
   {
     "name": "Spain",
@@ -425,9 +425,9 @@
       -4.8,
       39.4
     ],
-    "risk": 0.3,
+    "risk": 0.32,
     "iso2": "ES",
-    "prevRisk": 0.059
+    "prevRisk": 0.35
   },
   {
     "name": "Sweden",
@@ -437,7 +437,7 @@
     ],
     "risk": 0.38,
     "iso2": "SE",
-    "prevRisk": 0.07
+    "prevRisk": 0.38
   },
   {
     "name": "Switzerland",
@@ -445,9 +445,9 @@
       8,
       46.75
     ],
-    "risk": 0.5,
+    "risk": 0.35,
     "iso2": "CH",
-    "prevRisk": 0.43
+    "prevRisk": 0.38
   },
   {
     "name": "Thailand",
@@ -455,9 +455,9 @@
       101,
       15
     ],
-    "risk": 0.55,
+    "risk": 0.45,
     "iso2": "TH",
-    "prevRisk": 0.556
+    "prevRisk": 0.38
   },
   {
     "name": "Ukraine",
@@ -465,7 +465,7 @@
       31,
       49.5
     ],
-    "risk": 0.95,
+    "risk": 0.9,
     "iso2": "UA",
     "prevRisk": 0.9
   },
@@ -475,9 +475,9 @@
       54,
       24
     ],
-    "risk": 0.25,
+    "risk": 0.32,
     "iso2": "AE",
-    "prevRisk": 0.24
+    "prevRisk": 0.28
   },
   {
     "name": "United Kingdom",
@@ -485,9 +485,9 @@
       -3.5,
       54.75
     ],
-    "risk": 0.35,
+    "risk": 0.45,
     "iso2": "GB",
-    "prevRisk": 0.07
+    "prevRisk": 0.5
   },
   {
     "name": "United States",
@@ -495,8 +495,8 @@
       -100.5,
       39.75
     ],
-    "risk": 0.45,
+    "risk": 0.4,
     "iso2": "US",
-    "prevRisk": 0.115
+    "prevRisk": 0.35
   }
 ]
