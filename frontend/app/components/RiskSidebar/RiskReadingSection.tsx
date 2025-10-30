@@ -1,13 +1,23 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import {
+  ResponsiveContainer,
+  AreaChart,
+  Area,
+  XAxis,
+  YAxis,
+  Tooltip,
+  CartesianGrid,
+} from 'recharts';
 
 /** risk.json entry */
 type RiskEntry = {
   name: string;
   lngLat: [number, number];
-  risk: number;
-  prevRisk?: number;
+  risk: number;                 // latest
+  prevRisk?: number;            // convenience: most-recent prior value
+  prevRiskSeries?: number[];    // all prior values, newest→oldest (excludes current)
   iso2?: string;
 };
 
@@ -20,21 +30,17 @@ function colorForRisk(r: number) {
   if (r >= 0.5) return '#ffd60a';
   return '#39ff14';
 }
+const clamp01 = (x: number) => Math.max(0, Math.min(1, x));
 
 type Props = {
-  /** Country display name (fallback if iso2 not matched) */
   countryName?: string | null;
-  /** ISO2 code like 'US' (recommended) */
   iso2?: string | null;
-  /** If false, component will not fetch (use to pause when sidebar closed) */
   active?: boolean;
-
-  /** Plumbed from parent (optional; we can also look up from risk.json) */
   currentRisk?: number | null;
   prevRisk?: number | null;
 };
 
-/** Top stats row only: Current Risk, Avg Risk Rating, Change, Avg Delta */
+/** Top stats row: left = Current/Avg; right = modern area chart (no labels) */
 export default function RiskReadingSection({
   countryName,
   iso2,
@@ -46,14 +52,28 @@ export default function RiskReadingSection({
   const [statsError, setStatsError] = useState<string | null>(null);
   const [stats, setStats] = useState<{
     currentRisk: number | null;
-    prevRisk: number | null;
     avgCurrent: number | null;
-    avgChange: number | null;
+    history: number[]; // oldest→newest inclusive of current
   } | null>(null);
 
-  // Load risk.json (for averages, and to fill prevRisk/currentRisk if not passed)
+  // unique gradient id to avoid collisions if multiple sidebars mount
+  const gradId = useMemo(() => {
+    const base = (iso2 || countryName || 'risk').toString().replace(/\s+/g, '-').toUpperCase();
+    return `riskGrad-${base}`;
+  }, [iso2, countryName]);
+
   useEffect(() => {
     let cancelled = false;
+
+    async function fetchRiskJson(preferFresh: boolean) {
+      const res = await fetch('/api/risk.json', {
+        cache: preferFresh ? 'no-store' : 'force-cache',
+        headers: { accept: 'application/json' },
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const payload = (await res.json()) as RiskEntry[] | RiskEntry;
+      return Array.isArray(payload) ? payload : [payload];
+    }
 
     async function ensureRiskStats() {
       setStatsError(null);
@@ -66,43 +86,58 @@ export default function RiskReadingSection({
         setStatsLoading(true);
 
         if (!RISK_CACHE) {
-          const res = await fetch('/api/risk.json', {
-            cache: 'force-cache',
-            headers: { accept: 'application/json' },
-          });
-          if (!res.ok) throw new Error(`HTTP ${res.status}`);
-          const payload = (await res.json()) as RiskEntry[] | RiskEntry;
-          RISK_CACHE = Array.isArray(payload) ? payload : [payload];
+          RISK_CACHE = await fetchRiskJson(false);
         }
 
         const isoU = iso2?.toUpperCase() || '';
         const norm = (s: string) => s.trim().toLowerCase();
 
-        let entry: RiskEntry | undefined;
-        if (isoU) entry = RISK_CACHE.find((c) => (c.iso2 || '').toUpperCase() === isoU);
-        if (!entry && countryName) entry = RISK_CACHE.find((c) => norm(c.name) === norm(countryName));
+        const findEntry = () => {
+          let e: RiskEntry | undefined;
+          if (isoU) e = RISK_CACHE!.find((c) => (c.iso2 || '').toUpperCase() === isoU);
+          if (!e && countryName) e = RISK_CACHE!.find((c) => norm(c.name) === norm(countryName));
+          return e;
+        };
 
-        const currentRisk = (currentRiskProp ?? undefined) !== undefined
-          ? (currentRiskProp as number | null)
-          : (entry?.risk ?? null);
+        let entry = findEntry();
 
-        const prevRisk = (prevRiskProp ?? undefined) !== undefined
-          ? (prevRiskProp as number | null)
-          : (entry?.prevRisk ?? null);
+        // If cached JSON is stale and missing prevRiskSeries, re-fetch fresh once
+        if (entry && (!entry.prevRiskSeries || entry.prevRiskSeries.length === 0)) {
+          RISK_CACHE = await fetchRiskJson(true);
+          entry = findEntry();
+        }
 
-        // Averages
+        // Build history: [...prevRiskSeries reversed, risk]
+        let history: number[] = [];
+        let currentRisk: number | null = null;
+
+        if (entry) {
+          const prior = (entry.prevRiskSeries ?? []).slice().reverse(); // oldest→newest
+          const latest = entry.risk;
+          history = [...prior, latest].filter((v) => typeof v === 'number' && Number.isFinite(v));
+          currentRisk = typeof latest === 'number' ? latest : null;
+        } else {
+          // fallback to props if entry not found
+          const cr =
+            (currentRiskProp ?? undefined) !== undefined
+              ? (currentRiskProp as number | null)
+              : null;
+          currentRisk = typeof cr === 'number' ? cr : null;
+          history = typeof cr === 'number' ? [cr] : [];
+          const pr =
+            (prevRiskProp ?? undefined) !== undefined
+              ? (prevRiskProp as number | null)
+              : null;
+          if (typeof pr === 'number') history.unshift(pr);
+        }
+
         const values = (RISK_CACHE ?? [])
-          .map(r => r.risk)
-          .filter(v => Number.isFinite(v)) as number[];
+          .map((r) => r.risk)
+          .filter((v) => Number.isFinite(v)) as number[];
         const avgCurrent = values.length ? values.reduce((a, b) => a + b, 0) / values.length : null;
 
-        const diffs = (RISK_CACHE ?? [])
-          .filter(r => typeof r.prevRisk === 'number')
-          .map(r => r.risk - (r.prevRisk as number));
-        const avgChange = diffs.length ? diffs.reduce((a, b) => a + b, 0) / diffs.length : null;
-
         if (!cancelled) {
-          setStats({ currentRisk, prevRisk, avgCurrent, avgChange });
+          setStats({ currentRisk, avgCurrent, history });
         }
       } catch {
         if (!cancelled) setStatsError('Failed to load risk stats');
@@ -115,28 +150,19 @@ export default function RiskReadingSection({
     return () => { cancelled = true; };
   }, [active, countryName, iso2, currentRiskProp, prevRiskProp]);
 
-  // --- Helpers for the top stats row ---
   const currentColor =
-    typeof stats?.currentRisk === 'number' ? colorForRisk(stats.currentRisk) : 'rgba(255,255,255,0.85)';
+    typeof stats?.currentRisk === 'number' ? colorForRisk(stats.currentRisk) : '#9cc2ff';
 
-  const delta =
-    typeof stats?.currentRisk === 'number' && typeof stats?.prevRisk === 'number'
-      ? stats.currentRisk - stats.prevRisk
-      : null;
-
-  const deltaColor =
-    delta == null
-      ? 'rgba(255,255,255,0.85)'
-      : delta > 0
-        ? '#ff2d55'   // worse (up)
-        : delta < 0
-          ? '#39ff14' // better (down)
-          : 'rgba(255,255,255,0.85)';
+  // transform for Recharts
+  const chartData = useMemo(
+    () => (stats?.history ?? []).map((v, i) => ({ idx: i, v: clamp01(v) })),
+    [stats?.history]
+  );
 
   return (
     <>
-      {/* --- Top Stats Row --- */}
       <div className="statsRow" aria-label="Risk stats">
+        {/* LEFT: Current + Avg */}
         <div className="statsCol">
           <div className="bigTitle">Current Risk</div>
           {statsLoading ? (
@@ -156,26 +182,63 @@ export default function RiskReadingSection({
           )}
         </div>
 
-        <div className="statsCol">
-          <div className="smallTitle">Change</div>
+        {/* RIGHT: Modern area chart (no labels/legend) */}
+        <div className="statsCol rightCol">
           {statsLoading ? (
             <div className="bigValue muted">Loading…</div>
           ) : statsError ? (
             <div className="bigValue muted">—</div>
+          ) : chartData.length > 0 ? (
+            <div className="chartWrap">
+              <ResponsiveContainer width="100%" height={84}>
+                <AreaChart
+                  data={chartData}
+                  margin={{ left: 0, right: 0, top: 8, bottom: 0 }}
+                >
+                  <defs>
+                    <linearGradient id={gradId} x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor={currentColor} stopOpacity={0.45} />
+                      <stop offset="100%" stopColor={currentColor} stopOpacity={0} />
+                    </linearGradient>
+                  </defs>
+
+                  <CartesianGrid
+                    stroke="rgba(255,255,255,0.12)"
+                    vertical={false}
+                    strokeDasharray="3 5"
+                  />
+                  <XAxis dataKey="idx" hide />
+                  <YAxis domain={[0, 1]} hide />
+
+                  <Tooltip
+                    cursor={{ stroke: 'rgba(255,255,255,0.25)', strokeWidth: 1 }}
+                    formatter={(val: any) => [(Number(val) as number).toFixed(2), 'Risk']}
+                    labelFormatter={() => ''}
+                    contentStyle={{
+                      background: 'rgba(14,14,14,0.92)',
+                      border: '1px solid rgba(255,255,255,0.08)',
+                      borderRadius: 8,
+                      padding: '6px 8px',
+                      color: '#fff',
+                    }}
+                  />
+
+                  <Area
+                    type="monotone"
+                    dataKey="v"
+                    stroke={currentColor}
+                    strokeWidth={2.2}
+                    fill={`url(#${gradId})`}
+                    dot={false}
+                    activeDot={{ r: 3 }}
+                  />
+                </AreaChart>
+              </ResponsiveContainer>
+            </div>
           ) : (
-            <>
-              <div className="bigValue" style={{ color: deltaColor }}>
-                {delta == null ? '—' : `${delta >= 0 ? '+' : ''}${delta.toFixed(2)}`}
-              </div>
-              <div className="pill" aria-label="Average change in risk">
-                Avg Delta:&nbsp;
-                <strong>
-                  {typeof stats?.avgChange === 'number'
-                    ? `${stats.avgChange >= 0 ? '+' : ''}${stats.avgChange.toFixed(2)}`
-                    : '—'}
-                </strong>
-              </div>
-            </>
+            <div className="bigValue muted" style={{ fontSize: '1.2em' }}>
+              No history
+            </div>
           )}
         </div>
       </div>
@@ -183,12 +246,12 @@ export default function RiskReadingSection({
       <style jsx>{`
         .muted { opacity: 0.7; }
 
-        /* Top stats row — FLEX to pin left/right edges  */
         .statsRow {
           display: flex;
           width: 100%;
           justify-content: space-between;
           align-items: flex-start;
+          gap: 8px;
         }
         .statsCol {
           flex: 1 1 0;
@@ -197,21 +260,19 @@ export default function RiskReadingSection({
           display: flex;
           flex-direction: column;
         }
-        .statsCol:last-child {
+        .rightCol {
           text-align: right;
-          align-items: flex-end;
+          align-items: stretch;
+        }
+        .chartWrap {
+          width: 100%;
         }
 
-        /* Stack on small screens */
         @media (max-width: 520px) {
           .statsRow { flex-direction: column; }
-          .statsCol:last-child {
-            text-align: left;
-            align-items: flex-start;
-          }
+          .rightCol { text-align: left; align-items: stretch; }
         }
 
-        /* Optional: remove side padding so columns sit truly flush to container edges */
         .statsCol:first-child { padding-left: 0; }
         .statsCol:last-child  { padding-right: 0; }
 
@@ -222,15 +283,6 @@ export default function RiskReadingSection({
           color: rgba(255, 255, 255, 0.9);
           margin-bottom: 0.1em;
         }
-
-        .smallTitle {
-          font-size: 12px;
-          line-height: 1;
-          letter-spacing: 0.4px;
-          color: rgba(255,255,255,0.7);
-          margin-bottom: 6px;
-        }
-
         .bigValue {
           font-size: 3em;
           font-weight: 800;
@@ -239,7 +291,6 @@ export default function RiskReadingSection({
           color: rgba(255,255,255,0.95);
           text-shadow: 0 0 6px rgba(0,0,0,0.3);
         }
-
         .pill {
           display: inline-block;
           padding: 4px 5px;
