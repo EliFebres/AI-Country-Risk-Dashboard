@@ -222,7 +222,7 @@ export default function RiskSidebar({
           50%      { opacity: 1; }
         }
 
-        .liveLabel { text-transform: uppercase; font-weight: 700; opacity: 0.9; }
+        .liveLabel { text-transform: uppercase; font-weight: 550; opacity: 0.9; }
         .ageBox {
           display: inline-flex; align-items: center; justify-content: center;
           padding: 0.15em 0.4em; border-radius: 4px;
