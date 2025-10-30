@@ -17,18 +17,8 @@ type CountryIndicatorLatest = {
   values: Partial<Record<IndicatorName, IndicatorSnapshot>>;
 };
 
-/** risk.json entry */
-type RiskEntry = {
-  name: string;
-  lngLat: [number, number];
-  risk: number;
-  prevRisk?: number;
-  iso2?: string;
-};
-
-/** Caches to avoid refetch storms */
+/** Cache to avoid refetch storms */
 let INDICATOR_CACHE: CountryIndicatorLatest[] | null = null;
-let RISK_CACHE: RiskEntry[] | null = null;
 
 /** utils */
 const clamp01 = (x: number) => Math.max(0, Math.min(1, x));
@@ -98,6 +88,13 @@ function oneWordLabel(name: IndicatorName): string {
     case 'GDP per-capita growth (% y/y)': return 'GDP';
   }
 }
+
+const ORDER: IndicatorName[] = [
+  'Rule of law (z-score)',
+  'Inflation (% y/y)',
+  'Interest payments (% revenue)',
+  'GDP per-capita growth (% y/y)',
+];
 
 const GAUGE_SIZE = 60;
 
@@ -176,13 +173,6 @@ function MiniGauge(props: {
   );
 }
 
-const ORDER: IndicatorName[] = [
-  'Rule of law (z-score)',
-  'Inflation (% y/y)',
-  'Interest payments (% revenue)',
-  'GDP per-capita growth (% y/y)',
-];
-
 type Props = {
   /** Country display name (fallback if iso2 not matched) */
   countryName?: string | null;
@@ -190,31 +180,16 @@ type Props = {
   iso2?: string | null;
   /** If false, component will not fetch (use to pause when sidebar closed) */
   active?: boolean;
-
-  /** Plumbed from parent (optional; we can also look up from risk.json) */
-  currentRisk?: number | null;
-  prevRisk?: number | null;
 };
 
-export default function RiskReadingSection({
+export default function EconomicGaugeSection({
   countryName,
   iso2,
   active = true,
-  currentRisk: currentRiskProp,
-  prevRisk: prevRiskProp,
 }: Props) {
   const [indicators, setIndicators] = useState<CountryIndicatorLatest | null>(null);
   const [indLoading, setIndLoading] = useState(false);
   const [indError, setIndError] = useState<string | null>(null);
-
-  const [statsLoading, setStatsLoading] = useState(false);
-  const [statsError, setStatsError] = useState<string | null>(null);
-  const [stats, setStats] = useState<{
-    currentRisk: number | null;
-    prevRisk: number | null;
-    avgCurrent: number | null;
-    avgChange: number | null;
-  } | null>(null);
 
   // Load indicator_latest.json (cache once), then select the country
   useEffect(() => {
@@ -262,68 +237,6 @@ export default function RiskReadingSection({
     return () => { cancelled = true; };
   }, [active, countryName, iso2]);
 
-  // Load risk.json (for averages, and to fill prevRisk/currentRisk if not passed)
-  useEffect(() => {
-    let cancelled = false;
-
-    async function ensureRiskStats() {
-      setStatsError(null);
-      setStats(null);
-
-      if (!active) return;
-      if (!countryName && !iso2) return;
-
-      try {
-        setStatsLoading(true);
-
-        if (!RISK_CACHE) {
-          const res = await fetch('/api/risk.json', {
-            cache: 'force-cache', /* markers already forced a fresh write/bust */
-            headers: { accept: 'application/json' },
-          });
-          if (!res.ok) throw new Error(`HTTP ${res.status}`);
-          const payload = (await res.json()) as RiskEntry[] | RiskEntry;
-          RISK_CACHE = Array.isArray(payload) ? payload : [payload];
-        }
-
-        const isoU = iso2?.toUpperCase() || '';
-        const norm = (s: string) => s.trim().toLowerCase();
-
-        let entry: RiskEntry | undefined;
-        if (isoU) entry = RISK_CACHE.find((c) => (c.iso2 || '').toUpperCase() === isoU);
-        if (!entry && countryName) entry = RISK_CACHE.find((c) => norm(c.name) === norm(countryName));
-
-        const currentRisk = (currentRiskProp ?? undefined) !== undefined
-          ? (currentRiskProp as number | null)
-          : (entry?.risk ?? null);
-
-        const prevRisk = (prevRiskProp ?? undefined) !== undefined
-          ? (prevRiskProp as number | null)
-          : (entry?.prevRisk ?? null);
-
-        // Averages
-        const values = RISK_CACHE.map(r => r.risk).filter(v => Number.isFinite(v)) as number[];
-        const avgCurrent = values.length ? values.reduce((a, b) => a + b, 0) / values.length : null;
-
-        const diffs = RISK_CACHE
-          .filter(r => typeof r.prevRisk === 'number')
-          .map(r => r.risk - (r.prevRisk as number));
-        const avgChange = diffs.length ? diffs.reduce((a, b) => a + b, 0) / diffs.length : null;
-
-        if (!cancelled) {
-          setStats({ currentRisk, prevRisk, avgCurrent, avgChange });
-        }
-      } catch {
-        if (!cancelled) setStatsError('Failed to load risk stats');
-      } finally {
-        if (!cancelled) setStatsLoading(false);
-      }
-    }
-
-    ensureRiskStats();
-    return () => { cancelled = true; };
-  }, [active, countryName, iso2, currentRiskProp, prevRiskProp]);
-
   // --- Build gauge items ---
   const gaugeItems =
     indicators
@@ -350,81 +263,8 @@ export default function RiskReadingSection({
         })
       : [];
 
-  // --- Helpers for the top stats row ---
-  const currentColor =
-    typeof stats?.currentRisk === 'number' ? colorForRisk(stats.currentRisk) : 'rgba(255,255,255,0.85)';
-
-  const delta =
-    typeof stats?.currentRisk === 'number' && typeof stats?.prevRisk === 'number'
-      ? stats.currentRisk - stats.prevRisk
-      : null;
-
-  const deltaColor =
-    delta == null
-      ? 'rgba(255,255,255,0.85)'
-      : delta > 0
-        ? '#ff2d55'   // worse (up)
-        : delta < 0
-          ? '#39ff14' // better (down)
-          : 'rgba(255,255,255,0.85)';
-
-  const arrow =
-    delta == null
-      ? ''
-      : delta > 0
-        ? '▲'
-        : delta < 0
-          ? '▼'
-          : '■';
-
   return (
     <>
-      {/* --- Top Stats Row --- */}
-      <div className="statsRow" aria-label="Risk stats">
-        <div className="statsCol">
-          <div className="smallTitle">Current Risk Rating</div>
-          {statsLoading ? (
-            <div className="bigValue muted">Loading…</div>
-          ) : statsError ? (
-            <div className="bigValue muted">—</div>
-          ) : (
-            <>
-              <div className="bigValue" style={{ color: currentColor }}>
-                {typeof stats?.currentRisk === 'number' ? stats.currentRisk.toFixed(2) : '—'}
-              </div>
-              <div className="pill" aria-label="Average current risk">
-                Avg Risk Rating:&nbsp;
-                <strong>{typeof stats?.avgCurrent === 'number' ? stats.avgCurrent.toFixed(2) : '—'}</strong>
-              </div>
-            </>
-          )}
-        </div>
-
-        <div className="statsCol">
-          <div className="smallTitle">Change in Risk Rating</div>
-          {statsLoading ? (
-            <div className="bigValue muted">Loading…</div>
-          ) : statsError ? (
-            <div className="bigValue muted">—</div>
-          ) : (
-            <>
-              <div className="bigValue" style={{ color: deltaColor }}>
-                {delta == null ? '—' : `${arrow} ${delta >= 0 ? '+' : ''}${delta.toFixed(2)}`}
-              </div>
-              <div className="pill" aria-label="Average change in risk">
-                Avg Delta:&nbsp;
-                <strong>
-                  {typeof stats?.avgChange === 'number'
-                    ? `${stats.avgChange >= 0 ? '+' : ''}${stats.avgChange.toFixed(2)}`
-                    : '—'}
-                </strong>
-              </div>
-            </>
-          )}
-        </div>
-      </div>
-
-      {/* --- Indicators Grid --- */}
       {indLoading ? (
         <p className="muted">Loading indicators…</p>
       ) : indError ? (
@@ -439,7 +279,6 @@ export default function RiskReadingSection({
                 valueText={g.valueText}
                 progress={g.progress}
                 aria={g.aria}
-                size={GAUGE_SIZE}
                 ringColor={g.ringColor}
               />
             </div>
@@ -451,69 +290,6 @@ export default function RiskReadingSection({
 
       <style jsx>{`
         .muted { opacity: 0.7; }
-
-        /* Top stats row — FLEX to pin left/right edges  */
-        .statsRow {
-          display: flex;
-          width: 100%;
-          justify-content: space-between;  /* push columns to far left/right */
-          align-items: flex-start;
-          gap: 12px;                       /* spacing between the two columns */
-          margin: 6px 0 12px 0;
-          padding-right: 20px;
-          padding-left: 20px;
-        }
-        .statsCol {
-          flex: 1 1 0;
-          padding: 15px 20px;
-          padding-top: 0px;
-          display: flex;
-          flex-direction: column;
-        }
-        .statsCol:last-child {
-          text-align: right;               /* right-align numbers/pills */
-          align-items: flex-end;
-        }
-
-        /* Stack on small screens */
-        @media (max-width: 520px) {
-          .statsRow { flex-direction: column; }
-          .statsCol:last-child {
-            text-align: left;
-            align-items: flex-start;
-          }
-        }
-
-        /* Optional: remove side padding so columns sit truly flush to container edges */
-        .statsCol:first-child { padding-left: 0; }
-        .statsCol:last-child  { padding-right: 0; }
-
-        .smallTitle {
-          font-size: 12px;
-          line-height: 1;
-          letter-spacing: 0.4px;
-          color: rgba(255,255,255,0.7);
-          margin-bottom: 6px;
-        }
-        .bigValue {
-          font-size: 34px;
-          font-weight: 800;
-          line-height: 1.1;
-          margin: 2px 0 8px 0;
-          color: rgba(255,255,255,0.95);
-          text-shadow: 0 0 6px rgba(0,0,0,0.3);
-        }
-        .pill {
-          display: inline-block;
-          padding: 4px 5px;
-          font-size: 12px;
-          line-height: 1;
-          /* background: rgba(255,255,255,0.10); */
-          /* border: 1px solid rgba(255,255,255,0.12); */
-          color: rgba(255,255,255,0.9);
-        }
-
-        /* Gauges */
         .gaugeGrid {
           width: 100%;
           display: grid;

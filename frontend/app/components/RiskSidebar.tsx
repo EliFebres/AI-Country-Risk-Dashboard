@@ -2,8 +2,9 @@
 'use client';
 
 import { useEffect, useMemo } from 'react';
-import RiskReadingSection from './Sidebar/RiskReadingSection';
-import AiSummary from './Sidebar/AiSummary';
+import RiskReadingSection from './RiskSidebar/RiskReadingSection';
+import EconomicGaugeSection from './RiskSidebar/EconomicGaugeSection';
+import AiSummary from './RiskSidebar/AiSummary';
 
 type Props = {
   open: boolean;
@@ -52,7 +53,7 @@ export default function RiskSidebar({
   // Tooltip copy for the numeric badge
   const ageTitle =
     typeof daysOld === 'number'
-      ? `Time since last data refresh. ${daysOld}d means ${daysOld === 0 ? 'updated today' : `updated ${daysOld} day${daysOld === 1 ? '' : 's'} ago`}.${lastUpdatedLocal ? ` Last update: ${lastUpdatedLocal}.` : ''}`
+      ? `This is the time since the last data refresh. Last update: ${lastUpdatedLocal ?? 'unknown'}`
       : undefined;
 
   return (
@@ -87,7 +88,7 @@ export default function RiskSidebar({
             {typeof daysOld === 'number' && (
               <span
                 className="dataTracker"
-                title={`${lastUpdatedLocal ? ` Last update: ${lastUpdatedLocal}` : ''}`}
+                title={ageTitle}
                 aria-label={`Data age ${daysOld} day${daysOld === 1 ? '' : 's'}`}
               >
                 {/* PERFECT CIRCLE VIA SVG */}
@@ -118,6 +119,7 @@ export default function RiskSidebar({
             <>
               <section className="card">
                 <h3></h3>
+                {/* Top stats */}
                 <RiskReadingSection
                   countryName={country?.name}
                   iso2={country?.iso2}
@@ -125,12 +127,18 @@ export default function RiskSidebar({
                   prevRisk={country?.prevRisk}
                   active={open}
                 />
+                {/* Economic gauges */}
+                <EconomicGaugeSection
+                  countryName={country?.name}
+                  iso2={country?.iso2}
+                  active={open}
+                />
               </section>
 
               <div className="custom-divider" />
 
               <section className="card">
-                <h3>Ai Summary (GPT 4o)</h3>
+                <h3>AI Summary</h3>
                 <AiSummary iso2={country?.iso2} active={open} />
               </section>
             </>
@@ -159,98 +167,57 @@ export default function RiskSidebar({
           will-change: clip-path, opacity;
           transition: clip-path var(--revealMs, 360ms) var(--easing, ease),
                       opacity var(--fadeMs, 220ms) var(--easing, ease);
-          /* Enable container queries so sizes respond to sidebar width */
           container-type: inline-size;
         }
         .sidebar.closed { clip-path: inset(0 100% 0 0); opacity: 0; }
         .sidebar.open   { clip-path: inset(0 0 0 0);   opacity: 1; }
 
-        /* Align header content's left edge with the text inside sections:
-           16px (.content) + 12px (.card horizontal padding) = 28px */
         .bar {
           display: flex; align-items: center;
           padding: 14px 16px 14px calc(16px + 12px);
         }
 
-        /* Full-width row so freshness docks right */
         .titleRow {
           display: flex; align-items: center; gap: 10px;
-          min-width: 0;
-          width: 100%;
+          min-width: 0; width: 100%;
           font-size: clamp(20px, 2.4cqw, 34px);
           line-height: 1;
-          padding: 0.6em 0;
+          padding: 0.8em 0;
         }
 
         .countryName {
           font-size: 1.3em;
           line-height: 1;
           white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-          flex: 1 1 auto;      /* let name grow/shrink; enables ellipsis */
-          min-width: 0;
+          flex: 1 1 auto; min-width: 0;
         }
 
-        /* --- Data tracker (right-aligned) --- */
         .dataTracker {
-          display: inline-flex;
-          align-items: center;
-          gap: 6px;
-          font-size: 0.75em;          /* slightly smaller than title */
-          opacity: 0.85;
-          letter-spacing: 0.02em;
-          flex: 0 0 auto;
-          margin-inline-start: auto;  /* push to the right edge */
+          display: inline-flex; align-items: center; gap: 6px;
+          font-size: 0.75em; opacity: 0.85; letter-spacing: 0.02em;
+          flex: 0 0 auto; margin-inline-start: auto;
         }
-
-        /* SVG dot: fixed px size to avoid font rounding */
-        .statusDot {
-          width: 8px; height: 8px;
-          flex: 0 0 10px; display: inline-block;
-        }
-        .statusDot circle { fill: rgba(255, 255, 255, 0.28); } /* default = grey */
-        .statusDot.fresh circle { fill: #ff2d55; }             /* red */
+        .statusDot { width: 8px; height: 8px; flex: 0 0 10px; display: inline-block; }
+        .statusDot circle { fill: rgba(255, 255, 255, 0.28); }
+        .statusDot.fresh circle { fill: #ff2d55; }
         .statusDot.fresh { filter: drop-shadow(0 0 6px rgba(255, 45, 85, 0.55)); }
 
-        .liveLabel {
-          text-transform: uppercase;
-          font-weight: 700;
-          opacity: 0.9;
-        }
+        .liveLabel { text-transform: uppercase; font-weight: 700; opacity: 0.9; }
         .ageBox {
-          display: inline-flex;
-          align-items: center;
-          justify-content: center;
-          padding: 0.15em 0.4em;
-          border-radius: 4px;
+          display: inline-flex; align-items: center; justify-content: center;
+          padding: 0.15em 0.4em; border-radius: 4px;
           background: rgba(0, 0, 0, 0.28);
           border: 1px solid rgba(255, 255, 255, 0.06);
-          font-weight: 600;
-          line-height: 1;
-          min-width: 2.1em;
-          text-align: center;
+          font-weight: 600; line-height: 1; min-width: 2.1em; text-align: center;
         }
 
         .flagBox {
-          width: 2.1em;
-          height: 1.2em;
-          display: inline-flex;
-          align-items: center;
-          justify-content: center;
-          border-radius: 3px;
-          overflow: hidden;
-          background: rgba(255,255,255,0.06);
+          width: 2.1em; height: 1.2em; display: inline-flex; align-items: center; justify-content: center;
+          border-radius: 3px; overflow: hidden; background: rgba(255,255,255,0.06);
           box-shadow: inset 0 0 0 1px rgba(255,255,255,0.08);
-          flex: 0 0 auto;
-          margin-inline-end: 0.3em;
+          flex: 0 0 auto; margin-inline-end: 0.3em;
         }
-
-        .flag {
-          width: 100%;
-          height: 100%;
-          object-fit: cover;
-          object-position: 50% 50%;
-          display: block;
-        }
+        .flag { width: 100%; height: 100%; object-fit: cover; object-position: 50% 50%; display: block; }
 
         .content { padding: 16px; overflow-y: auto; }
         .muted { opacity: 0.7; }
@@ -258,7 +225,6 @@ export default function RiskSidebar({
         .card { margin-bottom: 16px; padding: 10px 12px; }
         .card h3 { margin: 0 0 8px; font-size: 18px; opacity: 0.9; font-weight: bold; }
 
-        /* Existing section divider */
         .custom-divider {
           width: 95%;
           height: 1px;
@@ -266,7 +232,6 @@ export default function RiskSidebar({
           margin: 16px auto;
         }
 
-        /* Header variant: same look, aligned to content text column */
         .custom-divider.header-divider {
           background: rgba(255, 255, 255, 0.18);
           height: 1px;
