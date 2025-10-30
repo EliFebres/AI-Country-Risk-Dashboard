@@ -1,5 +1,5 @@
 {
-  "last_run": "2025-10-30T17:42:39.439Z",
+  "last_run": "2025-10-30T20:47:56.626Z",
   "source": "neon",
-  "note": "Updated risk + iso2 and prevRisk (from previous DB snapshot) and wrote risk_summary.json; preserved lngLat."
+  "note": "Updated risk + iso2 and prevRisk/prevRiskSeries (from previous DB snapshots) and wrote risk_summary.json; preserved lngLat."
 }

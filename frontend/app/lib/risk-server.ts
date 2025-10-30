@@ -19,6 +19,9 @@ export type JoinedLatestRisk = {
   bullet_summary: string;
   prev_as_of?: string | null;
   prev_score?: number | null;
+  // NEW: arrays of all prior observations (excluding the latest), newest→oldest
+  prev_scores?: number[] | null;
+  prev_as_ofs?: string[] | null;
 };
 
 declare global {
@@ -69,8 +72,8 @@ export async function fetchLatestRiskSnapshotsFromDB(): Promise<DBRiskSnapshot[]
 
 /**
  * Returns latest and previous risk snapshot per country.
- * - Latest = rn = 1 (max as_of)
- * - Previous = rn = 2 (the period immediately before the latest)
+ * Also returns arrays of all prior scores/dates (excluding the latest),
+ * ordered newest→oldest.
  */
 export async function fetchJoinedLatestRisksFromDB(): Promise<JoinedLatestRisk[]> {
   const pool = await getPool();
@@ -93,10 +96,18 @@ export async function fetchJoinedLatestRisksFromDB(): Promise<JoinedLatestRisk[]
       FROM ranked
       WHERE rn = 1
     ),
-    prev AS (
+    prev_single AS (
       SELECT country_iso2, as_of AS prev_as_of, score AS prev_score
       FROM ranked
       WHERE rn = 2
+    ),
+    prev_list AS (
+      SELECT
+        country_iso2,
+        ARRAY_AGG(score::float8 ORDER BY as_of DESC) FILTER (WHERE rn >= 2) AS prev_scores,
+        ARRAY_AGG(as_of ORDER BY as_of DESC)          FILTER (WHERE rn >= 2) AS prev_as_ofs
+      FROM ranked
+      GROUP BY country_iso2
     )
     SELECT
       c.iso2,
@@ -104,13 +115,14 @@ export async function fetchJoinedLatestRisksFromDB(): Promise<JoinedLatestRisk[]
       l.as_of,
       l.score,
       l.bullet_summary,
-      p.prev_as_of,
-      p.prev_score
+      ps.prev_as_of,
+      ps.prev_score,
+      pl.prev_scores,
+      pl.prev_as_ofs
     FROM latest l
-    LEFT JOIN prev p
-      ON p.country_iso2 = l.country_iso2
-    JOIN country c
-      ON c.iso2 = l.country_iso2
+    LEFT JOIN prev_single ps ON ps.country_iso2 = l.country_iso2
+    LEFT JOIN prev_list   pl ON pl.country_iso2 = l.country_iso2
+    JOIN country c           ON c.iso2 = l.country_iso2
     ORDER BY c.name ASC;
     `
   );
@@ -266,6 +278,7 @@ async function writeLatestIndicatorValuesJson(): Promise<number> {
  *  - risk (latest DB score)
  *  - iso2 (DB)
  *  - prevRisk (DB score from the period immediately before the latest as_of)
+ *  - prevRiskSeries (all prior scores, newest→oldest, excluding current)
  * Preserves lngLat and other fields. Also writes risk_summary.json (latest
  * summaries only) and indicator_latest.json. Skips if run < 7 days ago.
  */
@@ -299,18 +312,30 @@ export async function refreshRiskJsonWeekly(): Promise<RefreshOutcome> {
     // 3) Pull latest + previous risks/summaries from Neon
     const joined = await fetchJoinedLatestRisksFromDB();
 
-    // 4) Build a lookup by normalized country name -> { iso2, score, prevScore }
+    // 4) Build a lookup by normalized country name -> DB data
     const normalize = (s: string) => s.trim().toLowerCase();
-    const dbMap = new Map<string, { iso2: string; score: number; prevScore: number | null }>();
+    const dbMap = new Map<
+      string,
+      { iso2: string; score: number; prevScore: number | null; prevScores: number[] }
+    >();
     for (const row of joined) {
+      const list = Array.isArray(row.prev_scores)
+        ? row.prev_scores.map(Number).filter((x) => Number.isFinite(x))
+        : [];
+      // (defensive) if list missing but prev_score exists, include it
+      if (list.length === 0 && row.prev_score != null) {
+        const n = Number(row.prev_score);
+        if (Number.isFinite(n)) list.push(n);
+      }
       dbMap.set(normalize(row.name), {
         iso2: row.iso2,
         score: Number(row.score),
         prevScore: row.prev_score == null ? null : Number(row.prev_score),
+        prevScores: list,
       });
     }
 
-    // 5) Update risk/iso2 and set prevRisk from DB's previous snapshot
+    // 5) Update risk/iso2 and set prevRisk/prevRiskSeries
     let matchedCount = 0;
     let changedCount = 0;
     const seenDb = new Set<string>();
@@ -327,12 +352,15 @@ export async function refreshRiskJsonWeekly(): Promise<RefreshOutcome> {
         if (riskChanged || iso2Changed) changedCount++;
 
         const out: any = { ...d, risk: rec.score, iso2: rec.iso2 };
-        if (rec.prevScore != null && Number.isFinite(rec.prevScore)) {
-          out.prevRisk = rec.prevScore;
+
+        if (rec.prevScores.length > 0) {
+          out.prevRiskSeries = rec.prevScores;         // newest→oldest, excluding current
+          out.prevRisk = rec.prevScores[0];            // convenience single value
         } else {
-          // Ensure we don't carry stale prevRisk if DB has no previous row.
+          delete out.prevRiskSeries;
           delete out.prevRisk;
         }
+
         return out as CountryRisk;
       }
       return d;
@@ -367,7 +395,7 @@ export async function refreshRiskJsonWeekly(): Promise<RefreshOutcome> {
       last_run: now,
       source: "neon",
       note:
-        "Updated risk + iso2 and prevRisk (from previous DB snapshot) and wrote risk_summary.json; preserved lngLat.",
+        "Updated risk + iso2 and prevRisk/prevRiskSeries (from previous DB snapshots) and wrote risk_summary.json; preserved lngLat.",
     };
     await fs.writeFile(metaJsonPath, JSON.stringify(metaOut, null, 2) + "\n", "utf8");
 

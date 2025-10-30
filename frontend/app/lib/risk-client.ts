@@ -1,9 +1,9 @@
-
 export type CountryRisk = {
   name: string;
   lngLat: [number, number]; // [lng, lat]
   risk: number;             // 0..1 (current risk)
-  prevRisk?: number;        // previous period's risk (from DB)
+  prevRisk?: number;        // previous single value (convenience)
+  prevRiskSeries?: number[]; // NEW: all prior scores, newest→oldest (excludes current)
   iso2?: string;            // populated by weekly refresh
 };
 
