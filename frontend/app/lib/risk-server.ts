@@ -259,7 +259,7 @@ export async function fetchLatestIndicatorValuesFromDB(): Promise<CountryIndicat
 }
 
 /**
- * Writes public/api/indicator_latest.json … (omitted for brevity above)
+ * Writes public/api/indicator_latest.json.
  */
 async function writeLatestIndicatorValuesJson(): Promise<number> {
   const { fs, path } = await nodeFs();
@@ -269,6 +269,115 @@ async function writeLatestIndicatorValuesJson(): Promise<number> {
   await fs.mkdir(path.dirname(outPath), { recursive: true });
   await fs.writeFile(outPath, JSON.stringify(payload, null, 2) + "\n", "utf8");
   return payload.length;
+}
+
+// ----------------------------- Latest articles ----------------------------
+export type CountryArticles = {
+  iso2: string;
+  name: string;
+  as_of: string; // latest snapshot date for this country
+  articles: {
+    url: string;
+    title?: string | null;
+    source?: string | null;
+    published_at?: string | null; // ISO string
+  }[];
+};
+
+/**
+ * For each country, find its latest risk_snapshot.as_of and then take up to 3
+ * most recent (by published_at DESC, then rank ASC) articles for that same as_of.
+ * Countries with 0 articles will still be included with an empty array.
+ */
+export async function fetchLatestArticlesForLatestSnapshotsFromDB(): Promise<CountryArticles[]> {
+  const pool = await getPool();
+
+  const { rows } = await pool.query<{
+    iso2: string;
+    name: string;
+    as_of: string;
+    url: string | null;
+    title: string | null;
+    source: string | null;
+    published_at: string | null;
+    rn: number | null;
+  }>(`
+    WITH latest AS (
+      SELECT DISTINCT ON (rs.country_iso2)
+             rs.country_iso2, rs.as_of
+        FROM risk_snapshot rs
+    ORDER BY rs.country_iso2, rs.as_of DESC
+    ),
+    ranked AS (
+      SELECT
+        a.country_iso2,
+        a.as_of,
+        a.url,
+        a.title,
+        a.source,
+        a.published_at,
+        ROW_NUMBER() OVER (
+          PARTITION BY a.country_iso2
+          ORDER BY a.published_at DESC NULLS LAST, a.rank ASC, a.id ASC
+        ) AS rn
+      FROM risk_snapshot_article a
+      JOIN latest l
+        ON l.country_iso2 = a.country_iso2
+       AND l.as_of = a.as_of
+    ),
+    top3 AS (
+      SELECT *
+      FROM ranked
+      WHERE rn <= 3
+    )
+    SELECT
+      c.iso2,
+      c.name,
+      l.as_of::text AS as_of,
+      t.url,
+      t.title,
+      t.source,
+      t.published_at::text AS published_at,
+      t.rn
+    FROM latest l
+    JOIN country c ON c.iso2 = l.country_iso2
+    LEFT JOIN top3 t ON t.country_iso2 = l.country_iso2
+    ORDER BY c.name ASC, t.rn ASC NULLS LAST;
+  `);
+
+  // Group rows into one object per country.
+  const byIso2 = new Map<string, CountryArticles>();
+  for (const r of rows) {
+    const key = (r.iso2 || "").toUpperCase();
+    let entry = byIso2.get(key);
+    if (!entry) {
+      entry = { iso2: key, name: r.name, as_of: r.as_of, articles: [] };
+      byIso2.set(key, entry);
+    }
+    if (r.url) {
+      entry.articles.push({
+        url: r.url,
+        title: r.title ?? null,
+        source: r.source ?? null,
+        published_at: r.published_at ?? null,
+      });
+    }
+  }
+  // Ensure every country from latest is present (even if 0 articles)
+  return Array.from(byIso2.values());
+}
+
+/**
+ * Writes public/api/articles_latest.json.
+ */
+async function writeLatestArticlesJson(): Promise<number> {
+  const { fs, path } = await nodeFs();
+  const outPath = path.join(process.cwd(), "public", "api", "articles_latest.json");
+
+  const payload = await fetchLatestArticlesForLatestSnapshotsFromDB();
+  await fs.mkdir(path.dirname(outPath), { recursive: true });
+  await fs.writeFile(outPath, JSON.stringify(payload, null, 2) + "\n", "utf8");
+  return payload.length; // number of countries written
 }
 
 // ------------------------- Weekly refresh main flow -----------------------
@@ -402,6 +511,10 @@ export async function refreshRiskJsonWeekly(): Promise<RefreshOutcome> {
     // 10) Also write the latest indicator values snapshot
     const indicatorsWritten = await writeLatestIndicatorValuesJson();
     console.log(`Wrote indicator_latest.json for ${indicatorsWritten} countries`);
+
+    // 11) And write the latest per-country articles (0–3 each)
+    const articlesWritten = await writeLatestArticlesJson();
+    console.log(`Wrote articles_latest.json for ${articlesWritten} countries`);
 
     return { status: "updated", lastRun: now, matchedCount, changedCount, missingInJson };
   } catch (err: any) {
