@@ -1,8 +1,8 @@
 import sys
 import pathlib
+import requests
 import pandas as pd
 from datetime import datetime, timezone
-import requests  # ← ADDED
 
 # --- Resolve project root so "backend/" is importable ------------------------
 project_root = pathlib.Path.cwd().resolve()
@@ -19,7 +19,8 @@ from backend.ai import langchain_llm
 from backend.utils import fetch_links
 from backend.utils import country_data_fetch
 from backend import constants, data_retrieval, data_push
-from backend.utils.url_resolver import resolve_google_news_url  # ← ADDED
+from backend.utils.url_resolver import resolve_google_news_url
+from backend.utils.article_summary import extract_and_summarize
 
 # --- Paths ------------------------------------------------------------------
 BACKEND_DIR    = project_root / "backend"
@@ -82,12 +83,28 @@ def main() -> None:
                 summary_words=240,
             )
 
-            # --- NEW: replace Google wrapper links with publisher raw URLs ----
+            # --- Replace Google wrapper links with publisher raw URLs & improve summaries ---
             with requests.Session() as _sess:
+                # Resolve URLs
                 for it in items:
                     link = it.get("link")
                     if isinstance(link, str) and "news.google.com" in link:
                         it["link"] = resolve_google_news_url(link, session=_sess)
+
+                # Upgrade weak summaries using BeautifulSoup (only when needed)
+                for it in items:
+                    cur_sum = (it.get("summary") or "").strip()
+                    source  = (it.get("source")  or "").strip()
+                    # Heuristic: if missing/very short/equals source name → replace
+                    if (not cur_sum) or (len(cur_sum.split()) < 8) or (cur_sum.lower() == source.lower()):
+                        link = it.get("link")
+                        if isinstance(link, str) and link.startswith("http"):
+                            summary, full_text = extract_and_summarize(link, session=_sess, max_words=160)
+                            if summary:
+                                it["summary"] = summary
+                            # Optionally keep some body text for the LLM (respect your cap)
+                            if full_text:
+                                it["content"] = full_text[:24000]
 
             # Assign stable ids for each article item ("a1","a2",...)
             for i, it in enumerate(items, start=1):
@@ -133,7 +150,10 @@ def main() -> None:
                 })
 
             # 4) Upsert to DB (payload, llm_output, and top_articles)
-            data_push.upsert_snapshot({**payload, "llm_output": llm_output, "top_articles": top_articles},country_name=country_name)
+            data_push.upsert_snapshot(
+                {**payload, "llm_output": llm_output, "top_articles": top_articles},
+                country_name=country_name
+            )
 
             # Optional progress print
             sc = llm_output.get("score")
