@@ -1,8 +1,8 @@
 import sys
 import pathlib
-import requests
 import pandas as pd
 from datetime import datetime, timezone
+import requests  # for URL resolution & article fetching
 
 # --- Resolve project root so "backend/" is importable ------------------------
 project_root = pathlib.Path.cwd().resolve()
@@ -21,6 +21,7 @@ from backend.utils import country_data_fetch
 from backend import constants, data_retrieval, data_push
 from backend.utils.url_resolver import resolve_google_news_url
 from backend.utils.article_summary import extract_and_summarize
+from backend.utils.article_media import extract_thumbnail
 
 # --- Paths ------------------------------------------------------------------
 BACKEND_DIR    = project_root / "backend"
@@ -48,11 +49,12 @@ def _to_utc_iso(dt: datetime) -> str:
         dt = dt.replace(tzinfo=timezone.utc)
     return dt.astimezone(timezone.utc).strftime("%Y-%m-%dT%H:%MZ")
 
-# --- Main function ----------------------------------------------------------------
+# --- Main -------------------------------------------------------------------
 def main() -> None:
-    """Loop countries → build payload → fetch news → LLM classify → deterministic aggregate → push data to NeonDB."""
+    """Loop countries → build payload → fetch news → LLM classify → push data to NeonDB."""
     print(f"=== AI Country Risk run started at {_to_utc_iso(datetime.now(timezone.utc))} UTC ===")
-    # Map "Country_Name" → "iso2Code"
+
+    # Map "Country_Name" → "iso2Code" from your Excel
     df_countries: pd.DataFrame = pd.read_excel(RAW_DATA_EXCEL)
     country_map = (
         df_countries[["Country_Name", "iso2Code"]]
@@ -63,7 +65,7 @@ def main() -> None:
 
     for country_name, iso2 in country_map.items():
         try:
-            # 1) Macro payload for this country
+            # 1) Macro payload (pretty, JSON-serializable) — keep your original helper
             payload = data_retrieval.prepare_llm_payload_pretty(
                 country_iso=iso2,
                 indicators=constants.INDICATORS,
@@ -83,45 +85,50 @@ def main() -> None:
                 summary_words=240,
             )
 
-            # --- Replace Google wrapper links with publisher raw URLs & improve summaries ---
+            # Resolve Google wrapper URLs, improve summaries, and (optionally) add thumbnails
             with requests.Session() as _sess:
-                # Resolve URLs
+                # a) Replace news.google.com wrappers with publisher URLs
                 for it in items:
                     link = it.get("link")
                     if isinstance(link, str) and "news.google.com" in link:
                         it["link"] = resolve_google_news_url(link, session=_sess)
 
-                # Upgrade weak summaries using BeautifulSoup (only when needed)
+                # b) Upgrade weak/missing summaries using BeautifulSoup text extraction
                 for it in items:
                     cur_sum = (it.get("summary") or "").strip()
                     source  = (it.get("source")  or "").strip()
-                    # Heuristic: if missing/very short/equals source name → replace
                     if (not cur_sum) or (len(cur_sum.split()) < 8) or (cur_sum.lower() == source.lower()):
                         link = it.get("link")
                         if isinstance(link, str) and link.startswith("http"):
                             summary, full_text = extract_and_summarize(link, session=_sess, max_words=160)
                             if summary:
                                 it["summary"] = summary
-                            # Optionally keep some body text for the LLM (respect your cap)
                             if full_text:
-                                it["content"] = full_text[:24000]
+                                it["content"] = full_text[:24000]  # optional extra context for LLM
+
+                # c) Thumbnail (best-effort via OG/Twitter/JSON-LD or first content <img>)
+                for it in items:
+                    if not it.get("image"):
+                        link = it.get("link")
+                        if isinstance(link, str) and link.startswith("http"):
+                            thumb = extract_thumbnail(link, session=_sess)
+                            if thumb:
+                                it["image"] = thumb
 
             # Assign stable ids for each article item ("a1","a2",...)
             for i, it in enumerate(items, start=1):
                 it["id"] = f"a{i}"
 
-            # 3) LLM scoring
+            # 3) LLM scoring (omit temperature if your model/mode rejects it)
             llm_output = langchain_llm.country_llm_score(
                 country_display=country_name,
                 payload=payload,
                 articles=items,
                 model="gpt-4o-2024-08-06",
-                # IMPORTANT: some models/modes don't allow custom temperature.
-                # Omit temperature if you get "unsupported_value" errors.
                 seed=42,
             )
 
-            # Derive top-3 links by LLM per-article impact
+            # 4) Derive top-3 links by per-article impact (fallback to first 3)
             try:
                 imp_map = {
                     (e.get("id") or ""): float(e.get("impact") or 0.0)
@@ -130,10 +137,12 @@ def main() -> None:
                 }
             except Exception:
                 imp_map = {}
+
             items_by_id = {it.get("id"): it for it in items if isinstance(it, dict) and it.get("id")}
             ranked = sorted(
                 ((imp_map.get(iid, 0.0), items_by_id[iid]) for iid in items_by_id),
-                key=lambda t: t[0], reverse=True
+                key=lambda t: t[0],
+                reverse=True
             )
 
             top_articles = []
@@ -147,17 +156,20 @@ def main() -> None:
                     "published_at": it.get("published") or None,
                     "impact": float(impact) if impact is not None else None,
                     "summary": it.get("summary") or it.get("snippet") or "",
+                    "image": it.get("image")
                 })
 
-            # 4) Upsert to DB (payload, llm_output, and top_articles)
+            # 5) Upsert to DB (writes country, indicator, yearly_value, snapshot, and top-3 links)
             data_push.upsert_snapshot(
                 {**payload, "llm_output": llm_output, "top_articles": top_articles},
-                country_name=country_name
-            )
+                    country_name=country_name
+                    )
 
             # Optional progress print
             sc = llm_output.get("score")
-            print(f"[{iso2}] score={sc} news_flow={llm_output.get('news_flow')} top={[a['url'] for a in top_articles]}")
+            print(f"[{iso2}] score={sc}")
+            print(f"article_url: {[a['url'] for a in top_articles]}")
+            print(f"img_url: {[a['image'] for a in top_articles]}")
 
         except Exception as e:
             print(f"[{iso2}] ERROR: {e}")

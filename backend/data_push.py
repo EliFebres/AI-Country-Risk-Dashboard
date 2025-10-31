@@ -1,9 +1,9 @@
 import os
 import datetime
+from typing import Dict, Any, Optional, List, Tuple
+
 import psycopg2
 import psycopg2.extras as extras
-
-from typing import Dict, Any, Optional, List, Tuple
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -47,7 +47,7 @@ def upsert_snapshot(payload: Dict[str, Any], country_name: str) -> None:
       • indicator               (upsert by name, keeps unit updated)
       • yearly_value            (upsert by (country_iso2, indicator_id, yr))
       • risk_snapshot           (upsert by (country_iso2, as_of))
-      • risk_snapshot_article   (top-3 links for this snapshot; optional)
+      • risk_snapshot_article   (top-3 links for this snapshot; optional; includes image_url)
 
     Expects in `payload`:
       - country (str ISO-2)
@@ -58,7 +58,7 @@ def upsert_snapshot(payload: Dict[str, Any], country_name: str) -> None:
 
     Optional:
       - top_articles: list of dicts with
-          {rank, url, title, source, published_at (ISO), impact, summary}
+          {rank, url, title, source, published_at (ISO), impact, summary, image?}
     """
     if not DB_URL:
         raise RuntimeError("DATABASE_URL is not set in the environment")
@@ -108,7 +108,6 @@ def upsert_snapshot(payload: Dict[str, Any], country_name: str) -> None:
             )
 
             # 1) Indicators + yearly series
-            #    Upsert each indicator by NAME, get its id, then upsert yearly values.
             for ind_name, ind_data in indicators.items():
                 unit = units[ind_name]  # rely on your existing contract; raises if missing
 
@@ -139,7 +138,6 @@ def upsert_snapshot(payload: Dict[str, Any], country_name: str) -> None:
                     rows_yv.append((country, ind_id, yr_int, val_f))
 
                 if rows_yv:
-                    # Requires a UNIQUE index/PK on (country_iso2, indicator_id, yr)
                     extras.execute_values(
                         cur,
                         """
@@ -165,7 +163,7 @@ def upsert_snapshot(payload: Dict[str, Any], country_name: str) -> None:
                 (country, as_of, llm_out["score"], llm_out["bullet_summary"]),
             )
 
-            # 3) Optional: write the top-3 links for this snapshot
+            # 3) Optional: write the top-3 links for this snapshot (now includes image_url)
             rows_art: List[Tuple] = []
             for a in top_articles:
                 if not isinstance(a, dict):
@@ -174,17 +172,31 @@ def upsert_snapshot(payload: Dict[str, Any], country_name: str) -> None:
                 url = (a.get("url") or "").strip()
                 if not url or rank not in (1, 2, 3):
                     continue
+
+                # Normalize image value to a single URL string (or None)
+                img = a.get("image")
+                image_url: Optional[str] = None
+                if isinstance(img, str):
+                    u = img.strip()
+                    image_url = u if u.startswith(("http://", "https://")) else None
+                elif isinstance(img, list):
+                    for v in img:
+                        if isinstance(v, str) and v.strip().startswith(("http://", "https://")):
+                            image_url = v.strip()
+                            break
+
                 rows_art.append(
                     (
-                        country,                           # country_iso2
-                        as_of,                             # as_of (DATE)
-                        int(rank),                         # rank 1..3
-                        url,                               # url (TEXT NOT NULL)
-                        a.get("title"),                    # title
-                        a.get("source"),                   # source
+                        country,                                # country_iso2
+                        as_of,                                  # as_of (DATE)
+                        int(rank),                              # rank 1..3
+                        url,                                    # url (TEXT NOT NULL)
+                        a.get("title"),                         # title
+                        a.get("source"),                        # source
                         _to_ts_or_none(a.get("published_at")),  # published_at TIMESTAMPTZ
                         (float(a["impact"]) if (a.get("impact") is not None) else None),
                         a.get("summary"),
+                        image_url,                               # NEW: image_url
                     )
                 )
 
@@ -193,7 +205,7 @@ def upsert_snapshot(payload: Dict[str, Any], country_name: str) -> None:
                     cur,
                     """
                     INSERT INTO risk_snapshot_article
-                      (country_iso2, as_of, rank, url, title, source, published_at, impact, summary)
+                      (country_iso2, as_of, rank, url, title, source, published_at, impact, summary, image_url)
                     VALUES %s
                     ON CONFLICT (country_iso2, as_of, rank)
                     DO UPDATE SET
@@ -203,6 +215,7 @@ def upsert_snapshot(payload: Dict[str, Any], country_name: str) -> None:
                       published_at = EXCLUDED.published_at,
                       impact       = EXCLUDED.impact,
                       summary      = EXCLUDED.summary,
+                      image_url    = EXCLUDED.image_url,
                       updated_at   = now()
                     """,
                     rows_art,
