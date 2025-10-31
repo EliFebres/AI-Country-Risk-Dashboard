@@ -5,6 +5,7 @@ import { useEffect, useMemo } from 'react';
 import RiskReadingSection from './RiskSidebar/RiskReadingSection';
 import EconomicGaugeSection from './RiskSidebar/EconomicGaugeSection';
 import AiSummary from './RiskSidebar/AiSummary';
+import NewsArticleSection from './RiskSidebar/NewsArticleSection';
 
 type Props = {
   open: boolean;
@@ -144,6 +145,14 @@ export default function RiskSidebar({
               <section className="card">
                 <h3>AI Summary</h3>
                 <AiSummary iso2={country?.iso2} active={open} />
+              </section>
+
+              <div className="custom-divider" />
+
+              {/* NewsArticleSection */}
+              <section className="card">
+                <h3>News</h3>
+                <NewsArticleSection iso2={country?.iso2} active={open} />
               </section>
             </>
           )}

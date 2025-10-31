@@ -313,13 +313,13 @@ export default function EconomicGaugeSection({
       <style jsx>{`
         .muted { opacity: 0.7; }
         .gaugeGrid {
-          width: 100%;
-          display: grid;
-          grid-template-columns: repeat(2, 1fr);
-          gap: 20px;
-          justify-items: center;
-          align-items: center;
-          margin-top: 14px;
+            width: 100%;
+            display: grid;            
+            grid-auto-flow: column; 
+            justify-content: space-between; 
+            gap: 60px;
+            align-items: center;
+            margin-top: 14px;
         }
         @media (min-width: 680px) {
           .gaugeGrid { grid-template-columns: repeat(4, 1fr); }

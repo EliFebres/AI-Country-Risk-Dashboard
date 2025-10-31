@@ -312,7 +312,7 @@ export default function RiskReadingSection({
           line-height: 1;
           letter-spacing: 0.4px;
           color: rgba(255, 255, 255, 0.9);
-          margin-bottom: 0.1em;
+          margin-bottom: 0.25em;
         }
         .bigValue {
           display: inline-flex;
