@@ -8,6 +8,11 @@
         "value": -2.06,
         "unit": "% y/y"
       },
+      "Inflation (% y/y)": {
+        "year": 2024,
+        "value": 219.88,
+        "unit": "% y/y"
+      },
       "Interest payments (% revenue)": {
         "year": 2023,
         "value": 8.6,
@@ -165,8 +170,8 @@
         "unit": "% y/y"
       },
       "Interest payments (% revenue)": {
-        "year": 2023,
-        "value": 7.44,
+        "year": 2024,
+        "value": 8.22,
         "unit": "% revenue"
       },
       "Rule of law (z-score)": {
@@ -347,8 +352,8 @@
         "unit": "% y/y"
       },
       "Interest payments (% revenue)": {
-        "year": 2022,
-        "value": 1.48,
+        "year": 2023,
+        "value": 2.06,
         "unit": "% revenue"
       },
       "Rule of law (z-score)": {
@@ -467,8 +472,8 @@
         "unit": "% y/y"
       },
       "Inflation (% y/y)": {
-        "year": 2023,
-        "value": 3.67,
+        "year": 2024,
+        "value": 2.18,
         "unit": "% y/y"
       },
       "Rule of law (z-score)": {
@@ -515,7 +520,7 @@
       },
       "Inflation (% y/y)": {
         "year": 2024,
-        "value": 3.06,
+        "value": 3.07,
         "unit": "% y/y"
       },
       "Interest payments (% revenue)": {
@@ -686,8 +691,8 @@
     "name": "Morocco",
     "values": {
       "GDP per-capita growth (% y/y)": {
-        "year": 2023,
-        "value": 2.34,
+        "year": 2024,
+        "value": 2.22,
         "unit": "% y/y"
       },
       "Inflation (% y/y)": {
@@ -890,7 +895,7 @@
       },
       "Inflation (% y/y)": {
         "year": 2024,
-        "value": 3.79,
+        "value": 3.78,
         "unit": "% y/y"
       },
       "Interest payments (% revenue)": {
@@ -1165,8 +1170,8 @@
     "name": "Ukraine",
     "values": {
       "GDP per-capita growth (% y/y)": {
-        "year": 2023,
-        "value": 15.22,
+        "year": 2024,
+        "value": 2.53,
         "unit": "% y/y"
       },
       "Inflation (% y/y)": {
