@@ -10,6 +10,7 @@
     "prevRisk": 0.8,
     "prevRiskSeries": [
       0.8,
+      0.8,
       0.8
     ]
   },
@@ -19,10 +20,11 @@
       134.53,
       -24.6809
     ],
-    "risk": 0.4,
+    "risk": 0.45,
     "iso2": "AU",
-    "prevRisk": 0.38,
+    "prevRisk": 0.4,
     "prevRiskSeries": [
+      0.4,
       0.38,
       0.35
     ]
@@ -33,10 +35,11 @@
       14.3738,
       47.6082
     ],
-    "risk": 0.42,
+    "risk": 0.45,
     "iso2": "AT",
     "prevRisk": 0.42,
     "prevRiskSeries": [
+      0.42,
       0.42,
       0.38
     ]
@@ -47,10 +50,11 @@
       90.0125,
       24.5103
     ],
-    "risk": 0.55,
+    "risk": 0.68,
     "iso2": "BD",
-    "prevRisk": 0.65,
+    "prevRisk": 0.55,
     "prevRiskSeries": [
+      0.55,
       0.65,
       0.55
     ]
@@ -61,10 +65,11 @@
       4.3517,
       50.6003
     ],
-    "risk": 0.38,
+    "risk": 0.45,
     "iso2": "BE",
     "prevRisk": 0.38,
     "prevRiskSeries": [
+      0.38,
       0.38,
       0.38
     ]
@@ -75,10 +80,11 @@
       -53.3,
       -10.3
     ],
-    "risk": 0.45,
+    "risk": 0.55,
     "iso2": "BR",
-    "prevRisk": 0.55,
+    "prevRisk": 0.45,
     "prevRiskSeries": [
+      0.45,
       0.55,
       0.45
     ]
@@ -89,10 +95,11 @@
       -108.007,
       60.9215
     ],
-    "risk": 0.45,
+    "risk": 0.35,
     "iso2": "CA",
     "prevRisk": 0.45,
     "prevRiskSeries": [
+      0.45,
       0.45,
       0.4
     ]
@@ -108,6 +115,7 @@
     "prevRisk": 0.38,
     "prevRiskSeries": [
       0.38,
+      0.38,
       0.38
     ]
   },
@@ -119,8 +127,9 @@
     ],
     "risk": 0.45,
     "iso2": "CN",
-    "prevRisk": 0.55,
+    "prevRisk": 0.45,
     "prevRiskSeries": [
+      0.45,
       0.55,
       0.45
     ]
@@ -136,6 +145,7 @@
     "prevRisk": 0.55,
     "prevRiskSeries": [
       0.55,
+      0.55,
       0.5
     ]
   },
@@ -145,10 +155,11 @@
       10.5683,
       55.6761
     ],
-    "risk": 0.38,
+    "risk": 0.35,
     "iso2": "DK",
-    "prevRisk": 0.3,
+    "prevRisk": 0.38,
     "prevRiskSeries": [
+      0.38,
       0.3,
       0.35
     ]
@@ -159,10 +170,11 @@
       25.62,
       63.3
     ],
-    "risk": 0.55,
+    "risk": 0.45,
     "iso2": "FI",
-    "prevRisk": 0.45,
+    "prevRisk": 0.55,
     "prevRiskSeries": [
+      0.55,
       0.45,
       0.55
     ]
@@ -173,10 +185,11 @@
       2,
       46.6
     ],
-    "risk": 0.45,
+    "risk": 0.55,
     "iso2": "FR",
-    "prevRisk": 0.5,
+    "prevRisk": 0.45,
     "prevRiskSeries": [
+      0.45,
       0.5,
       0.55
     ]
@@ -187,10 +200,11 @@
       10.5,
       51.2
     ],
-    "risk": 0.38,
+    "risk": 0.35,
     "iso2": "DE",
-    "prevRisk": 0.45,
+    "prevRisk": 0.38,
     "prevRiskSeries": [
+      0.38,
       0.45,
       0.38
     ]
@@ -201,10 +215,11 @@
       22.3,
       39
     ],
-    "risk": 0.28,
+    "risk": 0.32,
     "iso2": "GR",
-    "prevRisk": 0.35,
+    "prevRisk": 0.28,
     "prevRiskSeries": [
+      0.28,
       0.35,
       0.3
     ]
@@ -220,6 +235,7 @@
     "prevRisk": 0.28,
     "prevRiskSeries": [
       0.28,
+      0.28,
       0.28
     ]
   },
@@ -229,10 +245,11 @@
       19.5,
       47.15
     ],
-    "risk": 0.65,
+    "risk": 0.6,
     "iso2": "HU",
-    "prevRisk": 0.5,
+    "prevRisk": 0.65,
     "prevRiskSeries": [
+      0.65,
       0.5,
       0.45
     ]
@@ -243,10 +260,11 @@
       78.5,
       22.35
     ],
-    "risk": 0.5,
+    "risk": 0.38,
     "iso2": "IN",
-    "prevRisk": 0.45,
+    "prevRisk": 0.5,
     "prevRiskSeries": [
+      0.5,
       0.45,
       0.38
     ]
@@ -257,10 +275,11 @@
       118,
       -2.5
     ],
-    "risk": 0.38,
+    "risk": 0.45,
     "iso2": "ID",
-    "prevRisk": 0.35,
+    "prevRisk": 0.38,
     "prevRiskSeries": [
+      0.38,
       0.35,
       0.45
     ]
@@ -271,10 +290,11 @@
       -8,
       52.8
     ],
-    "risk": 0.38,
+    "risk": 0.3,
     "iso2": "IE",
-    "prevRisk": 0.35,
+    "prevRisk": 0.38,
     "prevRiskSeries": [
+      0.38,
       0.35,
       0.35
     ]
@@ -287,8 +307,9 @@
     ],
     "risk": 0.8,
     "iso2": "IL",
-    "prevRisk": 0.45,
+    "prevRisk": 0.8,
     "prevRiskSeries": [
+      0.8,
       0.45,
       0.8
     ]
@@ -301,8 +322,9 @@
     ],
     "risk": 0.45,
     "iso2": "IT",
-    "prevRisk": 0.48,
+    "prevRisk": 0.45,
     "prevRiskSeries": [
+      0.45,
       0.48,
       0.4
     ]
@@ -318,6 +340,7 @@
     "prevRisk": 0.38,
     "prevRiskSeries": [
       0.38,
+      0.38,
       0.35
     ]
   },
@@ -327,10 +350,11 @@
       38.52,
       1.36
     ],
-    "risk": 0.45,
+    "risk": 0.35,
     "iso2": "KE",
-    "prevRisk": 0.4,
+    "prevRisk": 0.45,
     "prevRiskSeries": [
+      0.45,
       0.4,
       0.42
     ]
@@ -343,8 +367,9 @@
     ],
     "risk": 0.25,
     "iso2": "LU",
-    "prevRisk": 0.28,
+    "prevRisk": 0.25,
     "prevRiskSeries": [
+      0.25,
       0.28,
       0.25
     ]
@@ -355,10 +380,11 @@
       102.2,
       4.5
     ],
-    "risk": 0.35,
+    "risk": 0.32,
     "iso2": "MY",
-    "prevRisk": 0.42,
+    "prevRisk": 0.35,
     "prevRiskSeries": [
+      0.35,
       0.42,
       0.35
     ]
@@ -374,6 +400,7 @@
     "prevRisk": 0.55,
     "prevRiskSeries": [
       0.55,
+      0.55,
       0.55
     ]
   },
@@ -385,8 +412,9 @@
     ],
     "risk": 0.35,
     "iso2": "MA",
-    "prevRisk": 0.3,
+    "prevRisk": 0.35,
     "prevRiskSeries": [
+      0.35,
       0.3,
       0.35
     ]
@@ -402,6 +430,7 @@
     "prevRisk": 0.35,
     "prevRiskSeries": [
       0.35,
+      0.35,
       0.35
     ]
   },
@@ -416,6 +445,7 @@
     "prevRisk": 0.55,
     "prevRiskSeries": [
       0.55,
+      0.55,
       0.55
     ]
   },
@@ -425,10 +455,11 @@
       8,
       9.5
     ],
-    "risk": 0.6,
+    "risk": 0.65,
     "iso2": "NG",
     "prevRisk": 0.6,
     "prevRiskSeries": [
+      0.6,
       0.6,
       0.55
     ]
@@ -439,10 +470,11 @@
       8.7,
       61.2
     ],
-    "risk": 0.28,
+    "risk": 0.35,
     "iso2": "NO",
-    "prevRisk": 0.3,
+    "prevRisk": 0.28,
     "prevRiskSeries": [
+      0.28,
       0.3,
       0.38
     ]
@@ -458,6 +490,7 @@
     "prevRisk": 0.55,
     "prevRiskSeries": [
       0.55,
+      0.55,
       0.55
     ]
   },
@@ -467,10 +500,11 @@
       -75,
       -7
     ],
-    "risk": 0.45,
+    "risk": 0.5,
     "iso2": "PE",
     "prevRisk": 0.45,
     "prevRiskSeries": [
+      0.45,
       0.45,
       0.45
     ]
@@ -481,10 +515,11 @@
       122.5,
       13
     ],
-    "risk": 0.4,
+    "risk": 0.45,
     "iso2": "PH",
-    "prevRisk": 0.38,
+    "prevRisk": 0.4,
     "prevRiskSeries": [
+      0.4,
       0.38,
       0.45
     ]
@@ -495,10 +530,11 @@
       19,
       52.2297
     ],
-    "risk": 0.35,
+    "risk": 0.38,
     "iso2": "PL",
-    "prevRisk": 0.38,
+    "prevRisk": 0.35,
     "prevRiskSeries": [
+      0.35,
       0.38,
       0.38
     ]
@@ -511,8 +547,9 @@
     ],
     "risk": 0.35,
     "iso2": "PT",
-    "prevRisk": 0.38,
+    "prevRisk": 0.35,
     "prevRiskSeries": [
+      0.35,
       0.38,
       0.35
     ]
@@ -528,6 +565,7 @@
     "prevRisk": 0.35,
     "prevRiskSeries": [
       0.35,
+      0.35,
       0.35
     ]
   },
@@ -542,6 +580,7 @@
     "prevRisk": 0.55,
     "prevRiskSeries": [
       0.55,
+      0.55,
       0.55
     ]
   },
@@ -551,10 +590,11 @@
       42.35,
       25.56
     ],
-    "risk": 0.55,
+    "risk": 0.38,
     "iso2": "SA",
-    "prevRisk": 0.38,
+    "prevRisk": 0.55,
     "prevRiskSeries": [
+      0.55,
       0.38,
       0.38
     ]
@@ -570,6 +610,7 @@
     "prevRisk": 0.18,
     "prevRiskSeries": [
       0.18,
+      0.18,
       0.18
     ]
   },
@@ -581,8 +622,9 @@
     ],
     "risk": 0.55,
     "iso2": "ZA",
-    "prevRisk": 0.6,
+    "prevRisk": 0.55,
     "prevRiskSeries": [
+      0.55,
       0.6,
       0.55
     ]
@@ -593,10 +635,11 @@
       -4.8,
       39.4
     ],
-    "risk": 0.32,
+    "risk": 0.38,
     "iso2": "ES",
-    "prevRisk": 0.35,
+    "prevRisk": 0.32,
     "prevRiskSeries": [
+      0.32,
       0.35,
       0.38
     ]
@@ -612,6 +655,7 @@
     "prevRisk": 0.38,
     "prevRiskSeries": [
       0.38,
+      0.38,
       0.45
     ]
   },
@@ -621,10 +665,11 @@
       8,
       46.75
     ],
-    "risk": 0.35,
+    "risk": 0.25,
     "iso2": "CH",
-    "prevRisk": 0.38,
+    "prevRisk": 0.35,
     "prevRiskSeries": [
+      0.35,
       0.38,
       0.35
     ]
@@ -635,10 +680,11 @@
       101,
       15
     ],
-    "risk": 0.45,
+    "risk": 0.38,
     "iso2": "TH",
-    "prevRisk": 0.38,
+    "prevRisk": 0.45,
     "prevRiskSeries": [
+      0.45,
       0.38,
       0.45
     ]
@@ -654,6 +700,7 @@
     "prevRisk": 0.9,
     "prevRiskSeries": [
       0.9,
+      0.9,
       0.9
     ]
   },
@@ -665,8 +712,9 @@
     ],
     "risk": 0.32,
     "iso2": "AE",
-    "prevRisk": 0.28,
+    "prevRisk": 0.32,
     "prevRiskSeries": [
+      0.32,
       0.28,
       0.2
     ]
@@ -679,8 +727,9 @@
     ],
     "risk": 0.45,
     "iso2": "GB",
-    "prevRisk": 0.5,
+    "prevRisk": 0.45,
     "prevRiskSeries": [
+      0.45,
       0.5,
       0.45
     ]
@@ -691,10 +740,11 @@
       -100.5,
       39.75
     ],
-    "risk": 0.4,
+    "risk": 0.45,
     "iso2": "US",
-    "prevRisk": 0.35,
+    "prevRisk": 0.4,
     "prevRiskSeries": [
+      0.4,
       0.35,
       0.3
     ]

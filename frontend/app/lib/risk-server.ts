@@ -21,8 +21,8 @@ export type JoinedLatestRisk = {
   prev_score?: number | null;
   // NEW: arrays of all prior observations (excluding the latest), newest→oldest
   prev_scores?: number[] | null;
-  prev_as_ofs?: string[] | null;
-};
+  prev_asofs?: string[] | null;
+} & { prev_as_ofs?: string[] | null }; // keep backward compat with your earlier shape
 
 declare global {
   // eslint-disable-next-line no-var
@@ -281,6 +281,7 @@ export type CountryArticles = {
     title?: string | null;
     source?: string | null;
     published_at?: string | null; // ISO string
+    img_url?: string | null;      // NEW: image URL per article
   }[];
 };
 
@@ -300,6 +301,7 @@ export async function fetchLatestArticlesForLatestSnapshotsFromDB(): Promise<Cou
     title: string | null;
     source: string | null;
     published_at: string | null;
+    image_url: string | null;
     rn: number | null;
   }>(`
     WITH latest AS (
@@ -316,6 +318,7 @@ export async function fetchLatestArticlesForLatestSnapshotsFromDB(): Promise<Cou
         a.title,
         a.source,
         a.published_at,
+        a.image_url,
         ROW_NUMBER() OVER (
           PARTITION BY a.country_iso2
           ORDER BY a.published_at DESC NULLS LAST, a.rank ASC, a.id ASC
@@ -338,6 +341,7 @@ export async function fetchLatestArticlesForLatestSnapshotsFromDB(): Promise<Cou
       t.title,
       t.source,
       t.published_at::text AS published_at,
+      t.image_url,
       t.rn
     FROM latest l
     JOIN country c ON c.iso2 = l.country_iso2
@@ -360,6 +364,7 @@ export async function fetchLatestArticlesForLatestSnapshotsFromDB(): Promise<Cou
         title: r.title ?? null,
         source: r.source ?? null,
         published_at: r.published_at ?? null,
+        img_url: r.image_url ?? null, // map DB image_url -> JSON img_url
       });
     }
   }

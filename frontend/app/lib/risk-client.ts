@@ -56,6 +56,7 @@ export type CountryArticles = {
     title?: string | null;
     source?: string | null;
     published_at?: string | null;
+    img_url?: string | null;
   }[];
 };
 

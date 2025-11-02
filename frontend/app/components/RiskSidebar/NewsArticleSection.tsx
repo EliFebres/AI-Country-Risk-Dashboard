@@ -8,6 +8,7 @@ type Article = {
   title: string;
   source?: string;
   published_at: string; // ISO
+  img_url?: string;     // hero image from JSON (note: img_url)
 };
 
 type CountryNews = {
@@ -119,9 +120,7 @@ function cleanTitle(a: Article): string {
   if (!raw) return '';
 
   const canonical = canonicalPublisherName(a);
-  const candidates = new Set<string>([
-    normalizePublisher(canonical),
-  ]);
+  const candidates = new Set<string>([ normalizePublisher(canonical) ]);
 
   // Also consider raw host forms (helps when title uses domain)
   try {
@@ -144,6 +143,12 @@ function cleanTitle(a: Article): string {
     }
   }
   return t;
+}
+
+/* ---------- Image helpers (JSON-only) ---------- */
+
+function hasHttpImage(url?: string): boolean {
+  return !!url && /^https?:\/\//i.test(url.trim());
 }
 
 /* ---------- Component ---------- */
@@ -206,7 +211,7 @@ export default function NewsArticleSection({
 
   // Up to 3 cards; fill with skeletons
   const top3: (Article | null)[] = useMemo(() => {
-    const arr = (articles ?? []).slice(0, 3);
+    const arr: (Article | null)[] = [...(articles ?? []).slice(0, 3)];
     while (arr.length < 3) arr.push(null);
     return arr;
   }, [articles]);
@@ -227,6 +232,8 @@ export default function NewsArticleSection({
           (() => {
             const src = sourceLabels(a);
             const title = cleanTitle(a);
+            const hasImg = hasHttpImage(a.img_url);
+
             return (
               <a
                 key={`newsCard-${i}`}
@@ -237,6 +244,49 @@ export default function NewsArticleSection({
                 title={`${title} — ${src.full}`}
                 aria-label={title ? `Open article: ${title}` : 'Open article'}
               >
+                {/* Top 50% hero image or SVG placeholder */}
+                <div className={`thumbWrap ${hasImg ? '' : 'noimg'}`}>
+                  {hasImg ? (
+                    <img
+                      className="thumb"
+                      src={a.img_url!}
+                      alt={title ? `Image for: ${title}` : 'Article image'}
+                      loading="lazy"
+                      decoding="async"
+                      referrerPolicy="no-referrer"
+                      onError={(e) => {
+                        // Hide broken image and reveal the placeholder; no external fallbacks.
+                        const wrap = (e.currentTarget.parentElement as HTMLElement) || null;
+                        e.currentTarget.style.display = 'none';
+                        if (wrap) wrap.classList.add('noimg');
+                      }}
+                    />
+                  ) : null}
+
+                  {/* Inline newspaper SVG placeholder */}
+                  <div className="thumbPlaceholder" aria-hidden="true">
+                    <svg
+                      className="newspaperSvg"
+                      viewBox="0 0 64 64"
+                      role="img"
+                      aria-label="Newspaper"
+                    >
+                      <defs>
+                        <linearGradient id="paperGrad" x1="0" x2="0" y1="0" y2="1">
+                          <stop offset="0" stopOpacity="0.16" />
+                          <stop offset="1" stopOpacity="0.32" />
+                        </linearGradient>
+                      </defs>
+                      <rect x="6" y="10" width="52" height="44" rx="4" fill="url(#paperGrad)" />
+                      <rect x="10" y="14" width="22" height="6" rx="1.5" fill="currentColor" opacity="0.8" />
+                      <rect x="10" y="24" width="44" height="6" rx="1" fill="currentColor" opacity="0.55" />
+                      <rect x="10" y="32" width="44" height="6" rx="1" fill="currentColor" opacity="0.5" />
+                      <rect x="10" y="40" width="28" height="6" rx="1" fill="currentColor" opacity="0.45" />
+                    </svg>
+                  </div>
+                </div>
+
+                {/* Bottom 50% text (starts at top of bottom half) */}
                 <div className="overlay">
                   <div className="newsSource" title={src.full} aria-label={`Source: ${src.full}`}>
                     {src.short}
@@ -249,6 +299,23 @@ export default function NewsArticleSection({
           })()
         ) : (
           <div key={`newsCard-skel-${i}`} className="newsCard skeleton" aria-hidden="true">
+            <div className="thumbWrap noimg">
+              <div className="thumbPlaceholder" aria-hidden="true">
+                <svg className="newspaperSvg" viewBox="0 0 64 64" role="img" aria-label="Newspaper">
+                  <defs>
+                    <linearGradient id="paperGrad2" x1="0" x2="0" y1="0" y2="1">
+                      <stop offset="0" stopOpacity="0.16" />
+                      <stop offset="1" stopOpacity="0.32" />
+                    </linearGradient>
+                  </defs>
+                  <rect x="6" y="10" width="52" height="44" rx="4" fill="url(#paperGrad2)" />
+                  <rect x="10" y="14" width="22" height="6" rx="1.5" fill="currentColor" opacity="0.8" />
+                  <rect x="10" y="24" width="44" height="6" rx="1" fill="currentColor" opacity="0.55" />
+                  <rect x="10" y="32" width="44" height="6" rx="1" fill="currentColor" opacity="0.5" />
+                  <rect x="10" y="40" width="28" height="6" rx="1" fill="currentColor" opacity="0.45" />
+                </svg>
+              </div>
+            </div>
             <div className="overlay skeletonOverlay">
               <div className="skel skel-source" />
               <div className="skel skel-title" />
@@ -304,23 +371,60 @@ export default function NewsArticleSection({
           outline-offset: 2px;
         }
 
-        /* Bottom overlay occupies exactly the bottom 50% of the card */
+        /* Top 50% hero area */
+        .thumbWrap {
+          position: absolute;
+          left: 0; right: 0; top: 0;
+          height: 50%;
+          overflow: hidden;
+          background: radial-gradient(100% 100% at 50% 0%, rgba(255,255,255,0.06), rgba(255,255,255,0.02));
+        }
+        .thumb {
+          width: 100%;
+          height: 100%;
+          display: block;
+          object-fit: cover;
+          object-position: center;
+          filter: saturate(1) contrast(1.02) brightness(0.95);
+          transform: scale(1.001); /* avoid hairline gaps on some GPUs */
+        }
+
+        /* Placeholder (visible when .noimg is set or when no <img> rendered) */
+        .thumbPlaceholder {
+          position: absolute;
+          inset: 0;
+          display: none;
+          align-items: center;
+          justify-content: center;
+          background: rgba(0, 0, 0, 0.28);
+          color: rgba(255, 255, 255, 0.85);
+          text-shadow: 0 2px 6px rgba(0,0,0,0.45);
+          user-select: none;
+        }
+        .thumbWrap.noimg .thumbPlaceholder { display: flex; }
+
+        .newspaperSvg {
+          width: clamp(28px, 9cqw, 56px);
+          height: auto;
+          opacity: 0.9;
+        }
+
+        /* Bottom 50% text (starts at top of bottom half) */
         .overlay {
-          --overlay-h: 50%;
           position: absolute;
           left: 0; right: 0; bottom: 0;
-          height: var(--overlay-h);
+          height: 50%;
           padding: 10px 12px;
           background: linear-gradient(
             180deg,
-            rgba(0, 0, 0, 0) 0%,
-            rgba(0, 0, 0, 0.45) 40%,
+            rgba(0, 0, 0, 0.0) 0%,
+            rgba(0, 0, 0, 0.45) 35%,
             rgba(0, 0, 0, 0.65) 100%
           );
           color: #fff;
           display: flex;
           flex-direction: column;
-          justify-content: flex-start; /* text starts at TOP of bottom half */
+          justify-content: flex-start; /* top of bottom half */
           align-items: flex-start;
           overflow: hidden;
         }
@@ -349,7 +453,7 @@ export default function NewsArticleSection({
           color: #fff;
           text-shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
           display: -webkit-box;
-          -webkit-line-clamp: 5;
+          -webkit-line-clamp: 5; /* within bottom half */
           -webkit-box-orient: vertical;
           overflow: hidden;
         }
@@ -381,7 +485,7 @@ export default function NewsArticleSection({
           background: linear-gradient(
             180deg,
             rgba(0, 0, 0, 0) 0%,
-            rgba(0, 0, 0, 0.35) 40%,
+            rgba(0, 0, 0, 0.35) 35%,
             rgba(0, 0, 0, 0.55) 100%
           );
           display: flex;
