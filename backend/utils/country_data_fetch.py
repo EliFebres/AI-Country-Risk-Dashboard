@@ -1,27 +1,43 @@
-import sys
+import shutil
 import duckdb
 import pathlib
 import pandas as pd
-from typing import Mapping, Optional
 
-import backend.constants as constants
+from zoneinfo import ZoneInfo
+from typing import Mapping, Optional
+from datetime import datetime, date, timedelta
+
 import backend.utils.fetch_metrics as fetch_metrics
 
 
-def ingest_panel_wide(
-    panel: pd.DataFrame,
-    country_code: str,
-    root: pathlib.Path,
-) -> None:
-    """
-    Persist a *wide* World-Bank panel (years x indicators) as Parquet,
-    partitioned by ``country_code`` under *root*.
+def _first_monday(year: int, month: int) -> date:
+    d = date(year, month, 1)
+    return d + timedelta(days=(0 - d.weekday()) % 7)
 
-    Directory layout
-    ----------------
-    root/  
-    └── country_code=<CODE>/  
-        └── panel.parquet
+def _is_first_monday_of_quarter(now: datetime) -> bool:
+    return now.month in (1, 4, 7, 10) and now.date() == _first_monday(now.year, now.month)
+
+
+def ingest_panel_wide(panel: pd.DataFrame, country_code: str, root: pathlib.Path) -> None:
+    """Persist a wide World Bank panel to Parquet, partitioned by country.
+
+    The input ``panel`` is expected to be **wide** (rows = years, columns =
+    indicators) with the index representing calendar years. The function resets
+    the index to a ``year`` column, attaches the provided ``country_code``,
+    and uses an in-memory DuckDB connection to `COPY` the data as Parquet
+    files partitioned by ``country_code`` under ``root``.
+
+    Args:
+        panel (pd.DataFrame): Non-empty, wide-form DataFrame whose index are
+            years and whose columns are indicator codes (or similar). The index
+            will be reset to a ``year`` column.
+        country_code (str): ISO-2 (or similar) country code used both as a
+            data column and the Parquet partition key.
+        root (pathlib.Path): Output directory. It will be created if missing,
+            then used as the COPY destination for Parquet output.
+
+    Returns:
+        None
     """
     # Input Validation
     assert isinstance(panel, pd.DataFrame) and not panel.empty, \
@@ -41,20 +57,25 @@ def ingest_panel_wide(
     root.mkdir(parents=True, exist_ok=True)
 
     # Write Via Duckdb
-    con = duckdb.connect(":memory:")
-    con.register("df", df)
+    con = None
+    try:
+        con = duckdb.connect(":memory:")
+        con.register("df", df)
 
-    target = str(root).replace("'", "''")        # escape single quotes
-    con.execute(
-        f"""
-        COPY df
-        TO '{target}'
-        (FORMAT PARQUET,
-         PARTITION_BY ('country_code'),
-         OVERWRITE_OR_IGNORE 1);
-        """
-    )
-    con.close()
+        target = str(root).replace("'", "''")  # escape single quotes for SQL literal
+        con.execute(
+            f"""
+            COPY df
+            TO '{target}'
+            (FORMAT PARQUET,
+             PARTITION_BY ('country_code'),
+             OVERWRITE_OR_IGNORE 1);
+            """
+        )
+    
+    finally:
+        con.close()
+
 
 
 def ingest_panels_for_all_countries(
@@ -63,12 +84,40 @@ def ingest_panels_for_all_countries(
     indicators: Mapping[str, str],
     *,
     start: Optional[int] = None,
-    end:   Optional[int] = None,
+    end:   Optional[int] = None
 ) -> None:
+    """Build and persist per-country World Bank panels from a roster Excel file.
+
+    On the first Monday of each calendar quarter (Jan, Apr, Jul, Oct; timezone
+    ``America/New_York``), the function deletes the directory at ``root`` using
+    a safety-guarded `shutil.rmtree` and then recreates it to produce a clean
+    snapshot before ingest.
+
+    Args:
+        excel_path (pathlib.Path): Path to the country roster Excel file.
+            Must exist and include columns ``"Country_Name"`` and ``"iso2Code"``.
+        root (pathlib.Path): Root output directory where per-country panel
+            artifacts are written. On quarterly cleanup days, this directory is
+            deleted and recreated at the start of the run.
+        indicators (Mapping[str, str]): Mapping of indicator codes to labels/
+            descriptions passed to the panel fetcher. Must not be empty.
+        start (Optional[int], keyword-only): First calendar year to include
+            (inclusive). If ``None``, the fetcher’s default is used.
+        end (Optional[int], keyword-only): Last calendar year to include
+            (inclusive). If ``None``, the fetcher’s default is used.
+
+    Returns:
+        None
     """
-    Loop through every country listed in *excel_path*, build its panel,
-    and persist via :func:`ingest_panel_wide`.
-    """
+    # Quarterly cleanup (first Monday of each quarter, America/New_York)
+    now = datetime.now(ZoneInfo("America/New_York"))
+    if _is_first_monday_of_quarter(now) and root.is_dir():
+        # Safety guard: avoid catastrophic deletes (like '/')
+        root_resolved = root.resolve()
+        if len(root_resolved.parts) <= 3:  # tweak threshold for your project layout
+            raise RuntimeError(f"Refusing to delete suspiciously high-level path: {root_resolved}")
+        shutil.rmtree(root_resolved)
+
     # Input Validation
     assert excel_path.is_file(), f"{excel_path} does not exist"
     assert indicators, "`indicators` mapping must not be empty"
@@ -84,22 +133,13 @@ def ingest_panels_for_all_countries(
     # Iterate & Ingest
     for _, row in country_df.iterrows():
         iso_code = row["iso2Code"]
-
+        
         panel = fetch_metrics.build_country_panel(
-            iso_code,
-            indicators,
-            start=start,
-            end=end,
-            tidy_fetch=True,
+            iso_code, 
+            indicators, 
+            start=start, 
+            end=end, 
+            tidy_fetch=True
         )
+        
         ingest_panel_wide(panel, iso_code, root)
-
-
-# Example usage:
-# ingest_panels_for_all_countries(
-#     excel_path=RAW_DATA_EXCEL,
-#     root=PROCESSED_DATA,
-#     indicators=constants.INDICATORS,
-#     start=None,
-#     end=None,
-# )

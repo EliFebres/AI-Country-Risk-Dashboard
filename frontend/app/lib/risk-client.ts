@@ -1,9 +1,10 @@
-
+// app/lib/risk-client.ts
 export type CountryRisk = {
   name: string;
   lngLat: [number, number]; // [lng, lat]
   risk: number;             // 0..1 (current risk)
-  prevRisk?: number;        // previous period's risk (from DB)
+  prevRisk?: number;        // previous single value (convenience)
+  prevRiskSeries?: number[]; // NEW: all prior scores, newest→oldest (excludes current)
   iso2?: string;            // populated by weekly refresh
 };
 
@@ -42,4 +43,28 @@ export async function getRiskByCountry(
     }
   }
   return found;
+}
+
+// ----------------------------- Latest articles ----------------------------
+
+export type CountryArticles = {
+  iso2: string;
+  name: string;
+  as_of: string;
+  articles: {
+    url: string;
+    title?: string | null;
+    source?: string | null;
+    published_at?: string | null;
+    img_url?: string | null;
+  }[];
+};
+
+export const ARTICLES_JSON_PUBLIC_PATH = "/api/articles_latest.json";
+
+/** Load latest 0–3 articles for each country (based on latest snapshot date). */
+export async function loadLatestArticles(signal?: AbortSignal): Promise<CountryArticles[]> {
+  const res = await fetch(ARTICLES_JSON_PUBLIC_PATH, { cache: "force-cache", signal });
+  if (!res.ok) throw new Error(`Failed to load articles: ${res.status} ${res.statusText}`);
+  return (await res.json()) as CountryArticles[];
 }

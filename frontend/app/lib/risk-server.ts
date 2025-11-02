@@ -19,7 +19,10 @@ export type JoinedLatestRisk = {
   bullet_summary: string;
   prev_as_of?: string | null;
   prev_score?: number | null;
-};
+  // NEW: arrays of all prior observations (excluding the latest), newest→oldest
+  prev_scores?: number[] | null;
+  prev_asofs?: string[] | null;
+} & { prev_as_ofs?: string[] | null }; // keep backward compat with your earlier shape
 
 declare global {
   // eslint-disable-next-line no-var
@@ -69,8 +72,8 @@ export async function fetchLatestRiskSnapshotsFromDB(): Promise<DBRiskSnapshot[]
 
 /**
  * Returns latest and previous risk snapshot per country.
- * - Latest = rn = 1 (max as_of)
- * - Previous = rn = 2 (the period immediately before the latest)
+ * Also returns arrays of all prior scores/dates (excluding the latest),
+ * ordered newest→oldest.
  */
 export async function fetchJoinedLatestRisksFromDB(): Promise<JoinedLatestRisk[]> {
   const pool = await getPool();
@@ -93,10 +96,18 @@ export async function fetchJoinedLatestRisksFromDB(): Promise<JoinedLatestRisk[]
       FROM ranked
       WHERE rn = 1
     ),
-    prev AS (
+    prev_single AS (
       SELECT country_iso2, as_of AS prev_as_of, score AS prev_score
       FROM ranked
       WHERE rn = 2
+    ),
+    prev_list AS (
+      SELECT
+        country_iso2,
+        ARRAY_AGG(score::float8 ORDER BY as_of DESC) FILTER (WHERE rn >= 2) AS prev_scores,
+        ARRAY_AGG(as_of ORDER BY as_of DESC)          FILTER (WHERE rn >= 2) AS prev_as_ofs
+      FROM ranked
+      GROUP BY country_iso2
     )
     SELECT
       c.iso2,
@@ -104,13 +115,14 @@ export async function fetchJoinedLatestRisksFromDB(): Promise<JoinedLatestRisk[]
       l.as_of,
       l.score,
       l.bullet_summary,
-      p.prev_as_of,
-      p.prev_score
+      ps.prev_as_of,
+      ps.prev_score,
+      pl.prev_scores,
+      pl.prev_as_ofs
     FROM latest l
-    LEFT JOIN prev p
-      ON p.country_iso2 = l.country_iso2
-    JOIN country c
-      ON c.iso2 = l.country_iso2
+    LEFT JOIN prev_single ps ON ps.country_iso2 = l.country_iso2
+    LEFT JOIN prev_list   pl ON pl.country_iso2 = l.country_iso2
+    JOIN country c           ON c.iso2 = l.country_iso2
     ORDER BY c.name ASC;
     `
   );
@@ -247,7 +259,7 @@ export async function fetchLatestIndicatorValuesFromDB(): Promise<CountryIndicat
 }
 
 /**
- * Writes public/api/indicator_latest.json … (omitted for brevity above)
+ * Writes public/api/indicator_latest.json.
  */
 async function writeLatestIndicatorValuesJson(): Promise<number> {
   const { fs, path } = await nodeFs();
@@ -259,6 +271,120 @@ async function writeLatestIndicatorValuesJson(): Promise<number> {
   return payload.length;
 }
 
+// ----------------------------- Latest articles ----------------------------
+export type CountryArticles = {
+  iso2: string;
+  name: string;
+  as_of: string; // latest snapshot date for this country
+  articles: {
+    url: string;
+    title?: string | null;
+    source?: string | null;
+    published_at?: string | null; // ISO string
+    img_url?: string | null;      // NEW: image URL per article
+  }[];
+};
+
+/**
+ * For each country, find its latest risk_snapshot.as_of and then take up to 3
+ * most recent (by published_at DESC, then rank ASC) articles for that same as_of.
+ * Countries with 0 articles will still be included with an empty array.
+ */
+export async function fetchLatestArticlesForLatestSnapshotsFromDB(): Promise<CountryArticles[]> {
+  const pool = await getPool();
+
+  const { rows } = await pool.query<{
+    iso2: string;
+    name: string;
+    as_of: string;
+    url: string | null;
+    title: string | null;
+    source: string | null;
+    published_at: string | null;
+    image_url: string | null;
+    rn: number | null;
+  }>(`
+    WITH latest AS (
+      SELECT DISTINCT ON (rs.country_iso2)
+             rs.country_iso2, rs.as_of
+        FROM risk_snapshot rs
+    ORDER BY rs.country_iso2, rs.as_of DESC
+    ),
+    ranked AS (
+      SELECT
+        a.country_iso2,
+        a.as_of,
+        a.url,
+        a.title,
+        a.source,
+        a.published_at,
+        a.image_url,
+        ROW_NUMBER() OVER (
+          PARTITION BY a.country_iso2
+          ORDER BY a.published_at DESC NULLS LAST, a.rank ASC, a.id ASC
+        ) AS rn
+      FROM risk_snapshot_article a
+      JOIN latest l
+        ON l.country_iso2 = a.country_iso2
+       AND l.as_of = a.as_of
+    ),
+    top3 AS (
+      SELECT *
+      FROM ranked
+      WHERE rn <= 3
+    )
+    SELECT
+      c.iso2,
+      c.name,
+      l.as_of::text AS as_of,
+      t.url,
+      t.title,
+      t.source,
+      t.published_at::text AS published_at,
+      t.image_url,
+      t.rn
+    FROM latest l
+    JOIN country c ON c.iso2 = l.country_iso2
+    LEFT JOIN top3 t ON t.country_iso2 = l.country_iso2
+    ORDER BY c.name ASC, t.rn ASC NULLS LAST;
+  `);
+
+  // Group rows into one object per country.
+  const byIso2 = new Map<string, CountryArticles>();
+  for (const r of rows) {
+    const key = (r.iso2 || "").toUpperCase();
+    let entry = byIso2.get(key);
+    if (!entry) {
+      entry = { iso2: key, name: r.name, as_of: r.as_of, articles: [] };
+      byIso2.set(key, entry);
+    }
+    if (r.url) {
+      entry.articles.push({
+        url: r.url,
+        title: r.title ?? null,
+        source: r.source ?? null,
+        published_at: r.published_at ?? null,
+        img_url: r.image_url ?? null, // map DB image_url -> JSON img_url
+      });
+    }
+  }
+  // Ensure every country from latest is present (even if 0 articles)
+  return Array.from(byIso2.values());
+}
+
+/**
+ * Writes public/api/articles_latest.json.
+ */
+async function writeLatestArticlesJson(): Promise<number> {
+  const { fs, path } = await nodeFs();
+  const outPath = path.join(process.cwd(), "public", "api", "articles_latest.json");
+
+  const payload = await fetchLatestArticlesForLatestSnapshotsFromDB();
+  await fs.mkdir(path.dirname(outPath), { recursive: true });
+  await fs.writeFile(outPath, JSON.stringify(payload, null, 2) + "\n", "utf8");
+  return payload.length; // number of countries written
+}
+
 // ------------------------- Weekly refresh main flow -----------------------
 
 /**
@@ -266,6 +392,7 @@ async function writeLatestIndicatorValuesJson(): Promise<number> {
  *  - risk (latest DB score)
  *  - iso2 (DB)
  *  - prevRisk (DB score from the period immediately before the latest as_of)
+ *  - prevRiskSeries (all prior scores, newest→oldest, excluding current)
  * Preserves lngLat and other fields. Also writes risk_summary.json (latest
  * summaries only) and indicator_latest.json. Skips if run < 7 days ago.
  */
@@ -299,18 +426,30 @@ export async function refreshRiskJsonWeekly(): Promise<RefreshOutcome> {
     // 3) Pull latest + previous risks/summaries from Neon
     const joined = await fetchJoinedLatestRisksFromDB();
 
-    // 4) Build a lookup by normalized country name -> { iso2, score, prevScore }
+    // 4) Build a lookup by normalized country name -> DB data
     const normalize = (s: string) => s.trim().toLowerCase();
-    const dbMap = new Map<string, { iso2: string; score: number; prevScore: number | null }>();
+    const dbMap = new Map<
+      string,
+      { iso2: string; score: number; prevScore: number | null; prevScores: number[] }
+    >();
     for (const row of joined) {
+      const list = Array.isArray(row.prev_scores)
+        ? row.prev_scores.map(Number).filter((x) => Number.isFinite(x))
+        : [];
+      // (defensive) if list missing but prev_score exists, include it
+      if (list.length === 0 && row.prev_score != null) {
+        const n = Number(row.prev_score);
+        if (Number.isFinite(n)) list.push(n);
+      }
       dbMap.set(normalize(row.name), {
         iso2: row.iso2,
         score: Number(row.score),
         prevScore: row.prev_score == null ? null : Number(row.prev_score),
+        prevScores: list,
       });
     }
 
-    // 5) Update risk/iso2 and set prevRisk from DB's previous snapshot
+    // 5) Update risk/iso2 and set prevRisk/prevRiskSeries
     let matchedCount = 0;
     let changedCount = 0;
     const seenDb = new Set<string>();
@@ -327,12 +466,15 @@ export async function refreshRiskJsonWeekly(): Promise<RefreshOutcome> {
         if (riskChanged || iso2Changed) changedCount++;
 
         const out: any = { ...d, risk: rec.score, iso2: rec.iso2 };
-        if (rec.prevScore != null && Number.isFinite(rec.prevScore)) {
-          out.prevRisk = rec.prevScore;
+
+        if (rec.prevScores.length > 0) {
+          out.prevRiskSeries = rec.prevScores;         // newest→oldest, excluding current
+          out.prevRisk = rec.prevScores[0];            // convenience single value
         } else {
-          // Ensure we don't carry stale prevRisk if DB has no previous row.
+          delete out.prevRiskSeries;
           delete out.prevRisk;
         }
+
         return out as CountryRisk;
       }
       return d;
@@ -367,13 +509,17 @@ export async function refreshRiskJsonWeekly(): Promise<RefreshOutcome> {
       last_run: now,
       source: "neon",
       note:
-        "Updated risk + iso2 and prevRisk (from previous DB snapshot) and wrote risk_summary.json; preserved lngLat.",
+        "Updated risk + iso2 and prevRisk/prevRiskSeries (from previous DB snapshots) and wrote risk_summary.json; preserved lngLat.",
     };
     await fs.writeFile(metaJsonPath, JSON.stringify(metaOut, null, 2) + "\n", "utf8");
 
     // 10) Also write the latest indicator values snapshot
     const indicatorsWritten = await writeLatestIndicatorValuesJson();
     console.log(`Wrote indicator_latest.json for ${indicatorsWritten} countries`);
+
+    // 11) And write the latest per-country articles (0–3 each)
+    const articlesWritten = await writeLatestArticlesJson();
+    console.log(`Wrote articles_latest.json for ${articlesWritten} countries`);
 
     return { status: "updated", lastRun: now, matchedCount, changedCount, missingInJson };
   } catch (err: any) {
