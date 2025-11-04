@@ -1,30 +1,23 @@
-from __future__ import annotations
-
 import json
 import os
 import time
 import random
 import requests
 import tldextract
+
 from pathlib import Path
+from bs4 import BeautifulSoup
+from urllib import robotparser
+from urllib.parse import urlparse
 from datetime import datetime, timezone
 from typing import Dict, Any, Optional, List, Union
-from urllib.parse import urlparse
-from urllib import robotparser
 
-from bs4 import BeautifulSoup
+# --- .env loading (simple & explicit) ---
+from dotenv import load_dotenv
 
-# --- Optional .env loading (safe if python-dotenv is missing) ---
-try:
-    from dotenv import load_dotenv  # type: ignore
-
-    THIS_DIR = Path(__file__).resolve().parent
-    # Load backend/.env (this file's folder)
-    load_dotenv(THIS_DIR / ".env")
-    # Also try repo root .env without overriding existing envs
-    load_dotenv(THIS_DIR.parent / ".env", override=False)
-except Exception:
-    pass
+THIS_DIR = Path(__file__).resolve().parent
+load_dotenv(THIS_DIR / ".env")                  # backend/.env (same folder as this file)
+load_dotenv(THIS_DIR.parent / ".env", override=False)  # repo root .env (won't override)
 
 # -------------------- Constants -------------------- #
 API_BASE = "https://api.crawlbase.com"
