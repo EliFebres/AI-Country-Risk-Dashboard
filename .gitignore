@@ -55,3 +55,6 @@ venv.bak/
 
 # Other
 backend/data/wb_panel_wide
+
+# Allow the example env file in backend
+!backend/.env.example

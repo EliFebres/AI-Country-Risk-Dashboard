@@ -195,10 +195,10 @@ def main() -> None:
                 })
 
             # 7) Upsert to DB
-            data_push.upsert_snapshot(
-                {**payload, "llm_output": llm_output, "top_articles": top_articles},
-                country_name=country_name
-            )
+            # data_push.upsert_snapshot(
+            #     {**payload, "llm_output": llm_output, "top_articles": top_articles},
+            #     country_name=country_name
+            # )
 
             # Optional progress print
             sc = llm_output.get("score")
