@@ -19,6 +19,7 @@ if str(project_root) not in sys.path:
 from backend.ai import langchain_llm
 from backend.utils import fetch_links
 from backend.utils import country_data_fetch
+import backend.utils.fetch_metrics as fetch_metrics  # for building panels directly
 from backend import constants, data_retrieval, data_push
 from backend.utils.url_resolver import resolve_google_news_url
 from backend.utils.webscraping.simple_scraper import get_article_assets
@@ -29,17 +30,6 @@ BACKEND_DIR    = project_root / "backend"
 PROCESSED_DATA = BACKEND_DIR / "data" / "wb_panel_wide"
 RAW_DATA_EXCEL = BACKEND_DIR / "data" / "country_data.xlsx"
 
-# --- Ensure processed World Bank panel exists -------------------------------
-panel_dir = PROCESSED_DATA
-if not panel_dir.is_dir():
-    panel_dir.mkdir(parents=True, exist_ok=True)
-    country_data_fetch.ingest_panels_for_all_countries(
-        excel_path=RAW_DATA_EXCEL,
-        root=PROCESSED_DATA,
-        indicators=constants.INDICATORS,
-        start=None,
-        end=None,
-    )
 
 # --- Helpers ----------------------------------------------------------------
 def _news_query_for(country_name: str) -> str:
@@ -54,10 +44,78 @@ def _crawlbase_token() -> str:
     # Prefer JS token, then standard token
     return os.getenv("CRAWLBASE_JS_TOKEN") or os.getenv("CRAWLBASE_TOKEN") or ""
 
+def _has_country_partition(root: pathlib.Path, iso2: str) -> bool:
+    """
+    Return True if a partition dir like country_code=XX exists and has at least one .parquet file.
+    """
+    part_dir = root / f"country_code={iso2}"
+    if not part_dir.is_dir():
+        return False
+    try:
+        return any(p.suffix == ".parquet" for p in part_dir.glob("*.parquet"))
+    except Exception:
+        return False
+
+def ensure_missing_country_panels(excel_path: pathlib.Path,
+                                  root: pathlib.Path,
+                                  indicators: dict,
+                                  start: int | None = None,
+                                  end: int | None = None) -> None:
+    """
+    Make sure every country in excel_path has a partition under root.
+    Only (re)build and write partitions that are missing or empty.
+    """
+    root.mkdir(parents=True, exist_ok=True)
+
+    df = pd.read_excel(excel_path)
+    if not {"Country_Name", "iso2Code"}.issubset(df.columns):
+        raise ValueError(f"{excel_path} must include 'Country_Name' and 'iso2Code' columns.")
+
+    missing = []
+    for _, row in df.iterrows():
+        iso2 = str(row["iso2Code"]).strip()
+        if not iso2:
+            continue
+        if not _has_country_partition(root, iso2):
+            missing.append(iso2)
+
+    if not missing:
+        print(f"All {len(df)} countries already have parquet partitions in {root}.")
+        return
+
+    print(f"Backfilling {len(missing)} missing panels → {missing}")
+    for iso2 in missing:
+        try:
+            panel = fetch_metrics.build_country_panel(
+                iso2,
+                indicators,
+                start=start,
+                end=end,
+                tidy_fetch=True,
+            )
+            if panel is None or panel.empty:
+                print(f"[{iso2}] No World Bank rows for selected indicators — skipping write.")
+                continue
+
+            country_data_fetch.ingest_panel_wide(panel, iso2, root)
+            print(f"[{iso2}] Wrote panel with {panel.shape[0]} years × {panel.shape[1]} indicators.")
+        except Exception as e:
+            print(f"[{iso2}] ERROR while backfilling panel: {e}")
+
+
 # --- Main -------------------------------------------------------------------
 def main() -> None:
     """Loop countries → payload → news → LLM score → enrich Top-3 images if missing → DB."""
     print(f"=== AI Country Risk run started at {_to_utc_iso(datetime.now(timezone.utc))} UTC ===")
+
+    # 0) Ensure/Backfill World Bank panels per country (incremental, idempotent)
+    ensure_missing_country_panels(
+        excel_path=RAW_DATA_EXCEL,
+        root=PROCESSED_DATA,
+        indicators=constants.INDICATORS,
+        start=None,
+        end=None,
+    )
 
     # Map "Country_Name" → "iso2Code" from your Excel
     df_countries: pd.DataFrame = pd.read_excel(RAW_DATA_EXCEL)
