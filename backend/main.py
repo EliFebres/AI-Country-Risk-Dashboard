@@ -1,12 +1,10 @@
+import re
 import os
 import sys
 import pathlib
 import requests
 import pandas as pd
-import re
 from datetime import datetime, timezone
-
-from backend.utils import data_retrieval
 
 # --- Resolve project root so "backend/" is importable ------------------------
 project_root = pathlib.Path.cwd().resolve()
@@ -19,11 +17,12 @@ if str(project_root) not in sys.path:
     sys.path.insert(0, str(project_root))
 
 # --- Internal Imports -------------------------------------------
+from backend.utils import constants
+from backend.utils import data_retrieval
 from backend.utils.ai import langchain_llm
 from backend.utils.news_fetching import fetch_links
 from backend.utils.data_fetching import fetch_metrics
 from backend.utils.data_fetching import country_data_fetch
-from backend.utils import constants
 from backend.utils.news_fetching.url_resolver import resolve_google_news_url
 from backend.utils.news_fetching.simple_scraper import get_article_assets
 from backend.utils.news_fetching.advanced_scraper import scrape_one as crawlbase_scrape_one

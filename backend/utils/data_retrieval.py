@@ -1,41 +1,62 @@
-
 import re
 import duckdb
 import pathlib
 import pandas as pd
+
 from datetime import datetime, timezone
 
-import backend.utils.constants as constants
+from backend.utils import constants
 
 
-# Locate the *backend* directory at runtime so all paths remain portable
-BACKEND_DIR = pathlib.Path(__file__).resolve().parent          # …/backend
-DATA_DIR    = BACKEND_DIR / "data" / "wb_panel_wide"
+def _discover_backend_dir() -> pathlib.Path:
+    """
+    Walk up from this file until we find the 'backend' directory.
+    This works whether this module is located at backend/ or backend/utils/.
+    """
+    p = pathlib.Path(__file__).resolve()
+    for anc in [p.parent, *p.parents]:
+        if anc.name == "backend":
+            return anc
+    # Fallback: assume parent of current file
+    return p.parent
+
+
+# Anchor all data paths to the real backend/ folder (not backend/utils/)
+BACKEND_DIR = _discover_backend_dir()                   # .../backend
+DATA_DIR    = BACKEND_DIR / "data" / "wb_panel_wide"    # .../backend/data/wb_panel_wide
 
 
 def query_macro_panel(country_iso_code: str) -> pd.DataFrame:
     """
     Load and return World-Bank macro-panel data for *country_iso_code*
-    (years ≥ 2000) from the new «backend/data/processed/wb_panel_wide/» tree.
+    (years ≥ 2000) from «backend/data/wb_panel_wide/».
     """
     # ---- validation --------------------------------------------------------
     assert isinstance(country_iso_code, str) and country_iso_code, "`country_iso_code` must be a non-empty str"
     assert re.fullmatch(r"[A-Z]{2,3}", country_iso_code), "`country_iso_code` must be a 2- or 3-letter uppercase ISO code"
 
     # ---- compose partition path -------------------------------------------
-    parquet_glob = (
-        DATA_DIR
-        / f"country_code={country_iso_code}"
-        / "*.parquet"
-    )
+    part_dir = DATA_DIR / f"country_code={country_iso_code}"
+    parquet_files = sorted(part_dir.glob("*.parquet"))
+
+    if not parquet_files:
+        raise FileNotFoundError(
+            f"No parquet files found for {country_iso_code} at {part_dir}/*.parquet\n"
+            f"HINTS:\n"
+            f"  • Ensure writes go to {DATA_DIR}\n"
+            f"  • Run backfill or confirm the country exists in your Excel map\n"
+            f"  • Check permissions / paths in your runtime environment"
+        )
+
+    # Use glob form so DuckDB can read the full partition if multiple files exist
+    parquet_glob = (part_dir / "*.parquet").as_posix()
 
     sql = f"""
         SELECT *
-        FROM read_parquet('{parquet_glob.as_posix()}')
+        FROM read_parquet('{parquet_glob}')
         WHERE year >= 2000
         ORDER BY year
     """
-
     return duckdb.sql(sql).df()
 
 
@@ -49,8 +70,7 @@ def prepare_llm_payload_pretty(
 ) -> dict:
     """
     Build a compact, human-readable payload of recent macro-economic data
-    suitable for an LLM.  (No path changes needed here—`query_macro_panel`
-    already points at the new data location.)
+    suitable for an LLM.
     """
     # ---- validation --------------------------------------------------------
     assert isinstance(country_iso, str) and re.fullmatch(r"[A-Z]{2,3}", country_iso), \
@@ -100,7 +120,6 @@ def prepare_llm_payload_pretty(
             "series": series,
         }
 
-    # ---- assemble & return -------------------------------------------------
     return {
         "country": country_iso,
         "latest_year": latest_year,
@@ -110,10 +129,6 @@ def prepare_llm_payload_pretty(
             "source": "World Bank",
             "generated_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%MZ"),
             "series_lookback": lookback,
+            "data_dir": str(DATA_DIR),
         },
     }
-
-# Example usage:
-# payload = prepare_llm_payload_pretty(
-#     "IN", constants.INDICATORS, since=2020, lookback=5
-# )
