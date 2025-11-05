@@ -583,6 +583,32 @@
     }
   },
   {
+    "iso2": "KZ",
+    "name": "Kazakhstan",
+    "values": {
+      "GDP per-capita growth (% y/y)": {
+        "year": 2024,
+        "value": 3.46,
+        "unit": "% y/y"
+      },
+      "Inflation (% y/y)": {
+        "year": 2024,
+        "value": 8.84,
+        "unit": "% y/y"
+      },
+      "Interest payments (% revenue)": {
+        "year": 2023,
+        "value": 8.96,
+        "unit": "% revenue"
+      },
+      "Rule of law (z-score)": {
+        "year": 2023,
+        "value": -0.45,
+        "unit": "z-score"
+      }
+    }
+  },
+  {
     "iso2": "KE",
     "name": "Kenya",
     "values": {
@@ -682,6 +708,32 @@
       "Rule of law (z-score)": {
         "year": 2023,
         "value": -0.81,
+        "unit": "z-score"
+      }
+    }
+  },
+  {
+    "iso2": "MN",
+    "name": "Mongolia",
+    "values": {
+      "GDP per-capita growth (% y/y)": {
+        "year": 2024,
+        "value": 3.57,
+        "unit": "% y/y"
+      },
+      "Inflation (% y/y)": {
+        "year": 2024,
+        "value": 6.21,
+        "unit": "% y/y"
+      },
+      "Interest payments (% revenue)": {
+        "year": 2021,
+        "value": 6.17,
+        "unit": "% revenue"
+      },
+      "Rule of law (z-score)": {
+        "year": 2023,
+        "value": -0.18,
         "unit": "z-score"
       }
     }
@@ -984,6 +1036,32 @@
     }
   },
   {
+    "iso2": "RU",
+    "name": "Russia",
+    "values": {
+      "GDP per-capita growth (% y/y)": {
+        "year": 2024,
+        "value": 4.56,
+        "unit": "% y/y"
+      },
+      "Inflation (% y/y)": {
+        "year": 2021,
+        "value": 6.69,
+        "unit": "% y/y"
+      },
+      "Interest payments (% revenue)": {
+        "year": 2020,
+        "value": 2.36,
+        "unit": "% revenue"
+      },
+      "Rule of law (z-score)": {
+        "year": 2023,
+        "value": -1.19,
+        "unit": "z-score"
+      }
+    }
+  },
+  {
     "iso2": "SA",
     "name": "Saudi Arabia",
     "values": {
@@ -1057,6 +1135,32 @@
       "Rule of law (z-score)": {
         "year": 2023,
         "value": 0.09,
+        "unit": "z-score"
+      }
+    }
+  },
+  {
+    "iso2": "KR",
+    "name": "South Korea",
+    "values": {
+      "GDP per-capita growth (% y/y)": {
+        "year": 2023,
+        "value": 1.28,
+        "unit": "% y/y"
+      },
+      "Inflation (% y/y)": {
+        "year": 2024,
+        "value": 2.32,
+        "unit": "% y/y"
+      },
+      "Interest payments (% revenue)": {
+        "year": 2023,
+        "value": 4.51,
+        "unit": "% revenue"
+      },
+      "Rule of law (z-score)": {
+        "year": 2023,
+        "value": 1.25,
         "unit": "z-score"
       }
     }
@@ -1166,6 +1270,32 @@
     }
   },
   {
+    "iso2": "TR",
+    "name": "Turkey",
+    "values": {
+      "GDP per-capita growth (% y/y)": {
+        "year": 2024,
+        "value": 2.95,
+        "unit": "% y/y"
+      },
+      "Inflation (% y/y)": {
+        "year": 2024,
+        "value": 58.51,
+        "unit": "% y/y"
+      },
+      "Interest payments (% revenue)": {
+        "year": 2023,
+        "value": 12.97,
+        "unit": "% revenue"
+      },
+      "Rule of law (z-score)": {
+        "year": 2023,
+        "value": -0.51,
+        "unit": "z-score"
+      }
+    }
+  },
+  {
     "iso2": "UA",
     "name": "Ukraine",
     "values": {
@@ -1265,6 +1395,22 @@
       "Rule of law (z-score)": {
         "year": 2023,
         "value": 1.33,
+        "unit": "z-score"
+      }
+    }
+  },
+  {
+    "iso2": "VE",
+    "name": "Venezuela",
+    "values": {
+      "Inflation (% y/y)": {
+        "year": 2016,
+        "value": 254.95,
+        "unit": "% y/y"
+      },
+      "Rule of law (z-score)": {
+        "year": 2023,
+        "value": -2.15,
         "unit": "z-score"
       }
     }
