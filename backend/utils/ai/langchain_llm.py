@@ -11,57 +11,9 @@ load_dotenv(find_dotenv(), override=False)
 from langchain_openai import ChatOpenAI
 from langchain_core.messages import SystemMessage
 
-import backend.utils.ai.constants as constants
+import backend.utils.ai.constants as ai_constants
 
 logger = logging.getLogger(__name__)
-
-# -------------------------
-# Strict schema for outputs
-# -------------------------
-RISK_SCHEMA: Dict = {
-    "title": "CountryRiskAssessment",
-    "description": "Subscores, per-article impacts, a calibrated score, and a short summary.",
-    "type": "object",
-    "properties": {
-        "subscores": {
-            "title": "Subscores",
-            "type": "object",
-            "properties": {
-                "conflict_war":             {"type": ["number", "null"], "minimum": 0, "maximum": 1},
-                "political_stability":      {"type": ["number", "null"], "minimum": 0, "maximum": 1},
-                "governance_corruption":    {"type": ["number", "null"], "minimum": 0, "maximum": 1},
-                "macroeconomic_volatility": {"type": ["number", "null"], "minimum": 0, "maximum": 1},
-                "regulatory_uncertainty":   {"type": ["number", "null"], "minimum": 0, "maximum": 1}
-            },
-            "required": [
-                "conflict_war",
-                "political_stability",
-                "governance_corruption",
-                "macroeconomic_volatility",
-                "regulatory_uncertainty"
-            ],
-            "additionalProperties": False
-        },
-        "news_article_scores": {
-            "title": "NewsArticleScores",
-            "type": "array",
-            "items": {
-                "type": "object",
-                "properties": {
-                    "id":     {"type": "string"},
-                    "impact": {"type": "number", "minimum": 0, "maximum": 1}
-                },
-                "required": ["id", "impact"],
-                "additionalProperties": False
-            }
-        },
-        "score": {"type": "number", "minimum": 0, "maximum": 1},
-        "bullet_summary": {"type": "string", "maxLength": 800}
-    },
-    "required": ["subscores", "news_article_scores", "score", "bullet_summary"],
-    "additionalProperties": False
-}
-# Schema format/requirements align with LangChain’s structured outputs helper. :contentReference[oaicite:1]{index=1}
 
 # -------------------------
 # Optional diagnostic metric (does not affect score)
@@ -138,7 +90,7 @@ def country_llm_score(
     payload: Dict,
     articles: List[Dict],
     llm: Optional["ChatOpenAI"] = None,
-    model: str = "gpt-4.1",   # any model supporting structured outputs
+    model: str = "gpt-4o",   # any model supporting structured outputs
     temperature: float = 0.0,
     seed: int = 42,
     api_key: Optional[str] = None,
@@ -149,7 +101,7 @@ def country_llm_score(
         "score": float|None,        # final score (the model's score; no code-side reweighting)
         "bullet_summary": str,
         "subscores": {...},         # model diagnostics only
-        "news_article_scores": [...],
+        "news_article_scores": [...],  # NOW INCLUDES topic_group
         "news_flow": float,         # diagnostic only
       }
     """
@@ -164,7 +116,7 @@ def country_llm_score(
 
     evidence_json = json.dumps(payload, ensure_ascii=False)
     articles_json = _articles_to_json(articles)
-    prompt = constants.AI_PROMPT.format(
+    prompt = ai_constants.AI_PROMPT.format(
         country=country_display,
         evidence_json=evidence_json,
         articles_json=articles_json
@@ -177,7 +129,7 @@ def country_llm_score(
         api_key=api_key,
         seed=seed,
     )
-    structured_llm = _llm.with_structured_output(schema=RISK_SCHEMA, strict=True)
+    structured_llm = _llm.with_structured_output(schema=ai_constants.RISK_SCHEMA, strict=True)
 
     try:
         data = structured_llm.invoke([SystemMessage(content=prompt)])
@@ -201,6 +153,6 @@ def country_llm_score(
         "score": float(data["score"]) if isinstance(data.get("score"), (int, float, str)) else None,
         "bullet_summary": (data.get("bullet_summary") or "").strip()[:800],
         "subscores": data.get("subscores") or {},
-        "news_article_scores": data.get("news_article_scores") or [],
+        "news_article_scores": data.get("news_article_scores") or [],  # Now includes topic_group
         "news_flow": news_flow,  # diagnostic
     }

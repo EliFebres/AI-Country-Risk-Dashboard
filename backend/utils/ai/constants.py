@@ -36,12 +36,24 @@ Do NOT raise risk due to indirect foreign tensions or rhetoric. Elevate risk ONL
 • Parliamentary Guardrail: Cabinet resignations, caretaker phases, coalition talks, or scheduled/snap elections remain **moderate** unless there is unconstitutional dissolution, emergency/martial law, week-long widespread violent unrest disrupting essential services, bank runs, capital controls, or sovereign default. Otherwise **political_stability should not exceed 0.45**.
 • Macro floors (numeric): If CPI inflation ≥ 25% → macroeconomic_volatility ≥ 0.70 AND overall score ≥ 0.55. If ≥ 40% → ≥ 0.80 AND overall ≥ 0.65. If ≥ 80% → overall ≥ 0.80.
 
-# --- Per-article impact labels (for diagnostics; caller won't re-score) ---
+# --- Per-article impact labels and TOPIC CLUSTERING (CRITICAL) ---
 Impact ∈ [0,1]:
   • 0.85-1.00 Severe - kinetic activity in/against {country}, mass kidnappings, binding economic measures, or major infrastructure sabotage.
   • 0.60-0.75 Moderate - credible mobilization/preparations, high-probability sanctions.
   • 0.40-0.55 Mixed/unclear - indirect third-country events with uncertain transmission.
   • 0.05-0.25 Low/benign - rhetoric/symbolic acts.
+
+**CRITICAL INSTRUCTION - TOPIC GROUPING:**
+You MUST identify which articles cover the SAME UNDERLYING EVENT/TOPIC and assign them the same topic_group identifier. Articles about the same topic should share a topic_group even if titles differ.
+
+Examples of SAME TOPIC (should have same topic_group):
+- "Australia Central Bank Holds Rates Steady" + "RBA Decides Against Rate Cut" + "Reserve Bank of Australia Keeps Policy Unchanged" → ALL get topic_group="australia_rba_rate_decision"
+- "Fed Cuts Rates by 0.5%" + "Federal Reserve Lowers Interest Rates" → BOTH get topic_group="us_fed_rate_cut"
+
+Examples of DIFFERENT TOPICS (different topic_groups):
+- "Australia Rate Decision" (topic_group="australia_rba_rate_decision") vs "Trade Deal with China" (topic_group="australia_china_trade")
+
+Use lowercase, underscore-separated topic_group identifiers that describe the core event/topic. Be aggressive in clustering - if articles discuss the same policy decision, election, conflict event, or economic indicator release, they MUST share a topic_group.
 
 Return ONLY valid JSON (no prose) exactly:
 
@@ -54,7 +66,7 @@ Return ONLY valid JSON (no prose) exactly:
     "regulatory_uncertainty": <float 0..1 or null>
   }},
   "news_article_scores": [
-    {{"id": "<id from ARTICLES_JSON>", "impact": <float 0..1>}}
+    {{"id": "<id from ARTICLES_JSON>", "impact": <float 0..1>, "topic_group": "<lowercase_topic_identifier>"}}
   ],
   "score": <float 0..1>,  # your single calibrated investor-risk score AFTER applying the hard rules above
   "bullet_summary": "<<=120 words explaining primary drivers and meaningful mitigants>"
@@ -63,11 +75,11 @@ Return ONLY valid JSON (no prose) exactly:
 
 
 # -------------------------
-# Strict schema for outputs
+# Strict schema for outputs - UPDATED TO INCLUDE TOPIC_GROUP
 # -------------------------
 RISK_SCHEMA: Dict = {
     "title": "CountryRiskAssessment",
-    "description": "Subscores, per-article impacts, a calibrated score, and a short summary.",
+    "description": "Subscores, per-article impacts with topic grouping, a calibrated score, and a short summary.",
     "type": "object",
     "properties": {
         "subscores": {
@@ -95,10 +107,11 @@ RISK_SCHEMA: Dict = {
             "items": {
                 "type": "object",
                 "properties": {
-                    "id":     {"type": "string"},
-                    "impact": {"type": "number", "minimum": 0, "maximum": 1}
+                    "id":          {"type": "string"},
+                    "impact":      {"type": "number", "minimum": 0, "maximum": 1},
+                    "topic_group": {"type": "string"}
                 },
-                "required": ["id", "impact"],
+                "required": ["id", "impact", "topic_group"],
                 "additionalProperties": False
             }
         },

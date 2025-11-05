@@ -1,9 +1,11 @@
-import re
+# backend/main.py
 import os
 import sys
 import pathlib
 import requests
 import pandas as pd
+
+from collections import defaultdict
 from datetime import datetime, timezone
 
 # --- Resolve project root so "backend/" is importable ------------------------
@@ -57,6 +59,21 @@ def _has_country_partition(root: pathlib.Path, iso2: str) -> bool:
         return any(p.suffix == ".parquet" for p in part_dir.glob("*.parquet"))
     except Exception:
         return False
+    
+def _parse_date_for_sort(date_str):
+    """Parse publication date for sorting. Returns datetime or epoch for invalid dates."""
+    if not date_str:
+        return datetime(1970, 1, 1)
+    try:
+        # Try ISO format
+        return datetime.fromisoformat(date_str.replace('Z', '+00:00'))
+    except Exception:
+        pass
+    try:
+        # Try date only
+        return datetime.strptime(date_str[:10], "%Y-%m-%d")
+    except Exception:
+        return datetime(1970, 1, 1)
 
 def ensure_missing_country_panels(excel_path: pathlib.Path,
                                   root: pathlib.Path,
@@ -104,55 +121,6 @@ def ensure_missing_country_panels(excel_path: pathlib.Path,
         except Exception as e:
             print(f"[{iso2}] ERROR while backfilling panel: {e}")
 
-# ---------- Topic-diversity helpers (NEW) ----------
-_STOPWORDS = {
-    "the","a","an","of","and","for","to","in","on","at","by","with",
-    "from","is","are","was","were","be","as","it","that","this"
-}
-
-def _norm_title_tokens(t: str) -> set[str]:
-    """Lowercase, strip punctuation, drop stopwords → token set."""
-    t = re.sub(r"[^a-z0-9\s]", " ", (t or "").lower())
-    return {w for w in t.split() if w and w not in _STOPWORDS}
-
-def _jaccard(a: set[str], b: set[str]) -> float:
-    if not a or not b:
-        return 0.0
-    return len(a & b) / max(1, len(a | b))
-
-def pick_top_diverse(
-    items_by_id: dict[str, dict],
-    imp_map: dict[str, float],
-    k: int = 3,
-    sim_threshold: float = 0.60
-) -> list[str]:
-    """
-    Greedy selection of top-k by impact, skipping titles that are too similar
-    to already-selected ones (Jaccard on token sets).
-    """
-    ranked_ids = sorted(items_by_id.keys(), key=lambda iid: imp_map.get(iid, 0.0), reverse=True)
-    chosen: list[str] = []
-    chosen_sets: list[set[str]] = []
-
-    for iid in ranked_ids:
-        title = (items_by_id[iid].get("title") or "")
-        tokens = _norm_title_tokens(title)
-        if any(_jaccard(tokens, ts) >= sim_threshold for ts in chosen_sets):
-            continue  # too similar to an already-chosen topic
-        chosen.append(iid)
-        chosen_sets.append(tokens)
-        if len(chosen) == k:
-            break
-
-    # Backfill if we couldn't get k unique topics
-    if len(chosen) < k:
-        for iid in ranked_ids:
-            if iid not in chosen:
-                chosen.append(iid)
-                if len(chosen) == k:
-                    break
-    return chosen
-
 
 # --- Main -------------------------------------------------------------------
 def main() -> None:
@@ -192,7 +160,7 @@ def main() -> None:
             query = _news_query_for(country_name or iso2)
             items = fetch_links.gnews_rss(
                 query=query,
-                max_results=10,
+                max_results=20,
                 expand=True,
                 extract_chars=24000,
                 build_summary=True,
@@ -240,21 +208,85 @@ def main() -> None:
                 seed=42,
             )
 
-            # 4) Rank and select Top-3 by impact with topic diversity (NEW)
+            # 4) Rank and select Top-3 using AI's TOPIC CLUSTERING
             try:
-                imp_map = {
-                    (e.get("id") or ""): float(e.get("impact") or 0.0)
-                    for e in (llm_output.get("news_article_scores") or [])
-                    if isinstance(e, dict)
-                }
+                # Build maps from AI output
+                article_scores = llm_output.get("news_article_scores") or []
+                imp_map = {}
+                topic_map = {}  # article_id -> topic_group
+                
+                for e in article_scores:
+                    if not isinstance(e, dict):
+                        continue
+                    aid = e.get("id", "")
+                    if not aid:
+                        continue
+                    
+                    try:
+                        imp_map[aid] = float(e.get("impact", 0.0))
+                    except (ValueError, TypeError):
+                        imp_map[aid] = 0.0
+                    
+                    topic_map[aid] = e.get("topic_group", "unknown")
+                    
             except Exception:
                 imp_map = {}
+                topic_map = {}
 
             items_by_id = {it.get("id"): it for it in items if isinstance(it, dict) and it.get("id")}
-            top_ids = pick_top_diverse(items_by_id, imp_map, k=3, sim_threshold=0.60)
-            if not top_ids:
-                # fallback if LLM returned no impacts
-                top_ids = [it.get("id") for it in items[:3] if it.get("id")]
+
+            if imp_map and topic_map:
+                # Group articles by topic_group (AI's clustering)
+                
+                topics = defaultdict(list)
+                for aid, topic_group in topic_map.items():
+                    topics[topic_group].append(aid)
+                
+                # For each topic, select the BEST article:
+                # 1. Highest impact
+                # 2. If tied, most recent publication date
+                topic_representatives = []
+                
+                for topic_group, article_ids in topics.items():
+                    # Sort by: impact DESC, then recency DESC
+                    sorted_ids = sorted(
+                        article_ids,
+                        key=lambda aid: (
+                            imp_map.get(aid, 0.0),  # Higher impact first
+                            _parse_date_for_sort(items_by_id.get(aid, {}).get("published", ""))
+                        ),
+                        reverse=True
+                    )
+                    
+                    # Take the best article from this topic
+                    best_id = sorted_ids[0]
+                    topic_representatives.append((
+                        best_id,
+                        imp_map.get(best_id, 0.0),
+                        topic_group
+                    ))
+                
+                # Sort topic representatives by impact (highest first) and take top 3
+                topic_representatives.sort(key=lambda x: x[1], reverse=True)
+                top_ids = [aid for aid, _, _ in topic_representatives[:3]]
+                
+                # Optional logging to see what AI clustered
+                print(f"[{iso2}] AI identified {len(topics)} distinct topics:")
+                for aid, imp, topic in topic_representatives[:5]:
+                    title = items_by_id.get(aid, {}).get("title", "")[:60]
+                    print(f"  - {topic[:30]:30s} | impact={imp:.2f} | {title}")
+                
+            else:
+                # Fallback: naive sorting by impact if no topic info
+                if imp_map:
+                    ranked_ids = sorted(
+                        items_by_id.keys(),
+                        key=lambda iid: imp_map.get(iid, float("-inf")),
+                        reverse=True,
+                    )
+                else:
+                    ranked_ids = [it.get("id") for it in items if it.get("id")]
+                top_ids = ranked_ids[:3]
 
             # 5) Enrich ONLY the Top-3 with missing images using the advanced scraper
             cb_token = _crawlbase_token()
