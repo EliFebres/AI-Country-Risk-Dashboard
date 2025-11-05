@@ -1,15 +1,14 @@
-# backend/utils/fetch_links.py
-# pip install feedparser httpx trafilatura
-import asyncio
-import datetime as dt
-from typing import List, Dict
-from urllib.parse import urlencode, quote_plus
 import re
 import html
-
-import feedparser
 import httpx
+import asyncio
+import feedparser
 import trafilatura
+import datetime as dt
+
+from typing import List, Dict
+from urllib.parse import urlencode, quote_plus
+
 
 UA = "Mozilla/5.0 (compatible; ai-country-risk/1.0)"
 

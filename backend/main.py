@@ -1,8 +1,11 @@
+# backend/main.py
 import os
 import sys
 import pathlib
 import requests
 import pandas as pd
+
+from collections import defaultdict
 from datetime import datetime, timezone
 
 # --- Resolve project root so "backend/" is importable ------------------------
@@ -15,31 +18,23 @@ while not (project_root / "backend").is_dir():
 if str(project_root) not in sys.path:
     sys.path.insert(0, str(project_root))
 
-# --- Imports after sys.path tweak -------------------------------------------
-from backend.ai import langchain_llm
-from backend.utils import fetch_links
-from backend.utils import country_data_fetch
-from backend import constants, data_retrieval, data_push
-from backend.utils.url_resolver import resolve_google_news_url
-from backend.utils.webscraping.simple_scraper import get_article_assets
-from backend.utils.webscraping.advanced_scraper import scrape_one as crawlbase_scrape_one
+# --- Internal Imports -------------------------------------------
+from backend.utils import constants
+from backend.utils import data_retrieval
+from backend.utils.ai import langchain_llm
+from backend.utils.data_upsert import data_push
+from backend.utils.news_fetching import fetch_links
+from backend.utils.data_fetching import fetch_metrics
+from backend.utils.data_fetching import country_data_fetch
+from backend.utils.news_fetching.url_resolver import resolve_google_news_url
+from backend.utils.news_fetching.simple_scraper import get_article_assets
+from backend.utils.news_fetching.advanced_scraper import scrape_one as crawlbase_scrape_one
 
 # --- Paths ------------------------------------------------------------------
 BACKEND_DIR    = project_root / "backend"
 PROCESSED_DATA = BACKEND_DIR / "data" / "wb_panel_wide"
 RAW_DATA_EXCEL = BACKEND_DIR / "data" / "country_data.xlsx"
 
-# --- Ensure processed World Bank panel exists -------------------------------
-panel_dir = PROCESSED_DATA
-if not panel_dir.is_dir():
-    panel_dir.mkdir(parents=True, exist_ok=True)
-    country_data_fetch.ingest_panels_for_all_countries(
-        excel_path=RAW_DATA_EXCEL,
-        root=PROCESSED_DATA,
-        indicators=constants.INDICATORS,
-        start=None,
-        end=None,
-    )
 
 # --- Helpers ----------------------------------------------------------------
 def _news_query_for(country_name: str) -> str:
@@ -54,10 +49,93 @@ def _crawlbase_token() -> str:
     # Prefer JS token, then standard token
     return os.getenv("CRAWLBASE_JS_TOKEN") or os.getenv("CRAWLBASE_TOKEN") or ""
 
+def _has_country_partition(root: pathlib.Path, iso2: str) -> bool:
+    """
+    Return True if a partition dir like country_code=XX exists and has at least one .parquet file.
+    """
+    part_dir = root / f"country_code={iso2}"
+    if not part_dir.is_dir():
+        return False
+    try:
+        return any(p.suffix == ".parquet" for p in part_dir.glob("*.parquet"))
+    except Exception:
+        return False
+    
+def _parse_date_for_sort(date_str):
+    """Parse publication date for sorting. Returns datetime or epoch for invalid dates."""
+    if not date_str:
+        return datetime(1970, 1, 1)
+    try:
+        # Try ISO format
+        return datetime.fromisoformat(date_str.replace('Z', '+00:00'))
+    except Exception:
+        pass
+    try:
+        # Try date only
+        return datetime.strptime(date_str[:10], "%Y-%m-%d")
+    except Exception:
+        return datetime(1970, 1, 1)
+
+def ensure_missing_country_panels(excel_path: pathlib.Path,
+                                  root: pathlib.Path,
+                                  indicators: dict,
+                                  start: int | None = None,
+                                  end: int | None = None) -> None:
+    """
+    Make sure every country in excel_path has a partition under root.
+    Only (re)build and write partitions that are missing or empty.
+    """
+    root.mkdir(parents=True, exist_ok=True)
+
+    df = pd.read_excel(excel_path)
+    if not {"Country_Name", "iso2Code"}.issubset(df.columns):
+        raise ValueError(f"{excel_path} must include 'Country_Name' and 'iso2Code' columns.")
+
+    missing = []
+    for _, row in df.iterrows():
+        iso2 = str(row["iso2Code"]).strip()
+        if not iso2:
+            continue
+        if not _has_country_partition(root, iso2):
+            missing.append(iso2)
+
+    if not missing:
+        print(f"All {len(df)} countries already have parquet partitions in {root}.")
+        return
+
+    print(f"Backfilling {len(missing)} missing panels → {missing}")
+    for iso2 in missing:
+        try:
+            panel = fetch_metrics.build_country_panel(
+                iso2,
+                indicators,
+                start=start,
+                end=end,
+                tidy_fetch=True,
+            )
+            if panel is None or panel.empty:
+                print(f"[{iso2}] No World Bank rows for selected indicators — skipping write.")
+                continue
+
+            country_data_fetch.ingest_panel_wide(panel, iso2, root)
+            print(f"[{iso2}] Wrote panel with {panel.shape[0]} years × {panel.shape[1]} indicators.")
+        except Exception as e:
+            print(f"[{iso2}] ERROR while backfilling panel: {e}")
+
+
 # --- Main -------------------------------------------------------------------
 def main() -> None:
     """Loop countries → payload → news → LLM score → enrich Top-3 images if missing → DB."""
     print(f"=== AI Country Risk run started at {_to_utc_iso(datetime.now(timezone.utc))} UTC ===")
+
+    # 0) Ensure/Backfill World Bank panels per country (incremental, idempotent)
+    ensure_missing_country_panels(
+        excel_path=RAW_DATA_EXCEL,
+        root=PROCESSED_DATA,
+        indicators=constants.INDICATORS,
+        start=None,
+        end=None,
+    )
 
     # Map "Country_Name" → "iso2Code" from your Excel
     df_countries: pd.DataFrame = pd.read_excel(RAW_DATA_EXCEL)
@@ -83,7 +161,7 @@ def main() -> None:
             query = _news_query_for(country_name or iso2)
             items = fetch_links.gnews_rss(
                 query=query,
-                max_results=25,
+                max_results=20,
                 expand=True,
                 extract_chars=24000,
                 build_summary=True,
@@ -131,23 +209,85 @@ def main() -> None:
                 seed=42,
             )
 
-            # 4) Rank and select Top-3 by impact (fallback to first 3)
+            # 4) Rank and select Top-3 using AI's TOPIC CLUSTERING
             try:
-                imp_map = {
-                    (e.get("id") or ""): float(e.get("impact") or 0.0)
-                    for e in (llm_output.get("news_article_scores") or [])
-                    if isinstance(e, dict)
-                }
+                # Build maps from AI output
+                article_scores = llm_output.get("news_article_scores") or []
+                imp_map = {}
+                topic_map = {}  # article_id -> topic_group
+                
+                for e in article_scores:
+                    if not isinstance(e, dict):
+                        continue
+                    aid = e.get("id", "")
+                    if not aid:
+                        continue
+                    
+                    try:
+                        imp_map[aid] = float(e.get("impact", 0.0))
+                    except (ValueError, TypeError):
+                        imp_map[aid] = 0.0
+                    
+                    topic_map[aid] = e.get("topic_group", "unknown")
+                    
             except Exception:
                 imp_map = {}
+                topic_map = {}
 
             items_by_id = {it.get("id"): it for it in items if isinstance(it, dict) and it.get("id")}
-            ranked = sorted(
-                ((imp_map.get(iid, 0.0), items_by_id[iid]) for iid in items_by_id),
-                key=lambda t: t[0],
-                reverse=True
-            )
-            top_ids = [it.get("id") for _, it in ranked[:3]] or [it.get("id") for it in items[:3]]
+
+            if imp_map and topic_map:
+                # Group articles by topic_group (AI's clustering)
+                
+                topics = defaultdict(list)
+                for aid, topic_group in topic_map.items():
+                    topics[topic_group].append(aid)
+                
+                # For each topic, select the BEST article:
+                # 1. Highest impact
+                # 2. If tied, most recent publication date
+                topic_representatives = []
+                
+                for topic_group, article_ids in topics.items():
+                    # Sort by: impact DESC, then recency DESC
+                    sorted_ids = sorted(
+                        article_ids,
+                        key=lambda aid: (
+                            imp_map.get(aid, 0.0),  # Higher impact first
+                            _parse_date_for_sort(items_by_id.get(aid, {}).get("published", ""))
+                        ),
+                        reverse=True
+                    )
+                    
+                    # Take the best article from this topic
+                    best_id = sorted_ids[0]
+                    topic_representatives.append((
+                        best_id,
+                        imp_map.get(best_id, 0.0),
+                        topic_group
+                    ))
+                
+                # Sort topic representatives by impact (highest first) and take top 3
+                topic_representatives.sort(key=lambda x: x[1], reverse=True)
+                top_ids = [aid for aid, _, _ in topic_representatives[:3]]
+                
+                # Optional logging to see what AI clustered
+                print(f"[{iso2}] AI identified {len(topics)} distinct topics:")
+                for aid, imp, topic in topic_representatives[:5]:
+                    title = items_by_id.get(aid, {}).get("title", "")[:60]
+                    print(f"  - {topic[:30]:30s} | impact={imp:.2f} | {title}")
+                
+            else:
+                # Fallback: naive sorting by impact if no topic info
+                if imp_map:
+                    ranked_ids = sorted(
+                        items_by_id.keys(),
+                        key=lambda iid: imp_map.get(iid, float("-inf")),
+                        reverse=True,
+                    )
+                else:
+                    ranked_ids = [it.get("id") for it in items if it.get("id")]
+                top_ids = ranked_ids[:3]
 
             # 5) Enrich ONLY the Top-3 with missing images using the advanced scraper
             cb_token = _crawlbase_token()

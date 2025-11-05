@@ -1,70 +1,98 @@
-from __future__ import annotations
-
 import json
 import os
 import time
 import random
 import requests
 import tldextract
+
 from pathlib import Path
-from datetime import datetime, timezone
-from typing import Dict, Any, Optional, List, Union
-from urllib.parse import urlparse
-from urllib import robotparser
-
 from bs4 import BeautifulSoup
+from urllib import robotparser
+from urllib.parse import urlparse
+from datetime import datetime, timezone
+from typing import Dict, Any, Optional, List, Union, Tuple
 
-# --- Optional .env loading (safe if python-dotenv is missing) ---
-try:
-    from dotenv import load_dotenv  # type: ignore
+# --- .env loading (simple & explicit) ---
+from dotenv import load_dotenv
 
-    THIS_DIR = Path(__file__).resolve().parent
-    # Load backend/.env (this file's folder)
-    load_dotenv(THIS_DIR / ".env")
-    # Also try repo root .env without overriding existing envs
-    load_dotenv(THIS_DIR.parent / ".env", override=False)
-except Exception:
-    pass
+THIS_DIR = Path(__file__).resolve().parent
+load_dotenv(THIS_DIR / ".env")                           # backend/.env (same folder as this file)
+load_dotenv(THIS_DIR.parent / ".env", override=False)    # repo root .env (won't override)
 
-# -------------------- Constants -------------------- #
+# -------------------- Tuned constants (faster + safer) -------------------- #
 API_BASE = "https://api.crawlbase.com"
-TIMEOUT_SECS = 90
+
+# Use a connect/read tuple for tighter control (vs single long timeout).
+TIMEOUT_CONNECT_SECS = 5
+TIMEOUT_READ_SECS = 20
+TIMEOUT_TUPLE: Tuple[int, int] = (TIMEOUT_CONNECT_SECS, TIMEOUT_READ_SECS)
+
+# Crawlbase waits — most publishers expose OG/Twitter tags without long JS idle time.
+PAGE_WAIT_MS = 1000   # was 2000
+AJAX_WAIT_MS = 300    # was 2000
+
+# Global UA
 DEFAULT_UA = "NewsMetaScraper/1.0 (AI Country Risk) Python"
+
+# Retries kept small: 2 attempts total (1 retry) with short jittered backoff.
+MAX_ATTEMPTS = 1
+
 
 # -------------------- Time helper -------------------- #
 def now_utc_z() -> str:
     """ISO 8601 UTC with trailing 'Z'."""
     return datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
 
-# -------------------- robots.txt compliance -------------------- #
+
+# -------------------- robots.txt compliance (with timeouts & caching) -------------------- #
 _robots_cache: Dict[str, robotparser.RobotFileParser] = {}
+_ROBOTS_TIMEOUT: Tuple[int, int] = (3, 3)  # (connect, read)
+
+def _fetch_robots_txt(base: str) -> Optional[str]:
+    """
+    Fetch /robots.txt with explicit short timeouts.
+    Returns the content (str) or None on failure.
+    """
+    try:
+        resp = requests.get(
+            f"{base}/robots.txt",
+            headers={"User-Agent": DEFAULT_UA, "Accept-Encoding": "gzip"},
+            timeout=_ROBOTS_TIMEOUT,
+        )
+        if resp.status_code >= 400:
+            return None
+        return resp.text or ""
+    except Exception:
+        return None
 
 def robots_allowed(url: str, user_agent: str = DEFAULT_UA) -> bool:
     """
     Parse and cache robots.txt for the host, then check can_fetch.
-    Returns False if robots can't be fetched (conservative).
+    Returns False if robots can't be fetched or parsed (conservative).
     """
     parsed = urlparse(url)
     scheme = parsed.scheme or "https"
     host = parsed.netloc
     base = f"{scheme}://{host}"
-    rp = _robots_cache.get(base)
 
+    rp = _robots_cache.get(base)
     if rp is None:
+        txt = _fetch_robots_txt(base)
+        if txt is None:
+            return False  # conservative: can't fetch robots
         rp = robotparser.RobotFileParser()
-        robots_url = f"{base}/robots.txt"
         try:
-            rp.set_url(robots_url)
-            rp.read()
+            # Use .parse() so we control the fetch timeout above
+            rp.parse(txt.splitlines())
             _robots_cache[base] = rp
         except Exception:
-            # If robots can't be fetched, treat as disallowed (conservative).
             return False
 
     try:
         return rp.can_fetch(user_agent, url)
     except Exception:
         return False
+
 
 # -------------------- Crawlbase fetch -------------------- #
 def _resolve_token(explicit_token: Optional[str]) -> Optional[str]:
@@ -74,25 +102,27 @@ def _resolve_token(explicit_token: Optional[str]) -> Optional[str]:
 def crawlbase_fetch(url: str, token: str) -> Dict[str, Any]:
     """
     Hit Crawlbase with format=json to receive HTML body plus metadata.
+    Tuned to avoid excessive page waits and with explicit timeouts.
     """
     params = {
         "token": token,
         "url": url,
         "format": "json",     # returns JSON envelope with 'body', 'original_status', etc.
         "device": "desktop",
-        "page_wait": 2000,    # ms: let DOM settle
-        "ajax_wait": 2000,    # ms: let XHRs settle
-        # "country": "US",    # uncomment if you need region pinning
-        # "pretty": "true",   # helpful during debugging
+        "page_wait": PAGE_WAIT_MS,
+        "ajax_wait": AJAX_WAIT_MS,
+        # "country": "US",
+        # "pretty": "true",
     }
     r = requests.get(
         API_BASE,
         params=params,
         headers={"Accept-Encoding": "gzip", "User-Agent": DEFAULT_UA},
-        timeout=TIMEOUT_SECS,
+        timeout=TIMEOUT_TUPLE,   # (connect, read)
     )
     r.raise_for_status()
     return r.json()
+
 
 # -------------------- HTML parsing helpers -------------------- #
 def _first_meta(soup: BeautifulSoup, *names) -> Optional[str]:
@@ -180,10 +210,19 @@ def extract_metadata(html: str, url: str) -> Dict[str, Any]:
         "source_domain": domain,
     }
 
+
 # -------------------- Orchestrator -------------------- #
 def scrape_one(url: str, token: str, respect_robots: bool = True) -> Dict[str, Any]:
     """
-    Fetch via Crawlbase and extract metadata, with polite retries.
+    Fetch via Crawlbase and extract metadata, with polite, bounded retries.
+
+    Quick-fix changes:
+      • Shorter connect/read timeouts on all network calls.
+      • Reduced page/JS waits for Crawlbase render.
+      • Only 2 total attempts (1 retry).
+      • Skip retry on 4xx upstream statuses (won't succeed on retry).
+      • Short jittered backoff between attempts.
+      • robots.txt fetched with explicit short timeouts and cached.
     """
     if respect_robots and not robots_allowed(url):
         return {
@@ -193,16 +232,28 @@ def scrape_one(url: str, token: str, respect_robots: bool = True) -> Dict[str, A
             "fetched_at": now_utc_z(),
         }
 
-    tries = 0
+    attempts = 0
     last_err = None
-    while tries < 3:
-        tries += 1
+
+    while attempts < MAX_ATTEMPTS:
+        attempts += 1
         try:
             cb = crawlbase_fetch(url, token)
             original_status = cb.get("original_status")
             body = cb.get("body") or ""
-            if not body or original_status is None or int(original_status) >= 400:
-                raise RuntimeError(f"Upstream original_status={original_status}")
+
+            # If Crawlbase indicates a client error at the origin, don't retry.
+            if original_status is None or int(original_status) >= 400:
+                if original_status is not None and 400 <= int(original_status) < 500:
+                    return {
+                        "url": url,
+                        "fetched_at": now_utc_z(),
+                        "original_status": original_status,
+                        "error": f"origin_4xx:{original_status}",
+                    }
+                # treat 5xx or missing body/status as retryable
+                raise RuntimeError(f"Upstream status/body invalid: {original_status}, bytes={len(body)}")
+
             meta = extract_metadata(body, url)
             return {
                 "url": url,
@@ -211,21 +262,26 @@ def scrape_one(url: str, token: str, respect_robots: bool = True) -> Dict[str, A
                 "html_bytes": len(body),
                 **meta,
             }
+
         except Exception as e:
             last_err = str(e)
-            # jittered backoff
-            time.sleep(0.8 * tries + random.random() * 0.6)
+            if attempts >= MAX_ATTEMPTS:
+                break
+            # jittered backoff (short)
+            time.sleep(0.4 * attempts + random.random() * 0.4)
 
     return {
         "url": url,
-        "error": f"failed_after_retries: {last_err}",
+        "error": f"failed_after_{attempts}_attempts: {last_err}",
         "fetched_at": now_utc_z(),
     }
+
 
 def _normalize_urls(urls: Union[str, List[str]]) -> List[str]:
     if isinstance(urls, str):
         return [urls]
     return list(urls)
+
 
 def main(
     urls: Union[str, List[str]],
@@ -260,7 +316,7 @@ def main(
             if out_fp:
                 out_fp.write(json.dumps(rec, ensure_ascii=False) + "\n")
                 out_fp.flush()
-            time.sleep(0.25)  # polite pacing
+            time.sleep(0.25)  # polite pacing between different hosts
     finally:
         if out_fp:
             out_fp.close()

@@ -1,13 +1,11 @@
-# backend/utils/article_fetch.py
-from __future__ import annotations
-
-import json
 import re
-from typing import Optional, Tuple, List
-from urllib.parse import urljoin
-
+import json
 import requests
+
 from bs4 import BeautifulSoup
+from urllib.parse import urljoin
+from typing import Optional, Tuple, List
+
 
 # --------------------------- HTTP / Config ---------------------------
 
