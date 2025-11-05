@@ -5,6 +5,7 @@ import pathlib
 import requests
 import pandas as pd
 
+from typing import List, Dict
 from collections import defaultdict
 from datetime import datetime, timezone
 
@@ -37,9 +38,6 @@ RAW_DATA_EXCEL = BACKEND_DIR / "data" / "country_data.xlsx"
 
 
 # --- Helpers ----------------------------------------------------------------
-def _news_query_for(country_name: str) -> str:
-    return f'"{country_name}" (economy OR inflation OR policy OR protest OR sanctions OR war OR coup OR corruption OR central bank OR IMF)'
-
 def _to_utc_iso(dt: datetime) -> str:
     if dt.tzinfo is None:
         dt = dt.replace(tzinfo=timezone.utc)
@@ -75,6 +73,110 @@ def _parse_date_for_sort(date_str):
         return datetime.strptime(date_str[:10], "%Y-%m-%d")
     except Exception:
         return datetime(1970, 1, 1)
+
+def _score_article_relevance(article: Dict, country_name: str) -> float:
+    """
+    Score article relevance (0-1) based on title/summary content.
+    Higher = more relevant to geopolitical risk.
+    """
+    title = (article.get("title") or "").lower()
+    summary = (article.get("summary") or article.get("snippet") or "").lower()
+    text = f"{title} {summary}"
+    country_lower = country_name.lower()
+    
+    # Must mention country
+    if country_lower not in text:
+        return 0.1
+    
+    score = 0.3  # Base score for mentioning country
+    
+    # HIGH relevance keywords (government/policy/economy/security)
+    high_keywords = [
+        'government', 'ministry', 'parliament', 'president', 'prime minister',
+        'central bank', 'interest rate', 'monetary policy', 'inflation', 'gdp',
+        'election', 'cabinet', 'policy', 'budget', 'fiscal', 'trade',
+        'military', 'defense', 'conflict', 'sanctions', 'war', 'coup', 'security'
+    ]
+    
+    # MEDIUM relevance keywords
+    medium_keywords = [
+        'economy', 'economic', 'finance', 'currency', 'debt', 'growth',
+        'minister', 'official', 'regulation', 'law', 'reform'
+    ]
+    
+    # LOW relevance (noise - entertainment/sports)
+    noise_keywords = [
+        'sport', 'football', 'soccer', 'basketball', 'tennis', 'cricket',
+        'music', 'entertainment', 'celebrity', 'festival', 'award',
+        'movie', 'film', 'actor', 'singer', 'concert'
+    ]
+    
+    # Count matches
+    high_count = sum(1 for kw in high_keywords if kw in text)
+    medium_count = sum(1 for kw in medium_keywords if kw in text)
+    noise_count = sum(1 for kw in noise_keywords if kw in text)
+    
+    # Scoring logic
+    score += min(high_count * 0.15, 0.5)     # Up to +0.5 for high keywords
+    score += min(medium_count * 0.08, 0.2)   # Up to +0.2 for medium keywords
+    score -= noise_count * 0.2                # Penalty for noise
+    
+    # Bonus for title mentions (title is more important)
+    if any(kw in title for kw in high_keywords):
+        score += 0.15
+    
+    return max(0.0, min(1.0, score))
+
+
+def _fetch_relevant_news(country_name: str, max_articles: int = 20) -> List[Dict]:
+    """
+    Fetch news using multiple targeted queries (political, economic, security).
+    Score by relevance and return top max_articles most relevant items.
+    """
+    queries = [
+        # Query 1: Government/Political
+        f'"{country_name}" (government OR president OR prime minister OR parliament OR election OR cabinet OR coup OR protest)',
+        
+        # Query 2: Economic/Central Bank
+        f'"{country_name}" (central bank OR interest rate OR inflation OR GDP OR currency OR monetary policy OR IMF OR World Bank)',
+        
+        # Query 3: Security/Military
+        f'"{country_name}" (military OR defense OR conflict OR war OR attack OR sanctions OR security OR terrorism)',
+    ]
+    
+    all_items = []
+    seen_urls = set()
+    
+    for query in queries:
+        items = fetch_links.gnews_rss(
+            query=query,
+            max_results=15,  # Fetch 15 per query = 45 total
+            expand=True,
+            extract_chars=24000,
+            build_summary=True,
+            summary_words=240,
+        )
+        
+        # Deduplicate by URL
+        for item in items:
+            url = item.get("link", "")
+            if url and url not in seen_urls:
+                seen_urls.add(url)
+                all_items.append(item)
+    
+    # Score each article for relevance
+    for item in all_items:
+        item["relevance_score"] = _score_article_relevance(item, country_name)
+    
+    # Sort by relevance (highest first)
+    all_items.sort(key=lambda x: x.get("relevance_score", 0), reverse=True)
+    
+    # Filter out low-relevance articles (< 0.3)
+    filtered = [item for item in all_items if item.get("relevance_score", 0) >= 0.3]
+    
+    # Return top max_articles
+    return filtered[:max_articles]
+
 
 def ensure_missing_country_panels(excel_path: pathlib.Path,
                                   root: pathlib.Path,
@@ -157,16 +259,12 @@ def main() -> None:
                 deltas=(1, 5),
             )
 
-            # 2) Google News items
-            query = _news_query_for(country_name or iso2)
-            items = fetch_links.gnews_rss(
-                query=query,
-                max_results=20,
-                expand=True,
-                extract_chars=24000,
-                build_summary=True,
-                summary_words=240,
-            )
+            # 2) Fetch relevant news using multi-query strategy with relevance filtering
+            items = _fetch_relevant_news(country_name or iso2, max_articles=20)
+            
+            if items:
+                avg_rel = sum(it.get("relevance_score", 0) for it in items) / len(items)
+                print(f"[{iso2}] Fetched {len(items)} articles (avg relevance: {avg_rel:.2f})")
 
             # --- Resolve and do light enrichment using ONLY the simple scraper ---
             with requests.Session() as _sess:
@@ -238,7 +336,6 @@ def main() -> None:
 
             if imp_map and topic_map:
                 # Group articles by topic_group (AI's clustering)
-                
                 topics = defaultdict(list)
                 for aid, topic_group in topic_map.items():
                     topics[topic_group].append(aid)
