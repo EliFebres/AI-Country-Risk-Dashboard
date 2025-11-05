@@ -22,6 +22,7 @@ if str(project_root) not in sys.path:
 from backend.utils import constants
 from backend.utils import data_retrieval
 from backend.utils.ai import langchain_llm
+from backend.utils.data_upsert import data_push
 from backend.utils.news_fetching import fetch_links
 from backend.utils.data_fetching import fetch_metrics
 from backend.utils.data_fetching import country_data_fetch
@@ -334,10 +335,10 @@ def main() -> None:
                 })
 
             # 7) Upsert to DB
-            # data_push.upsert_snapshot(
-            #     {**payload, "llm_output": llm_output, "top_articles": top_articles},
-            #     country_name=country_name
-            # )
+            data_push.upsert_snapshot(
+                {**payload, "llm_output": llm_output, "top_articles": top_articles},
+                country_name=country_name
+            )
 
             # Optional progress print
             sc = llm_output.get("score")
