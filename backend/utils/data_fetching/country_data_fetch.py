@@ -7,7 +7,7 @@ from zoneinfo import ZoneInfo
 from typing import Mapping, Optional
 from datetime import datetime, date, timedelta
 
-import backend.utils.fetch_metrics as fetch_metrics
+import backend.utils.data_fetching.fetch_metrics as fetch_metrics
 
 
 def _first_monday(year: int, month: int) -> date:

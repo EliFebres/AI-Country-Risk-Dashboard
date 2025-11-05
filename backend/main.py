@@ -3,7 +3,10 @@ import sys
 import pathlib
 import requests
 import pandas as pd
+import re
 from datetime import datetime, timezone
+
+from backend.utils import data_retrieval
 
 # --- Resolve project root so "backend/" is importable ------------------------
 project_root = pathlib.Path.cwd().resolve()
@@ -15,15 +18,15 @@ while not (project_root / "backend").is_dir():
 if str(project_root) not in sys.path:
     sys.path.insert(0, str(project_root))
 
-# --- Imports after sys.path tweak -------------------------------------------
-from backend.ai import langchain_llm
-from backend.utils import fetch_links
-from backend.utils import country_data_fetch
-import backend.utils.fetch_metrics as fetch_metrics  # for building panels directly
-from backend import constants, data_retrieval, data_push
-from backend.utils.url_resolver import resolve_google_news_url
-from backend.utils.webscraping.simple_scraper import get_article_assets
-from backend.utils.webscraping.advanced_scraper import scrape_one as crawlbase_scrape_one
+# --- Internal Imports -------------------------------------------
+from backend.utils.ai import langchain_llm
+from backend.utils.news_fetching import fetch_links
+from backend.utils.data_fetching import fetch_metrics
+from backend.utils.data_fetching import country_data_fetch
+from backend.utils import constants
+from backend.utils.news_fetching.url_resolver import resolve_google_news_url
+from backend.utils.news_fetching.simple_scraper import get_article_assets
+from backend.utils.news_fetching.advanced_scraper import scrape_one as crawlbase_scrape_one
 
 # --- Paths ------------------------------------------------------------------
 BACKEND_DIR    = project_root / "backend"
@@ -102,6 +105,55 @@ def ensure_missing_country_panels(excel_path: pathlib.Path,
         except Exception as e:
             print(f"[{iso2}] ERROR while backfilling panel: {e}")
 
+# ---------- Topic-diversity helpers (NEW) ----------
+_STOPWORDS = {
+    "the","a","an","of","and","for","to","in","on","at","by","with",
+    "from","is","are","was","were","be","as","it","that","this"
+}
+
+def _norm_title_tokens(t: str) -> set[str]:
+    """Lowercase, strip punctuation, drop stopwords → token set."""
+    t = re.sub(r"[^a-z0-9\s]", " ", (t or "").lower())
+    return {w for w in t.split() if w and w not in _STOPWORDS}
+
+def _jaccard(a: set[str], b: set[str]) -> float:
+    if not a or not b:
+        return 0.0
+    return len(a & b) / max(1, len(a | b))
+
+def pick_top_diverse(
+    items_by_id: dict[str, dict],
+    imp_map: dict[str, float],
+    k: int = 3,
+    sim_threshold: float = 0.60
+) -> list[str]:
+    """
+    Greedy selection of top-k by impact, skipping titles that are too similar
+    to already-selected ones (Jaccard on token sets).
+    """
+    ranked_ids = sorted(items_by_id.keys(), key=lambda iid: imp_map.get(iid, 0.0), reverse=True)
+    chosen: list[str] = []
+    chosen_sets: list[set[str]] = []
+
+    for iid in ranked_ids:
+        title = (items_by_id[iid].get("title") or "")
+        tokens = _norm_title_tokens(title)
+        if any(_jaccard(tokens, ts) >= sim_threshold for ts in chosen_sets):
+            continue  # too similar to an already-chosen topic
+        chosen.append(iid)
+        chosen_sets.append(tokens)
+        if len(chosen) == k:
+            break
+
+    # Backfill if we couldn't get k unique topics
+    if len(chosen) < k:
+        for iid in ranked_ids:
+            if iid not in chosen:
+                chosen.append(iid)
+                if len(chosen) == k:
+                    break
+    return chosen
+
 
 # --- Main -------------------------------------------------------------------
 def main() -> None:
@@ -141,7 +193,7 @@ def main() -> None:
             query = _news_query_for(country_name or iso2)
             items = fetch_links.gnews_rss(
                 query=query,
-                max_results=25,
+                max_results=10,
                 expand=True,
                 extract_chars=24000,
                 build_summary=True,
@@ -189,7 +241,7 @@ def main() -> None:
                 seed=42,
             )
 
-            # 4) Rank and select Top-3 by impact (fallback to first 3)
+            # 4) Rank and select Top-3 by impact with topic diversity (NEW)
             try:
                 imp_map = {
                     (e.get("id") or ""): float(e.get("impact") or 0.0)
@@ -200,12 +252,10 @@ def main() -> None:
                 imp_map = {}
 
             items_by_id = {it.get("id"): it for it in items if isinstance(it, dict) and it.get("id")}
-            ranked = sorted(
-                ((imp_map.get(iid, 0.0), items_by_id[iid]) for iid in items_by_id),
-                key=lambda t: t[0],
-                reverse=True
-            )
-            top_ids = [it.get("id") for _, it in ranked[:3]] or [it.get("id") for it in items[:3]]
+            top_ids = pick_top_diverse(items_by_id, imp_map, k=3, sim_threshold=0.60)
+            if not top_ids:
+                # fallback if LLM returned no impacts
+                top_ids = [it.get("id") for it in items[:3] if it.get("id")]
 
             # 5) Enrich ONLY the Top-3 with missing images using the advanced scraper
             cb_token = _crawlbase_token()

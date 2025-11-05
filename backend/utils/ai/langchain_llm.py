@@ -1,3 +1,4 @@
+#backend/utils/ai/langchain_llm.py
 import os
 import json
 import logging
@@ -10,7 +11,7 @@ load_dotenv(find_dotenv(), override=False)
 from langchain_openai import ChatOpenAI
 from langchain_core.messages import SystemMessage
 
-import backend.constants as constants
+import backend.utils.constants as constants
 
 logger = logging.getLogger(__name__)
 

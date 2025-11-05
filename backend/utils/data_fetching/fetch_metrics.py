@@ -1,20 +1,11 @@
 import logging
 import requests
 import pandas as pd
-from tenacity import retry, wait_fixed, stop_after_attempt, retry_if_exception_type
+
 from typing import List, Dict, Tuple, Mapping, Optional, Union, Any
+from tenacity import retry, wait_fixed, stop_after_attempt, retry_if_exception_type
 
-import backend.constants as constants
-
-# Some WB endpoints are picky for Taiwan; ISO-2 "TW" often needs ISO-3 "TWN".
-_SPECIAL_WB_CODE = {"TW": "TWN",}
-
-def _normalize_country_code(code: str) -> str:
-    c = (code or "").strip().upper()
-    # Minimal, surgical normalization for known outliers
-    if len(c) == 2 and c in _SPECIAL_WB_CODE:
-        return _SPECIAL_WB_CODE[c]
-    return c
+import backend.utils.constants as constants
 
 
 @retry(
@@ -32,29 +23,23 @@ def wb_series(
     session: Optional[requests.Session] = None,
 ) -> Union[List[Tuple[int, Optional[float]]], pd.Series]:
     """
-    Retrieve the full World-Bank time-series *indicator* for a single country.
+    Fetch a World Bank indicator time series for a single country.
 
-    Parameters
-    ----------
-    code : str
-        ISO-2 or ISO-3 country code (e.g. "US", "IND"). For Taiwan, we normalize "TW" → "TWN".
-    indicator : str
-        World-Bank indicator code (e.g. "NY.GDP.MKTP.KD.ZG").
-    start, end : int | None, optional
-        Inclusive year bounds. Supplying only one bound filters locally
-        after download (WB API requires both for the `date=` parameter).
-    tidy : bool, default False
-        If True return a pandas.Series indexed by ascending years;
-        otherwise return list[(year, value)] (descending, WB default).
-    session : requests.Session | None, optional
-        Re-use an existing requests.Session to speed up bulk calls.
+    Args:
+        code: ISO-2 or ISO-3 country code (e.g., "US", "IND"). Trimmed and uppercased
+            inline; no special remapping is performed.
+        indicator: World Bank indicator code (e.g., "NY.GDP.MKTP.KD.ZG").
+        start: Inclusive start year. If only one of `start`/`end` is provided, the
+            filter is applied locally after download.
+        end: Inclusive end year. See `start` for single-bound behavior.
+        tidy: If True, return a pandas Series indexed by ascending years; otherwise,
+            return a list of (year, value) pairs in the World Bank's default
+            descending-year order.
+        session: Optional `requests.Session` to reuse connections across calls.
 
-    Returns
-    -------
-    list[tuple[int, float | None]]
-        When tidy=False (descending years).
-    pandas.Series
-        When tidy=True (ascending years).
+    Returns:
+        list[tuple[int, float | None]]: When `tidy=False` (descending years).
+        pandas.Series: When `tidy=True` (ascending years).
     """
     # Input Validation
     assert isinstance(code, str) and code.strip(),  "`code` must be non-empty str"
@@ -69,11 +54,13 @@ def wb_series(
     if session is not None:
         assert isinstance(session, requests.Session), "`session` must be requests.Session"
 
+    # Inline normalization: trim + uppercase
+    norm_code = (code or "").strip().upper()
+
     # Build Request
     if "?" in constants.WB_ENDPOINT:
         raise ValueError("WB_ENDPOINT should not include query parameters")
 
-    norm_code = _normalize_country_code(code)
     url = constants.WB_ENDPOINT.format(code=norm_code, ind=indicator)
     params: Dict[str, str] = {"format": "json", "per_page": "1000"}
     if start is not None and end is not None:
@@ -88,7 +75,7 @@ def wb_series(
     if not isinstance(payload, list) or len(payload) < 2:
         raise RuntimeError(f"World Bank API error for {norm_code}/{indicator}: {payload}")
 
-    rows = payload[1] or []  # key fix: treat None as empty list
+    rows = payload[1] or []  # treat None as empty list
 
     # Convert to list[(year, value)] in WB default order (desc by year)
     series_pairs: List[Tuple[int, Optional[float]]] = []
@@ -128,26 +115,22 @@ def build_country_panel(
     tidy_fetch: bool = True,
 ) -> pd.DataFrame:
     """
-    Fetch multiple World-Bank indicators for one country and assemble them
-    into a year-by-factor table.
+    Assemble multiple World Bank indicators for one country into a year-indexed table.
 
-    Parameters
-    ----------
-    code : str
-        ISO-2 or ISO-3 country code (e.g. "IN", "USA").
-    indicators : Mapping[str, str]
-        {column_name: wb_indicator_code} pairs; the mapping's *keys* become columns.
-    start, end : int | None, optional
-        Inclusive year bounds forwarded to wb_series.
-    tidy_fetch : bool, default True
-        If True call wb_series(..., tidy=True) to get ascending Series;
-        else get raw list and tidy locally.
+    Args:
+        code: ISO-2 or ISO-3 country code (e.g., "IN", "USA"). Trimmed/uppercased
+            behavior is handled inside `wb_series`.
+        indicators: Mapping of `{column_name: indicator_code}`; mapping keys become
+            DataFrame columns.
+        start: Inclusive start year forwarded to `wb_series`.
+        end: Inclusive end year forwarded to `wb_series`.
+        tidy_fetch: If True, fetch each series with `tidy=True` (ascending years).
+            If False, fetch raw descending lists and tidy locally.
 
-    Returns
-    -------
-    pandas.DataFrame
-        Index = year (int); columns = factor names; dtype = float64 where possible.
-        May be empty if no indicators returned any rows.
+    Returns:
+        pandas.DataFrame: Index = year (int); columns = indicator names; dtype
+        coerced to float64 where possible. The DataFrame may be empty if no
+        indicators return rows.
     """
     assert isinstance(code, str) and code.strip(), "`code` must be non-empty str"
     assert indicators, "`indicators` mapping must not be empty"
@@ -168,7 +151,6 @@ def build_country_panel(
                 if isinstance(s, pd.Series):
                     s.name = col
                 else:
-                    # Extremely defensive, though tidy=True always returns Series
                     s = pd.Series(dtype="float64", name=col)
             else:
                 lst = wb_series(code, ind_code, start=start, end=end, tidy=False)
