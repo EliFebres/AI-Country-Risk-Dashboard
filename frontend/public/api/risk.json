@@ -53,7 +53,7 @@
       90.0125,
       24.5103
     ],
-    "risk": 0.6,
+    "risk": 0.65,
     "iso2": "BD",
     "prevRisk": 0.68,
     "prevRiskSeries": [
@@ -149,7 +149,7 @@
       -73,
       4
     ],
-    "risk": 0.55,
+    "risk": 0.68,
     "iso2": "CO",
     "prevRisk": 0.55,
     "prevRiskSeries": [
@@ -229,7 +229,7 @@
       22.3,
       39
     ],
-    "risk": 0.35,
+    "risk": 0.45,
     "iso2": "GR",
     "prevRisk": 0.32,
     "prevRiskSeries": [
@@ -277,7 +277,7 @@
       78.5,
       22.35
     ],
-    "risk": 0.45,
+    "risk": 0.35,
     "iso2": "IN",
     "prevRisk": 0.38,
     "prevRiskSeries": [
@@ -293,7 +293,7 @@
       118,
       -2.5
     ],
-    "risk": 0.35,
+    "risk": 0.38,
     "iso2": "ID",
     "prevRisk": 0.45,
     "prevRiskSeries": [
@@ -309,7 +309,7 @@
       -8,
       52.8
     ],
-    "risk": 0.35,
+    "risk": 0.3,
     "iso2": "IE",
     "prevRisk": 0.3,
     "prevRiskSeries": [
@@ -325,7 +325,7 @@
       35,
       31
     ],
-    "risk": 0.65,
+    "risk": 0.55,
     "iso2": "IL",
     "prevRisk": 0.8,
     "prevRiskSeries": [
@@ -389,7 +389,7 @@
       5.7,
       49.85
     ],
-    "risk": 0.28,
+    "risk": 0.35,
     "iso2": "LU",
     "prevRisk": 0.25,
     "prevRiskSeries": [
@@ -453,7 +453,7 @@
       5.7,
       52.25
     ],
-    "risk": 0.45,
+    "risk": 0.35,
     "iso2": "NL",
     "prevRisk": 0.35,
     "prevRiskSeries": [
@@ -533,7 +533,7 @@
       -75,
       -7
     ],
-    "risk": 0.55,
+    "risk": 0.65,
     "iso2": "PE",
     "prevRisk": 0.5,
     "prevRiskSeries": [
@@ -565,7 +565,7 @@
       19,
       52.2297
     ],
-    "risk": 0.35,
+    "risk": 0.38,
     "iso2": "PL",
     "prevRisk": 0.38,
     "prevRiskSeries": [
@@ -581,7 +581,7 @@
       -8,
       39.7
     ],
-    "risk": 0.35,
+    "risk": 0.38,
     "iso2": "PT",
     "prevRisk": 0.35,
     "prevRiskSeries": [
@@ -725,7 +725,7 @@
       101,
       15
     ],
-    "risk": 0.55,
+    "risk": 0.45,
     "iso2": "TH",
     "prevRisk": 0.38,
     "prevRiskSeries": [
@@ -757,7 +757,7 @@
       54,
       24
     ],
-    "risk": 0.25,
+    "risk": 0.3,
     "iso2": "AE",
     "prevRisk": 0.32,
     "prevRiskSeries": [
@@ -805,7 +805,7 @@
       -66,
       8
     ],
-    "risk": 0.9,
+    "risk": 0.95,
     "iso2": "VE"
   },
   {
@@ -823,7 +823,7 @@
       97.7,
       64.7
     ],
-    "risk": 0.75,
+    "risk": 1,
     "iso2": "RU"
   },
   {
@@ -832,7 +832,7 @@
       127.83,
       36.6
     ],
-    "risk": 0.45,
+    "risk": 0.38,
     "iso2": "KR"
   },
   {
