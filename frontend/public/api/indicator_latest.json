@@ -286,6 +286,32 @@
     }
   },
   {
+    "iso2": "EG",
+    "name": "Egypt",
+    "values": {
+      "GDP per-capita growth (% y/y)": {
+        "year": 2024,
+        "value": 0.64,
+        "unit": "% y/y"
+      },
+      "Inflation (% y/y)": {
+        "year": 2024,
+        "value": 28.27,
+        "unit": "% y/y"
+      },
+      "Interest payments (% revenue)": {
+        "year": 2015,
+        "value": 33.25,
+        "unit": "% revenue"
+      },
+      "Rule of law (z-score)": {
+        "year": 2023,
+        "value": -0.18,
+        "unit": "z-score"
+      }
+    }
+  },
+  {
     "iso2": "FI",
     "name": "Finland",
     "values": {
