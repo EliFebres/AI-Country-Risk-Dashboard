@@ -1,4 +1,3 @@
-#backend/utils/ai/constants.py
 from typing import Dict
 
 # ---------------------------------------------------------------------------
@@ -36,15 +35,28 @@ Do NOT raise risk due to indirect foreign tensions or rhetoric. Elevate risk ONL
 • Parliamentary Guardrail: Cabinet resignations, caretaker phases, coalition talks, or scheduled/snap elections remain **moderate** unless there is unconstitutional dissolution, emergency/martial law, week-long widespread violent unrest disrupting essential services, bank runs, capital controls, or sovereign default. Otherwise **political_stability should not exceed 0.45**.
 • Macro floors (numeric): If CPI inflation ≥ 25% → macroeconomic_volatility ≥ 0.70 AND overall score ≥ 0.55. If ≥ 40% → ≥ 0.80 AND overall ≥ 0.65. If ≥ 80% → overall ≥ 0.80.
 
+# --- One-off Incidents & Foiled Plots (ANTI-OVERREACTION GUARDRAIL) ---
+• Definition: “One-off” = a single incident or a single foiled/attempted plot with no follow-on attacks, no multi-region spread, and no successful damage to critical infrastructure in the last 60 days.
+• Default treatment:
+  - Foiled/attempted plots with arrests and no casualties → **impact ≤ 0.30** for the relevant topic_group.
+  - Single-target assassinations (or attempts) without sustained campaign signals → raise **political_stability** at most to 0.50; keep **conflict_war ≤ 0.35**.
+  - Temporary terror-alert hikes without operational disruption (business/transport open) → **impact 0.10–0.25**.
+• Country score guardrail (unless Hard Rules or Macro floors trigger): If terrorism/assassination evidence consists of **only one topic_group** in the last 60 days and is foiled/low-casualty (<10 killed) with no infrastructure damage → **overall score ≤ 0.55**.
+
 # --- Per-article impact labels and TOPIC CLUSTERING (CRITICAL) ---
 Impact ∈ [0,1]:
-  • 0.85-1.00 Severe - kinetic activity in/against {country}, mass kidnappings, binding economic measures, or major infrastructure sabotage.
-  • 0.60-0.75 Moderate - credible mobilization/preparations, high-probability sanctions.
+  • 0.85-1.00 Severe - successful kinetic activity in/against {country}, mass kidnappings, binding economic measures, or major infrastructure sabotage.
+  • 0.60-0.75 Moderate - credible mobilization/preparations with specific capabilities/timelines, high-probability binding sanctions.
   • 0.40-0.55 Mixed/unclear - indirect third-country events with uncertain transmission.
-  • 0.05-0.25 Low/benign - rhetoric/symbolic acts.
+  • 0.10-0.35 Low/benign - rhetoric/symbolic acts, **foiled/attempted plots without casualties**, temporary alert level changes without disruption.
 
-**CRITICAL INSTRUCTION - TOPIC GROUPING:**
+**CRITICAL INSTRUCTION - TOPIC GROUPING AND AGGREGATION:**
 You MUST identify which articles cover the SAME UNDERLYING EVENT/TOPIC and assign them the same topic_group identifier. Articles about the same topic should share a topic_group even if titles differ.
+
+Aggregation rule (apply before scoring): For each topic_group, take the **max impact** among its articles as the topic impact. When forming the overall view, combine topic impacts qualitatively by persistence and breadth:
+  - Persistence bonus: if the SAME topic_group appears across ≥7 days (by published_at), treat it one band higher when calibrating subscores.
+  - Breadth bonus: multiple independent severe topic_groups in the same 30-day window justify moving into High.
+  - Singularity penalty: a lone topic_group that is foiled/low-casualty with no spread → do NOT move the country into High; keep within Moderate or lower per the guardrail above.
 
 Examples of SAME TOPIC (should have same topic_group):
 - "Australia Central Bank Holds Rates Steady" + "RBA Decides Against Rate Cut" + "Reserve Bank of Australia Keeps Policy Unchanged" → ALL get topic_group="australia_rba_rate_decision"
@@ -52,8 +64,6 @@ Examples of SAME TOPIC (should have same topic_group):
 
 Examples of DIFFERENT TOPICS (different topic_groups):
 - "Australia Rate Decision" (topic_group="australia_rba_rate_decision") vs "Trade Deal with China" (topic_group="australia_china_trade")
-
-Use lowercase, underscore-separated topic_group identifiers that describe the core event/topic. Be aggressive in clustering - if articles discuss the same policy decision, election, conflict event, or economic indicator release, they MUST share a topic_group.
 
 Return ONLY valid JSON (no prose) exactly:
 
