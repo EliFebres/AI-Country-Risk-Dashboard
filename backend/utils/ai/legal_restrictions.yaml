@@ -1,0 +1,347 @@
+schema_version: 1.0
+jurisdiction: US
+generated_at: "2025-11-05"
+notes:
+  - "This file encodes sanctions-based investability rules for U.S. persons. It is not legal advice."
+  - "Region/territory entries apply to entities located/organized in those regions."
+  - "Sources are canonical OFAC/CFR/E.O. links (stable anchors)."
+
+entries:
+  # ---------- FULL, COUNTRY-WIDE INVESTMENT PROHIBITIONS (1.0 gate) ----------
+  - iso2: RU
+    name: Russia
+    scope: country
+    investability: uninvestable
+    trigger:
+      set_score_1_0: true
+    rule: "U.S. persons prohibited from purchasing new or existing debt/equity issued by any Russian entity; broad 'new investment' ban."
+    effective_from: "2022-06-06"
+    sources:
+      - https://ofac.treasury.gov/faqs/1054
+      - https://ofac.treasury.gov/sanctions-programs-and-country-information/ukraine-russia-related-sanctions
+      - https://ofac.treasury.gov/faqs/topic/6626
+
+  - iso2: IR
+    name: Iran
+    scope: country
+    investability: uninvestable
+    trigger:
+      set_score_1_0: true
+    rule: "Comprehensive embargo under ITSR; dealings with Iranian entities generally prohibited absent license."
+    effective_from: "2012-10-22"
+    sources:
+      - https://www.ecfr.gov/current/title-31/subtitle-B/chapter-V/part-560
+      - https://ofac.treasury.gov/sanctions-programs-and-country-information/iran-sanctions
+
+  - iso2: KP
+    name: North Korea
+    scope: country
+    investability: uninvestable
+    trigger:
+      set_score_1_0: true
+    rule: "Comprehensive prohibitions incl. import/export and new investment; practical impossibility of lawful securities exposure."
+    effective_from: "2017-09-21"
+    sources:
+      - https://www.ecfr.gov/current/title-31/subtitle-B/chapter-V/part-510
+      - https://ofac.treasury.gov/sanctions-programs-and-country-information/north-korea-sanctions
+
+  - iso2: CU
+    name: Cuba
+    scope: country
+    investability: uninvestable
+    trigger:
+      set_score_1_0: true
+    rule: "Comprehensive embargo under CACR; transactions with Cuban entities generally prohibited unless licensed."
+    effective_from: "1963-07-08"
+    sources:
+      - https://www.ecfr.gov/current/title-31/subtitle-B/chapter-V/part-515
+      - https://ofac.treasury.gov/sanctions-programs-and-country-information/cuba-sanctions
+
+  # ---------- TERRITORIAL/REGIONAL PROHIBITIONS (treat entities in-region as 1.0) ----------
+  - code: UA-CRIMEA
+    name: Crimea region of Ukraine
+    scope: region
+    investability: territorial_restriction
+    trigger:
+      set_score_1_0: true
+    rule: "Comprehensive territorial embargo; new investment and most transactions prohibited."
+    effective_from: "2014-12-19"
+    sources:
+      - https://www.ecfr.gov/current/title-31/subtitle-B/chapter-V/part-589#p-589.206
+      - https://ofac.treasury.gov/sanctions-programs-and-country-information/ukraine-russia-related-sanctions
+
+  - code: UA-DONETSK
+    name: Donetsk (Covered Region)
+    scope: region
+    investability: territorial_restriction
+    trigger:
+      set_score_1_0: true
+    rule: "New investment and most transactions prohibited under E.O. 14065 & follow-ons."
+    effective_from: "2022-02-21"
+    sources:
+      - https://ofac.treasury.gov/faqs/1006
+      - https://www.presidency.ucsb.edu/documents/executive-order-14065-blocking-property-certain-persons-and-prohibiting-certain-transactions
+
+  - code: UA-LUHANSK
+    name: Luhansk (Covered Region)
+    scope: region
+    investability: territorial_restriction
+    trigger:
+      set_score_1_0: true
+    rule: "New investment and most transactions prohibited under E.O. 14065 & follow-ons."
+    effective_from: "2022-02-21"
+    sources:
+      - https://ofac.treasury.gov/faqs/1006
+      - https://www.presidency.ucsb.edu/documents/executive-order-14065-blocking-property-certain-persons-and-prohibiting-certain-transactions
+
+  - code: UA-KHERSON
+    name: Kherson (Covered Region)
+    scope: region
+    investability: territorial_restriction
+    trigger:
+      set_score_1_0: true
+    rule: "Investment/trade restrictions extended to additional occupied oblasts."
+    effective_from: "2022-09-30"
+    sources:
+      - https://ofac.treasury.gov/faqs/1091
+      - https://finance.ec.europa.eu/eu-and-world/sanctions-restrictive-measures/sanctions-adopted-following-russias-military-aggression-against-ukraine_en
+
+  - code: UA-ZAPORIZHZHIA
+    name: Zaporizhzhia (Covered Region)
+    scope: region
+    investability: territorial_restriction
+    trigger:
+      set_score_1_0: true
+    rule: "Investment/trade restrictions extended to additional occupied oblasts."
+    effective_from: "2022-09-30"
+    sources:
+      - https://ofac.treasury.gov/faqs/1091
+      - https://finance.ec.europa.eu/eu-and-world/sanctions-restrictive-measures/sanctions-adopted-following-russias-military-aggression-against-ukraine_en
+
+  # ---------- SECURITIES (ENTITY-LIST) BANS ----------
+  - iso2: CN
+    name: China (NS-CMIC list)
+    scope: entity_list
+    investability: entity_security_ban
+    trigger:
+      set_score_1_0: false
+    rule: "U.S. persons are prohibited from purchasing or selling publicly traded securities (incl. derivatives) of listed CMIC entities."
+    effective_from: "2021-06-03"
+    sources:
+      - https://ofac.treasury.gov/sanctions-programs-and-country-information/chinese-military-companies-sanctions
+      - https://www.ecfr.gov/current/title-31/subtitle-B/chapter-V/part-586
+
+  # ---------- TARGETED COUNTRY PROGRAMS (screen & proceed; no country-wide 1.0 gate) ----------
+  - iso2: BY
+    name: Belarus
+    scope: country
+    investability: targeted
+    trigger:
+      set_score_1_0: false
+    rule: "Targeted sanctions (state banks, SOEs, officials, sectoral measures). No blanket ban on all Belarusian securities; strict SDN/SSI screening required."
+    effective_from: null
+    sources:
+      - https://ofac.treasury.gov/sanctions-programs-and-country-information/belarus-sanctions
+      - https://www.ecfr.gov/current/title-31/subtitle-B/chapter-V/part-548
+
+  - iso2: VE
+    name: Venezuela
+    scope: country
+    investability: targeted
+    trigger:
+      set_score_1_0: false
+    rule: "Complex sovereign/PdVSA debt restrictions with evolving general licenses; secondary-market permissions vary. Always check current GLs."
+    effective_from: "2018-05-21"
+    sources:
+      - https://ofac.treasury.gov/sanctions-programs-and-country-information/venezuela-related-sanctions
+      - https://ofac.treasury.gov/faqs/topic/1581
+      - https://www.congress.gov/crs-product/IF10715
+
+  - iso2: SY
+    name: Syria (post-July 1, 2025)
+    scope: country
+    investability: targeted
+    trigger:
+      set_score_1_0: false
+    rule: "Comprehensive Syria program revoked effective 2025-07-01; new PAARSS targets Assad/associates. No blanket country embargo; SDN screening still required."
+    effective_from: "2025-07-01"
+    sources:
+      - https://ofac.treasury.gov/faqs/added
+      - https://ofac.treasury.gov/sanctions-programs-and-country-information
+
+  - iso2: AF
+    name: Afghanistan (Taliban-related)
+    scope: country
+    investability: targeted
+    trigger:
+      set_score_1_0: false
+    rule: "Targeted sanctions (e.g., Taliban as SDGT). No country-wide embargo; apply SDN/ownership screening."
+    effective_from: null
+    sources:
+      - https://ofac.treasury.gov/sanctions-programs-and-country-information/afghanistan-related-sanctions
+
+  - iso2: MM
+    name: Burma / Myanmar
+    scope: country
+    investability: targeted
+    trigger:
+      set_score_1_0: false
+    rule: "Targeted sanctions on military/SOEs; no blanket ban. Apply SDN/ownership screening."
+    effective_from: null
+    sources:
+      - https://ofac.treasury.gov/sanctions-programs-and-country-information/burma-related-sanctions
+
+  - iso2: CF
+    name: Central African Republic
+    scope: country
+    investability: targeted
+    trigger:
+      set_score_1_0: false
+    rule: "Targeted sanctions (armed groups/actors). Screen for SDNs."
+    effective_from: null
+    sources:
+      - https://ofac.treasury.gov/sanctions-programs-and-country-information/central-african-republic-sanctions
+
+  - iso2: CD
+    name: Democratic Republic of the Congo
+    scope: country
+    investability: targeted
+    trigger:
+      set_score_1_0: false
+    rule: "Targeted sanctions; screen issuers/beneficial owners."
+    effective_from: null
+    sources:
+      - https://ofac.treasury.gov/sanctions-programs-and-country-information/democratic-republic-of-the-congo-related-sanctions
+
+  - iso2: ET
+    name: Ethiopia (Ethiopia-related)
+    scope: country
+    investability: targeted
+    trigger:
+      set_score_1_0: false
+    rule: "Targeted program (human rights/peace threats). No blanket embargo."
+    effective_from: null
+    sources:
+      - https://ofac.treasury.gov/sanctions-programs-and-country-information/ethiopia-related-sanctions
+
+  - iso2: HK
+    name: Hong Kong (HK-related)
+    scope: country_or_region
+    investability: targeted
+    trigger:
+      set_score_1_0: false
+    rule: "Targeted designations under HK-related program; no blanket embargo."
+    effective_from: null
+    sources:
+      - https://ofac.treasury.gov/sanctions-programs-and-country-information/hong-kong-related-sanctions
+
+  - iso2: IQ
+    name: Iraq
+    scope: country
+    investability: targeted
+    trigger:
+      set_score_1_0: false
+    rule: "Targeted sanctions; screen counterparties."
+    effective_from: null
+    sources:
+      - https://ofac.treasury.gov/sanctions-programs-and-country-information/iraq-related-sanctions
+
+  - iso2: LB
+    name: Lebanon
+    scope: country
+    investability: targeted
+    trigger:
+      set_score_1_0: false
+    rule: "Targeted sanctions (corruption/terror finance). No country-wide embargo."
+    effective_from: null
+    sources:
+      - https://ofac.treasury.gov/sanctions-programs-and-country-information/lebanon-related-sanctions
+
+  - iso2: LY
+    name: Libya
+    scope: country
+    investability: targeted
+    trigger:
+      set_score_1_0: false
+    rule: "Targeted sanctions; screen for SDNs and embargoed activities."
+    effective_from: null
+    sources:
+      - https://ofac.treasury.gov/sanctions-programs-and-country-information/libya-sanctions
+
+  - iso2: ML
+    name: Mali
+    scope: country
+    investability: targeted
+    trigger:
+      set_score_1_0: false
+    rule: "Targeted sanctions on destabilizing actors."
+    effective_from: null
+    sources:
+      - https://ofac.treasury.gov/sanctions-programs-and-country-information/mali-related-sanctions
+
+  - iso2: NI
+    name: Nicaragua
+    scope: country
+    investability: targeted
+    trigger:
+      set_score_1_0: false
+    rule: "Targeted sanctions; no blanket country ban."
+    effective_from: null
+    sources:
+      - https://ofac.treasury.gov/sanctions-programs-and-country-information/nicaragua-related-sanctions
+
+  - iso2: SO
+    name: Somalia
+    scope: country
+    investability: targeted
+    trigger:
+      set_score_1_0: false
+    rule: "Targeted sanctions."
+    effective_from: null
+    sources:
+      - https://ofac.treasury.gov/sanctions-programs-and-country-information/somalia-sanctions
+
+  - iso2: SS
+    name: South Sudan
+    scope: country
+    investability: targeted
+    trigger:
+      set_score_1_0: false
+    rule: "Targeted sanctions."
+    effective_from: null
+    sources:
+      - https://ofac.treasury.gov/sanctions-programs-and-country-information/south-sudan-related-sanctions
+
+  - iso2: SD
+    name: Sudan & Darfur
+    scope: country
+    investability: targeted
+    trigger:
+      set_score_1_0: false
+    rule: "Targeted sanctions re conflict; (note: legacy Sudan program changed; check page for current scope)."
+    effective_from: null
+    sources:
+      - https://ofac.treasury.gov/sanctions-programs-and-country-information/sudan-and-darfur-sanctions
+
+  - iso2: YE
+    name: Yemen
+    scope: country
+    investability: targeted
+    trigger:
+      set_score_1_0: false
+    rule: "Targeted sanctions (conflict/terror)."
+    effective_from: null
+    sources:
+      - https://ofac.treasury.gov/sanctions-programs-and-country-information/yemen-related-sanctions
+
+  # ---------- MULTI-COUNTRY / REGIONAL PROGRAM ----------
+  - code: BALKANS-REGION
+    name: Western Balkans (multi-country program)
+    scope: multi_country
+    investability: targeted
+    trigger:
+      set_score_1_0: false
+    rule: "Targeted sanctions across Western Balkans; screen entities/beneficial owners."
+    effective_from: null
+    sources:
+      - https://ofac.treasury.gov/sanctions-programs-and-country-information/balkans-related-sanctions
