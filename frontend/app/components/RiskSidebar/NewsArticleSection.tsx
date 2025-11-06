@@ -37,8 +37,17 @@ async function loadAllNews(signal?: AbortSignal): Promise<CountryNews[]> {
 function daysAgoLabel(iso?: string | null): string {
   if (!iso) return '';
   const pub = new Date(iso);
-  const ms = Math.max(0, Date.now() - pub.getTime());
-  const days = Math.floor(ms / (1000 * 60 * 60 * 24));
+  if (isNaN(pub.getTime())) return '';
+
+  const DAY_MS = 24 * 60 * 60 * 1000;
+
+  const now = new Date();
+  const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+  const startOfPub   = new Date(pub.getFullYear(), pub.getMonth(), pub.getDate()).getTime();
+
+  // Calendar-day difference (round guards against 23/25h DST days). Clamp future to 0.
+  const days = Math.max(0, Math.round((startOfToday - startOfPub) / DAY_MS));
+
   if (days === 0) return 'today';
   if (days === 1) return '1 day ago';
   return `${days} days ago`;
