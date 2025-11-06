@@ -63,6 +63,12 @@ const PUBLISHER_ALIASES: Record<string, string> = {
   'finews.com': 'Finews',
   'international monetary fund (imf)': 'IMF',
   'u.s. immigration and customs enforcement (.gov)': 'U.S. ICE',
+  'harvard kennedy school': 'HKS',
+  'upi.com': 'UPI',
+  'ing think economic and financial analysis | ing think': 'ING Bank',
+  '- essential business': 'Essential Business',
+  'streetwisereports.com': 'StreetWise Reports',
+  'le monde.fr': 'Le Monde',
 };
 
 const STOPWORDS = new Set(['the','a','an','of','for','and','to','in','on','at','by','with']);
