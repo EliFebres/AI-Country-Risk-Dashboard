@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import maplibregl, { LngLatBoundsLike, Map as MapLibreMap, Marker } from 'maplibre-gl';
 import RiskSidebar from './RiskSidebar';
 import TableSidebar from './TableSidebar';
+import type { CountryRisk } from '../lib/risk-client';
 
 type Props = {
   bounds?: LngLatBoundsLike;
@@ -11,20 +12,15 @@ type Props = {
   zoom?: number;
 };
 
-type RiskDot = {
-  name: string;
-  lngLat: [number, number]; // [lng, lat]
-  risk: number;             // 0..1
-  prevRisk?: number;        // previous period risk if available
-  iso2?: string;            // <- optional ISO2 for flag
-};
+// Reuse the shared type used by TableSidebar
+type RiskDot = CountryRisk;
 
 type Selected = {
   name: string;
   risk: number;
   prevRisk?: number;
   lngLat: [number, number];
-  iso2?: string;            // <- carry ISO2 into sidebar
+  iso2?: string;
 } | null;
 
 export default function Map({ bounds, center = [0, 20], zoom = 2.5 }: Props) {
@@ -37,24 +33,33 @@ export default function Map({ bounds, center = [0, 20], zoom = 2.5 }: Props) {
 
   const [selected, setSelected] = useState<Selected>(null);
 
+  // Share the *fresh* risk dataset with TableSidebar to avoid staleness
+  const [riskRows, setRiskRows] = useState<CountryRisk[] | null>(null);
+
   // NEW: data freshness timestamp for RiskSidebar ("LIVE 3d")
   const [dataTimestamp, setDataTimestamp] = useState<Date | string | number | null>(null);
 
   // Zooms
-  const FOCUS_ZOOM = 3.5;      // desired zoom when clicking a marker
-  const DEFAULT_ZOOM = 2.5;    // when clicking off or closing sidebar
-  const LOCK_ZOOM_THRESHOLD = 3.5; // if current zoom > 3, don't auto-zoom-out on dismiss
+  const FOCUS_ZOOM = 3.5;
+  const DEFAULT_ZOOM = 2.5;
+  const LOCK_ZOOM_THRESHOLD = 3.5;
+
+  const MOBILE_BREAKPOINT = 768;
+  const isMobile = () =>
+    typeof window !== 'undefined' && window.innerWidth <= MOBILE_BREAKPOINT;
 
   // --- Helpers (pure) ---
   const colorForRisk = (r: number) => {
-    if (r > 0.7) return '#ff2d55';   // red
-    if (r >= 0.5) return '#ffd60a';  // yellow
-    return '#39ff14';                // green
+    if (r > 0.7) return '#ff2d55';
+    if (r >= 0.5) return '#ffd60a';
+    return '#39ff14';
   };
 
-  // Sidebar is min(600px, 40vw)
+  // Sidebar is min(600px, 40vw) on desktop; 100vw on phones
   const getSidebarWidthPx = () => {
-    const vwWidth = typeof window !== 'undefined' ? window.innerWidth * 0.40 : 0;
+    if (typeof window === 'undefined') return 0;
+    if (isMobile()) return Math.round(window.innerWidth);
+    const vwWidth = window.innerWidth * 0.40;
     return Math.min(600, Math.round(vwWidth || 0));
   };
 
@@ -62,7 +67,8 @@ export default function Map({ bounds, center = [0, 20], zoom = 2.5 }: Props) {
     const map = mapRef.current;
     if (!map) return;
 
-    const offsetX = Math.round(getSidebarWidthPx() / 2 + 8);
+    // On phones, the sidebar overlays the entire screen, so don't offset the map.
+    const offsetX = isMobile() ? 0 : Math.round(getSidebarWidthPx() / 2 + 8);
 
     const options: any = {
       center: lngLat,
@@ -233,7 +239,7 @@ export default function Map({ bounds, center = [0, 20], zoom = 2.5 }: Props) {
       map.setMaxBounds(bounds);
     }
 
-    map.addControl(new maplibregl.NavigationControl({ visualizePitch: false }), 'top-right');
+    // Keep attribution if you need it; no other UI controls added.
     map.addControl(new maplibregl.AttributionControl({ compact: true }));
 
     const showOnlyCountryLabels = () => {
@@ -298,11 +304,11 @@ export default function Map({ bounds, center = [0, 20], zoom = 2.5 }: Props) {
       applyAllTweaks();
 
       try {
+        // Force backend refresh, then fetch *fresh* risk data
         const r = await fetch('/api/refresh-risk', { method: 'POST' });
         const refresh = await r.json().catch(() => ({} as any));
         console.log('refresh-risk result:', r.status, refresh);
 
-        // NEW: capture freshness timestamp (prefer server's lastRun, else "now")
         const stamp = refresh?.lastRun ?? Date.now();
         setDataTimestamp(stamp);
 
@@ -316,13 +322,18 @@ export default function Map({ bounds, center = [0, 20], zoom = 2.5 }: Props) {
           headers: { accept: 'application/json' }
         });
         if (!res.ok) throw new Error(`Failed to load risk.json: ${res.status}`);
+
         const dots: RiskDot[] = await res.json();
         console.log(`Loaded ${dots.length} risk markers`);
 
+        // Share the exact same fresh array with the TableSidebar
+        setRiskRows(dots);
+
+        // Add markers
         dots.forEach(({ name, lngLat, risk, iso2, prevRisk }) => {
           const el = makeDotEl(name, risk, () => {
             panToMarker(lngLat, FOCUS_ZOOM);
-            setSelected({ name, risk, prevRisk, lngLat, iso2 }); // <- keep prevRisk + iso2
+            setSelected({ name, risk, prevRisk, lngLat, iso2 });
           });
 
           const marker = new maplibregl.Marker({
@@ -390,9 +401,10 @@ export default function Map({ bounds, center = [0, 20], zoom = 2.5 }: Props) {
       {/* Map canvas */}
       <div ref={containerRef} style={{ position: 'absolute', inset: 0 }} />
 
-      {/* Persistent left sidebar — hides when RiskSidebar is open */}
+      {/* Persistent left sidebar — now fed the fresh data */}
       <TableSidebar
         open={!selected}
+        data={riskRows ?? undefined}
         onSelectCountry={(dot: any) => {
           panToMarker(dot.lngLat, FOCUS_ZOOM);
           setSelected({
@@ -413,7 +425,7 @@ export default function Map({ bounds, center = [0, 20], zoom = 2.5 }: Props) {
             ? { name: selected.name, risk: selected.risk, prevRisk: selected.prevRisk, iso2: selected.iso2 }
             : null
         }
-        dataTimestamp={dataTimestamp}   // ← feeds "LIVE 3d" tracker
+        dataTimestamp={dataTimestamp}
         onClose={handleCloseSidebar}
       />
     </div>
