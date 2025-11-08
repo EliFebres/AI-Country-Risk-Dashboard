@@ -14,7 +14,7 @@ entries:
     investability: uninvestable
     trigger:
       set_score_1_0: true
-    rule: "U.S. persons prohibited from purchasing new or existing debt/equity issued by any Russian entity; broad 'new investment' ban."
+    rule: "U.S. persons prohibited from purchasing new or existing debt/equity issued by any Russian entity."
     effective_from: "2022-06-06"
     sources:
       - https://ofac.treasury.gov/faqs/1054
