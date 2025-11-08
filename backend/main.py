@@ -3,6 +3,9 @@ import sys
 import pathlib
 import requests
 import pandas as pd
+
+from typing import List, Dict, Tuple
+from collections import defaultdict
 from datetime import datetime, timezone
 
 # --- Resolve project root so "backend/" is importable ------------------------
@@ -15,36 +18,25 @@ while not (project_root / "backend").is_dir():
 if str(project_root) not in sys.path:
     sys.path.insert(0, str(project_root))
 
-# --- Imports after sys.path tweak -------------------------------------------
-from backend.ai import langchain_llm
-from backend.utils import fetch_links
-from backend.utils import country_data_fetch
-from backend import constants, data_retrieval, data_push
-from backend.utils.url_resolver import resolve_google_news_url
-from backend.utils.webscraping.simple_scraper import get_article_assets
-from backend.utils.webscraping.advanced_scraper import scrape_one as crawlbase_scrape_one
+# --- Internal Imports -------------------------------------------
+from backend.utils import constants
+from backend.utils import data_retrieval
+from backend.utils.ai import langchain_llm
+from backend.utils.data_upsert import data_push
+from backend.utils.news_fetching import fetch_links
+from backend.utils.data_fetching import fetch_metrics
+from backend.utils.data_fetching import country_data_fetch
+from backend.utils.news_fetching.url_resolver import resolve_google_news_url
+from backend.utils.news_fetching.simple_scraper import get_article_assets
+from backend.utils.news_fetching.advanced_scraper import scrape_one as crawlbase_scrape_one
 
 # --- Paths ------------------------------------------------------------------
 BACKEND_DIR    = project_root / "backend"
 PROCESSED_DATA = BACKEND_DIR / "data" / "wb_panel_wide"
 RAW_DATA_EXCEL = BACKEND_DIR / "data" / "country_data.xlsx"
 
-# --- Ensure processed World Bank panel exists -------------------------------
-panel_dir = PROCESSED_DATA
-if not panel_dir.is_dir():
-    panel_dir.mkdir(parents=True, exist_ok=True)
-    country_data_fetch.ingest_panels_for_all_countries(
-        excel_path=RAW_DATA_EXCEL,
-        root=PROCESSED_DATA,
-        indicators=constants.INDICATORS,
-        start=None,
-        end=None,
-    )
 
 # --- Helpers ----------------------------------------------------------------
-def _news_query_for(country_name: str) -> str:
-    return f'"{country_name}" (economy OR inflation OR policy OR protest OR sanctions OR war OR coup OR corruption OR central bank OR IMF)'
-
 def _to_utc_iso(dt: datetime) -> str:
     if dt.tzinfo is None:
         dt = dt.replace(tzinfo=timezone.utc)
@@ -54,10 +46,226 @@ def _crawlbase_token() -> str:
     # Prefer JS token, then standard token
     return os.getenv("CRAWLBASE_JS_TOKEN") or os.getenv("CRAWLBASE_TOKEN") or ""
 
+def _has_country_partition(root: pathlib.Path, iso2: str) -> bool:
+    """
+    Return True if a partition dir like country_code=XX exists and has at least one .parquet file.
+    """
+    part_dir = root / f"country_code={iso2}"
+    if not part_dir.is_dir():
+        return False
+    try:
+        return any(p.suffix == ".parquet" for p in part_dir.glob("*.parquet"))
+    except Exception:
+        return False
+
+def _parse_date_for_sort(date_str: str | None):
+    """Parse publication date for sorting. Returns datetime(1970-01-01) for invalid/missing dates."""
+    if not date_str:
+        return datetime(1970, 1, 1)
+    try:
+        # Try ISO (allow trailing Z)
+        return datetime.fromisoformat(date_str.replace('Z', '+00:00'))
+    except Exception:
+        pass
+    try:
+        # Try date-only
+        return datetime.strptime(date_str[:10], "%Y-%m-%d")
+    except Exception:
+        return datetime(1970, 1, 1)
+
+def _score_article_relevance(article: Dict, country_name: str) -> float:
+    """
+    Score article relevance (0-1) based on title/summary content.
+    Higher = more relevant to geopolitical risk.
+    """
+    title = (article.get("title") or "").lower()
+    summary = (article.get("summary") or article.get("snippet") or "").lower()
+    text = f"{title} {summary}"
+    country_lower = country_name.lower()
+
+    # Must mention country (very small base if not, to allow backfill as absolute last resort)
+    if country_lower not in text:
+        return 0.1
+
+    score = 0.3  # Base score for mentioning country
+
+    # HIGH relevance keywords (government/policy/economy/security)
+    high_keywords = [
+        'government', 'ministry', 'parliament', 'president', 'prime minister',
+        'central bank', 'interest rate', 'monetary policy', 'inflation', 'gdp',
+        'election', 'cabinet', 'policy', 'budget', 'fiscal', 'trade',
+        'military', 'defense', 'conflict', 'sanctions', 'war', 'coup', 'security'
+    ]
+
+    # MEDIUM relevance keywords
+    medium_keywords = [
+        'economy', 'economic', 'finance', 'currency', 'debt', 'growth',
+        'minister', 'official', 'regulation', 'law', 'reform'
+    ]
+
+    # LOW relevance (noise - entertainment/sports)
+    noise_keywords = [
+        'sport', 'football', 'soccer', 'basketball', 'tennis', 'cricket',
+        'music', 'entertainment', 'celebrity', 'festival', 'award',
+        'movie', 'film', 'actor', 'singer', 'concert'
+    ]
+
+    high_count = sum(1 for kw in high_keywords if kw in text)
+    medium_count = sum(1 for kw in medium_keywords if kw in text)
+    noise_count = sum(1 for kw in noise_keywords if kw in text)
+
+    score += min(high_count * 0.15, 0.5)     # Up to +0.5 for high keywords
+    score += min(medium_count * 0.08, 0.2)   # Up to +0.2 for medium keywords
+    score -= noise_count * 0.2               # Penalty for noise
+
+    # Bonus for high keywords in the title
+    if any(kw in title for kw in high_keywords):
+        score += 0.15
+
+    return max(0.0, min(1.0, score))
+
+def _rank_ids_by(
+    ids: List[str],
+    items_by_id: Dict[str, Dict],
+    impact_map: Dict[str, float],
+) -> List[str]:
+    """
+    Rank a list of article IDs by:
+      1) impact DESC
+      2) published recency DESC
+      3) precomputed relevance_score DESC (if present)
+    """
+    def key_fn(aid: str) -> Tuple[float, datetime, float]:
+        it = items_by_id.get(aid, {})
+        impact = float(impact_map.get(aid, 0.0))
+        dt = _parse_date_for_sort(it.get("published"))
+        rel = float(it.get("relevance_score", 0.0))
+        return (impact, dt, rel)
+    return sorted(ids, key=key_fn, reverse=True)
+
+def _fetch_relevant_news(country_name: str, max_articles: int = 20) -> List[Dict]:
+    """
+    Fetch news via 4 queries:
+      - Broad catch-all (country only)
+      - Government/Political
+      - Economic/Central Bank
+      - Security/Military
+    Score by relevance and return up to max_articles. If the filtered set is < 3,
+    relax the threshold and fill from the broader pool to ensure >=3 when possible.
+    """
+    queries = [
+        # NEW: Broad catch-all to maximize recall; noise is filtered by scoring
+        f'"{country_name}"',
+
+        # Government/Political
+        f'"{country_name}" (government OR president OR prime minister OR parliament OR election OR cabinet OR coup OR protest)',
+
+        # Economic/Central Bank
+        f'"{country_name}" (central bank OR interest rate OR inflation OR GDP OR currency OR monetary policy OR IMF OR World Bank)',
+
+        # Security/Military
+        f'"{country_name}" (military OR defense OR conflict OR war OR attack OR sanctions OR security OR terrorism)',
+    ]
+
+    all_items: List[Dict] = []
+    seen_urls = set()
+
+    for query in queries:
+        items = fetch_links.gnews_rss(
+            query=query,
+            max_results=15,           # up to ~60 raw before de-dupe
+            expand=True,
+            extract_chars=24000,
+            build_summary=True,
+            summary_words=240,
+        )
+
+        for item in items:
+            url = item.get("link", "")
+            if url and url not in seen_urls:
+                seen_urls.add(url)
+                all_items.append(item)
+
+    # Score each article
+    for item in all_items:
+        item["relevance_score"] = _score_article_relevance(item, country_name)
+
+    # High-quality filter first
+    filtered = [it for it in all_items if it.get("relevance_score", 0) >= 0.3]
+    filtered.sort(key=lambda x: (x.get("relevance_score", 0.0), _parse_date_for_sort(x.get("published"))), reverse=True)
+
+    # If we have very few, relax threshold to ensure >=3 (if possible)
+    if len(filtered) < 3:
+        print(f"[{country_name}] Only {len(filtered)} high-relevance items (>=0.3). Relaxing threshold to ensure 3.")
+        relaxed = sorted(
+            all_items,
+            key=lambda x: (x.get("relevance_score", 0.0), _parse_date_for_sort(x.get("published"))),
+            reverse=True,
+        )
+        # Keep top 'max_articles', but ensure at least 3 if available
+        filtered = relaxed[:max(max_articles, 3)]
+
+    return filtered[:max_articles]
+
+def ensure_missing_country_panels(excel_path: pathlib.Path,
+                                  root: pathlib.Path,
+                                  indicators: dict,
+                                  start: int | None = None,
+                                  end: int | None = None) -> None:
+    """
+    Make sure every country in excel_path has a partition under root.
+    Only (re)build and write partitions that are missing or empty.
+    """
+    root.mkdir(parents=True, exist_ok=True)
+
+    df = pd.read_excel(excel_path)
+    if not {"Country_Name", "iso2Code"}.issubset(df.columns):
+        raise ValueError(f"{excel_path} must include 'Country_Name' and 'iso2Code' columns.")
+
+    missing = []
+    for _, row in df.iterrows():
+        iso2 = str(row["iso2Code"]).strip()
+        if not iso2:
+            continue
+        if not _has_country_partition(root, iso2):
+            missing.append(iso2)
+
+    if not missing:
+        print(f"All {len(df)} countries already have parquet partitions in {root}.")
+        return
+
+    print(f"Backfilling {len(missing)} missing panels → {missing}")
+    for iso2 in missing:
+        try:
+            panel = fetch_metrics.build_country_panel(
+                iso2,
+                indicators,
+                start=start,
+                end=end,
+                tidy_fetch=True,
+            )
+            if panel is None or panel.empty:
+                print(f"[{iso2}] No World Bank rows for selected indicators — skipping write.")
+                continue
+
+            country_data_fetch.ingest_panel_wide(panel, iso2, root)
+            print(f"[{iso2}] Wrote panel with {panel.shape[0]} years × {panel.shape[1]} indicators.")
+        except Exception as e:
+            print(f"[{iso2}] ERROR while backfilling panel: {e}")
+
 # --- Main -------------------------------------------------------------------
 def main() -> None:
     """Loop countries → payload → news → LLM score → enrich Top-3 images if missing → DB."""
     print(f"=== AI Country Risk run started at {_to_utc_iso(datetime.now(timezone.utc))} UTC ===")
+
+    # 0) Ensure/Backfill World Bank panels per country (incremental, idempotent)
+    ensure_missing_country_panels(
+        excel_path=RAW_DATA_EXCEL,
+        root=PROCESSED_DATA,
+        indicators=constants.INDICATORS,
+        start=None,
+        end=None,
+    )
 
     # Map "Country_Name" → "iso2Code" from your Excel
     df_countries: pd.DataFrame = pd.read_excel(RAW_DATA_EXCEL)
@@ -79,16 +287,12 @@ def main() -> None:
                 deltas=(1, 5),
             )
 
-            # 2) Google News items
-            query = _news_query_for(country_name or iso2)
-            items = fetch_links.gnews_rss(
-                query=query,
-                max_results=25,
-                expand=True,
-                extract_chars=24000,
-                build_summary=True,
-                summary_words=240,
-            )
+            # 2) Fetch relevant news using multi-query strategy with relevance filtering (+ BROAD query)
+            items = _fetch_relevant_news(country_name or iso2, max_articles=20)
+
+            if items:
+                avg_rel = sum(it.get("relevance_score", 0) for it in items) / len(items)
+                print(f"[{iso2}] Fetched {len(items)} articles (avg relevance: {avg_rel:.2f})")
 
             # --- Resolve and do light enrichment using ONLY the simple scraper ---
             with requests.Session() as _sess:
@@ -131,23 +335,97 @@ def main() -> None:
                 seed=42,
             )
 
-            # 4) Rank and select Top-3 by impact (fallback to first 3)
+            # 4) Rank and select Top-3 using AI's TOPIC CLUSTERING, with guaranteed length=3
             try:
-                imp_map = {
-                    (e.get("id") or ""): float(e.get("impact") or 0.0)
-                    for e in (llm_output.get("news_article_scores") or [])
-                    if isinstance(e, dict)
-                }
+                # Build maps from AI output
+                article_scores = llm_output.get("news_article_scores") or []
+                imp_map: Dict[str, float] = {}
+                topic_map: Dict[str, str] = {}  # article_id -> topic_group
+
+                for e in article_scores:
+                    if not isinstance(e, dict):
+                        continue
+                    aid = e.get("id", "")
+                    if not aid:
+                        continue
+                    try:
+                        imp_map[aid] = float(e.get("impact", 0.0))
+                    except (ValueError, TypeError):
+                        imp_map[aid] = 0.0
+                    topic_map[aid] = e.get("topic_group", "unknown")
             except Exception:
                 imp_map = {}
+                topic_map = {}
 
             items_by_id = {it.get("id"): it for it in items if isinstance(it, dict) and it.get("id")}
-            ranked = sorted(
-                ((imp_map.get(iid, 0.0), items_by_id[iid]) for iid in items_by_id),
-                key=lambda t: t[0],
-                reverse=True
-            )
-            top_ids = [it.get("id") for _, it in ranked[:3]] or [it.get("id") for it in items[:3]]
+
+            def ensure_top_three(
+                items_by_id: Dict[str, Dict],
+                imp_map: Dict[str, float],
+                topic_map: Dict[str, str] | None,
+            ) -> List[str]:
+                # If we have impact but no topic info, just impact-rank fallback.
+                if not items_by_id:
+                    return []
+
+                all_ids = list(items_by_id.keys())
+
+                # If we have some impact scores, fill missing ones with 0.0 so ranking is stable
+                if imp_map:
+                    for aid in all_ids:
+                        imp_map.setdefault(aid, 0.0)
+
+                # Prefer topic representatives ONLY if we have >=3 distinct topics
+                if topic_map:
+                    topics = defaultdict(list)
+                    for aid, tg in topic_map.items():
+                        if aid in items_by_id:  # ensure exists
+                            topics[tg].append(aid)
+
+                    topic_reps: List[Tuple[str, float, str]] = []
+                    for tg, ids in topics.items():
+                        # Best in topic by (impact, recency, relevance)
+                        best = _rank_ids_by(ids, items_by_id, imp_map)[0] if ids else None
+                        if best:
+                            topic_reps.append((best, imp_map.get(best, 0.0), tg))
+
+                    topic_reps.sort(key=lambda t: t[1], reverse=True)
+                    distinct_topic_count = len(topics)
+
+                    if distinct_topic_count >= 3:
+                        top_ids = [aid for aid, _, _ in topic_reps[:3]]
+                        print(f"[{iso2}] AI identified {distinct_topic_count} topics (used 1/article).")
+                        return top_ids
+
+                    # If topics <=2, still use the best representative(s) then fill to 3
+                    chosen = [aid for aid, _, _ in topic_reps[:3]]  # at most 2 here typically
+                    remaining = [aid for aid in all_ids if aid not in chosen]
+                    # Rank remaining by (impact, recency, relevance) and fill
+                    ranked_remaining = _rank_ids_by(remaining, items_by_id, imp_map)
+                    needed = 3 - len(chosen)
+                    chosen += ranked_remaining[:max(0, needed)]
+                    print(f"[{iso2}] Only {distinct_topic_count} topic(s). Backfilled to 3 with best remaining.")
+                    return chosen[:3]
+
+                # No topic map at all → fall back to global ranking by impact/recency/relevance
+                ranked = _rank_ids_by(all_ids, items_by_id, imp_map)
+                return ranked[:3]
+
+            # Main selection path
+            if imp_map:
+                top_ids = ensure_top_three(items_by_id, imp_map, topic_map or {})
+            else:
+                # No impact from LLM (edge), fall back to relevance+recency from fetch stage
+                ranked_ids = sorted(
+                    items_by_id.keys(),
+                    key=lambda iid: (
+                        items_by_id[iid].get("relevance_score", 0.0),
+                        _parse_date_for_sort(items_by_id[iid].get("published")),
+                    ),
+                    reverse=True,
+                )
+                top_ids = ranked_ids[:3]
+                print(f"[{iso2}] No LLM impacts. Used relevance+recency fallback.")
 
             # 5) Enrich ONLY the Top-3 with missing images using the advanced scraper
             cb_token = _crawlbase_token()
@@ -156,7 +434,7 @@ def main() -> None:
                     it = items_by_id.get(iid)
                     if not it:
                         continue
-                    if it.get("image"):   # only if image is missing
+                    if it.get("image"):  # only if image is missing
                         continue
                     link = it.get("link") or ""
                     if not isinstance(link, str) or not link.startswith("http"):
@@ -168,7 +446,7 @@ def main() -> None:
                     # Fill image if Crawlbase found one
                     if rec.get("image_url"):
                         it["image"] = rec["image_url"]
-                    # (Optional tiny bonus) backfill published if missing
+                    # Backfill published if missing
                     if (not it.get("published")) and rec.get("published_at"):
                         it["published"] = rec["published_at"]
 
@@ -176,7 +454,6 @@ def main() -> None:
             top_articles = []
             for r, iid in enumerate(top_ids, start=1):
                 it = items_by_id.get(iid, {})
-                impact = None
                 try:
                     impact = float(imp_map.get(iid, 0.0))
                 except Exception:

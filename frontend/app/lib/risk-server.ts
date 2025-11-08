@@ -176,6 +176,79 @@ function msUntilNextEligible(lastRunISO: string): {
   return { nextEligibleISO: new Date(next).toISOString(), msLeft };
 }
 
+// ---- Weekly + Monday 10am (local tz) gating ------------------------------
+// Set SCHEDULE_TZ to your preferred IANA TZ (defaults to US/Eastern).
+const SCHEDULE_TZ = process.env.SCHEDULE_TZ || "America/New_York";
+const MONDAY_SLOT_HOUR = 10;
+const MONDAY_SLOT_MINUTE = 0;
+
+type LocalParts = {
+  year: number;
+  month: number;
+  day: number;
+  weekday: number; // 0=Sun ... 6=Sat
+  hour: number;
+  minute: number;
+  second: number;
+};
+
+function getLocalParts(d: Date, timeZone: string): LocalParts {
+  const dtf = new Intl.DateTimeFormat("en-US", {
+    timeZone,
+    year: "numeric",
+    month: "numeric",
+    day: "numeric",
+    weekday: "short",
+    hour: "numeric",
+    minute: "numeric",
+    second: "numeric",
+    hour12: false,
+  });
+  const parts = dtf.formatToParts(d);
+  const num = (t: string) => Number(parts.find(p => p.type === t)?.value ?? 0);
+  const weekdayStr = (parts.find(p => p.type === "weekday")?.value ?? "Sun")
+    .slice(0, 3)
+    .toLowerCase();
+  const weekdayMap: Record<string, number> = {
+    sun: 0, mon: 1, tue: 2, wed: 3, thu: 4, fri: 5, sat: 6,
+  };
+
+  return {
+    year: num("year"),
+    month: num("month"),
+    day: num("day"),
+    weekday: weekdayMap[weekdayStr] ?? 0,
+    hour: num("hour"),
+    minute: num("minute"),
+    second: num("second"),
+  };
+}
+
+/**
+ * True if we should override the 7-day skip and run now because it's Monday
+ * at/after 10:00 in SCHEDULE_TZ and we haven't run since that slot today.
+ */
+function isMondaySlotDue(lastRunISO: string | null, timeZone = SCHEDULE_TZ): boolean {
+  const now = getLocalParts(new Date(), timeZone);
+  const afterSlot =
+    now.weekday === 1 &&
+    (now.hour > MONDAY_SLOT_HOUR ||
+      (now.hour === MONDAY_SLOT_HOUR && now.minute >= MONDAY_SLOT_MINUTE));
+  if (!afterSlot) return false;
+  if (!lastRunISO) return true;
+
+  const last = getLocalParts(new Date(lastRunISO), timeZone);
+  const lastWasThisMondayAfterSlot =
+    last.weekday === 1 &&
+    last.year === now.year &&
+    last.month === now.month &&
+    last.day === now.day &&
+    (last.hour > MONDAY_SLOT_HOUR ||
+      (last.hour === MONDAY_SLOT_HOUR && last.minute >= MONDAY_SLOT_MINUTE));
+
+  return !lastWasThisMondayAfterSlot;
+}
+
 // ----------------------------- Indicator latest ---------------------------
 
 export const INDICATOR_TARGET_NAMES = [
@@ -394,7 +467,8 @@ async function writeLatestArticlesJson(): Promise<number> {
  *  - prevRisk (DB score from the period immediately before the latest as_of)
  *  - prevRiskSeries (all prior scores, newest→oldest, excluding current)
  * Preserves lngLat and other fields. Also writes risk_summary.json (latest
- * summaries only) and indicator_latest.json. Skips if run < 7 days ago.
+ * summaries only) and indicator_latest.json. Skips if run < 7 days ago,
+ * unless it's Monday at/after 10:00 in SCHEDULE_TZ (once per Monday).
  */
 export async function refreshRiskJsonWeekly(): Promise<RefreshOutcome> {
   assertServer();
@@ -408,9 +482,13 @@ export async function refreshRiskJsonWeekly(): Promise<RefreshOutcome> {
     // 1) Check meta to decide whether to skip
     const meta = await readJsonIfExists<MetaFile>(metaJsonPath);
     if (meta?.last_run) {
-      const { nextEligibleISO, msLeft } = msUntilNextEligible(meta.last_run);
-      if (msLeft > 0) {
-        return { status: "skipped", lastRun: meta.last_run, nextEligible: nextEligibleISO };
+      // Allow a special "Monday 10:00" run in SCHEDULE_TZ even if < 7 days have passed
+      const mondayOverride = isMondaySlotDue(meta.last_run);
+      if (!mondayOverride) {
+        const { nextEligibleISO, msLeft } = msUntilNextEligible(meta.last_run);
+        if (msLeft > 0) {
+          return { status: "skipped", lastRun: meta.last_run, nextEligible: nextEligibleISO };
+        }
       }
     }
 

@@ -37,8 +37,17 @@ async function loadAllNews(signal?: AbortSignal): Promise<CountryNews[]> {
 function daysAgoLabel(iso?: string | null): string {
   if (!iso) return '';
   const pub = new Date(iso);
-  const ms = Math.max(0, Date.now() - pub.getTime());
-  const days = Math.floor(ms / (1000 * 60 * 60 * 24));
+  if (isNaN(pub.getTime())) return '';
+
+  const DAY_MS = 24 * 60 * 60 * 1000;
+
+  const now = new Date();
+  const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+  const startOfPub   = new Date(pub.getFullYear(), pub.getMonth(), pub.getDate()).getTime();
+
+  // Calendar-day difference (round guards against 23/25h DST days). Clamp future to 0.
+  const days = Math.max(0, Math.round((startOfToday - startOfPub) / DAY_MS));
+
   if (days === 0) return 'today';
   if (days === 1) return '1 day ago';
   return `${days} days ago`;
@@ -54,6 +63,12 @@ const PUBLISHER_ALIASES: Record<string, string> = {
   'finews.com': 'Finews',
   'international monetary fund (imf)': 'IMF',
   'u.s. immigration and customs enforcement (.gov)': 'U.S. ICE',
+  'harvard kennedy school': 'HKS',
+  'upi.com': 'UPI',
+  'ing think economic and financial analysis | ing think': 'ING Bank',
+  '- essential business': 'Essential Business',
+  'streetwisereports.com': 'StreetWise Reports',
+  'le monde.fr': 'Le Monde',
 };
 
 const STOPWORDS = new Set(['the','a','an','of','for','and','to','in','on','at','by','with']);

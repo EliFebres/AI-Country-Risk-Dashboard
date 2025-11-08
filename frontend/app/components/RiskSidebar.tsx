@@ -1,7 +1,7 @@
 // /components/Sidebar/RiskSidebar.tsx
 'use client';
 
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import RiskReadingSection from './RiskSidebar/RiskReadingSection';
 import EconomicGaugeSection from './RiskSidebar/EconomicGaugeSection';
 import AiSummary from './RiskSidebar/AiSummary';
@@ -38,24 +38,73 @@ export default function RiskSidebar({
   const fadeMs = Math.max(120, Math.round(durationMs * 0.6));
   const flagSrc = country?.iso2 ? `/flags/${country.iso2.toUpperCase()}.svg` : null;
 
-  // --- Data age (days) ---
+  // --- Data age (calendar days) ---
+  const DAY_MS = 24 * 60 * 60 * 1000;
   const { daysOld, lastUpdatedLocal } = useMemo(() => {
-    if (dataTimestamp == null) return { daysOld: null as number | null, lastUpdatedLocal: null as string | null };
+    if (dataTimestamp == null) {
+      return { daysOld: null as number | null, lastUpdatedLocal: null as string | null };
+    }
     const dt = dataTimestamp instanceof Date ? dataTimestamp : new Date(dataTimestamp);
     if (isNaN(dt.getTime())) return { daysOld: null, lastUpdatedLocal: null };
-    const ms = Date.now() - dt.getTime();
-    const d = Math.max(0, Math.floor(ms / (1000 * 60 * 60 * 24)));
+    const now = new Date();
+    // Start-of-day (local) for both timestamps
+    const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+    const startOfThatDay = new Date(dt.getFullYear(), dt.getMonth(), dt.getDate()).getTime();
+    // Use ROUND to be robust to DST (23h/25h day) differences, then clamp at 0.
+    const d = Math.max(0, Math.round((startOfToday - startOfThatDay) / DAY_MS));
     const local = dt.toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' });
     return { daysOld: d, lastUpdatedLocal: local };
   }, [dataTimestamp]);
-
   const isFresh = typeof daysOld === 'number' ? daysOld < 2 : null;
 
   // Tooltip copy for the numeric badge
   const ageTitle =
     typeof daysOld === 'number'
-      ? `Last update: ${lastUpdatedLocal ?? 'unknown'}`
+      ? `Data Last Updated: ${lastUpdatedLocal ?? 'unknown'}`
       : undefined;
+
+  // --- Swipe-to-close for mobile (right → left) ---
+  const [dragX, setDragX] = useState(0);
+  const touchStartRef = useRef<{ x: number; y: number; t: number } | null>(null);
+  const draggingRef = useRef(false);
+
+  const resetDrag = () => setDragX(0);
+
+  const handleTouchStart: React.TouchEventHandler<HTMLElement> = (e) => {
+    if (!open) return;
+    const t = e.touches[0];
+    touchStartRef.current = { x: t.clientX, y: t.clientY, t: performance.now() };
+    draggingRef.current = true;
+  };
+
+  const handleTouchMove: React.TouchEventHandler<HTMLElement> = (e) => {
+    if (!open || !draggingRef.current || !touchStartRef.current) return;
+    const t = e.touches[0];
+    const dx = t.clientX - touchStartRef.current.x;  // negative when swiping left
+    const dy = t.clientY - touchStartRef.current.y;
+
+    // Only react if predominantly horizontal
+    if (Math.abs(dx) > Math.abs(dy)) {
+      // Nudge the panel left up to 100px for feedback (no rubber-banding)
+      setDragX(Math.max(-100, Math.min(0, dx)));
+      // Do NOT call preventDefault; rely on CSS touch-action to manage scrolling
+    }
+  };
+
+  const handleTouchEnd: React.TouchEventHandler<HTMLElement> = () => {
+    if (!open || !draggingRef.current || !touchStartRef.current) {
+      resetDrag();
+      return;
+    }
+    draggingRef.current = false;
+    touchStartRef.current = null;
+
+    // Close if swiped left far enough
+    if (dragX <= -60) {
+      onClose();
+    }
+    resetDrag();
+  };
 
   return (
     <>
@@ -74,9 +123,18 @@ export default function RiskSidebar({
             ['--revealMs' as any]: `${durationMs}ms`,
             ['--fadeMs' as any]: `${fadeMs}ms`,
             ['--easing' as any]: easing,
-            ['--livePulseMs' as any]: '2200ms', // tweak to speed up / slow down the LIVE blink
+            ['--livePulseMs' as any]: '2200ms',
+            // Live CSS variable for swipe drag
+            ['--dragX' as any]: `${dragX}px`,
           } as React.CSSProperties
         }
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
+        onTouchCancel={() => {
+          draggingRef.current = false;
+          resetDrag();
+        }}
       >
         <header className="bar">
           <div className="titleRow">
@@ -177,13 +235,24 @@ export default function RiskSidebar({
           backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
           z-index: 10; display: flex; flex-direction: column;
           box-shadow: 0 0 24px rgba(0, 0, 0, 0.35);
-          will-change: clip-path, opacity;
+          will-change: clip-path, opacity, transform;
           transition: clip-path var(--revealMs, 360ms) var(--easing, ease),
-                      opacity var(--fadeMs, 220ms) var(--easing, ease);
+                      opacity var(--fadeMs, 220ms) var(--easing, ease),
+                      transform 140ms ease-out;
           container-type: inline-size;
+          /* Allow vertical scrolling; we manage horizontal with swipe and CSS */
+          touch-action: pan-y;
+          overscroll-behavior-x: contain; /* prevent horizontal scroll chaining */
+          /* Live nudge while swiping left */
+          transform: translateX(var(--dragX, 0));
         }
         .sidebar.closed { clip-path: inset(0 100% 0 0); opacity: 0; }
         .sidebar.open   { clip-path: inset(0 0 0 0);   opacity: 1; }
+
+        /* Phones: sidebar takes the full width */
+        @media (max-width: 768px) {
+          .sidebar { width: 100vw; }
+        }
 
         .bar {
           display: flex; align-items: center;

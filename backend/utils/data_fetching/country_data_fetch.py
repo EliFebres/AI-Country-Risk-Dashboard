@@ -7,7 +7,7 @@ from zoneinfo import ZoneInfo
 from typing import Mapping, Optional
 from datetime import datetime, date, timedelta
 
-import backend.utils.fetch_metrics as fetch_metrics
+import backend.utils.data_fetching.fetch_metrics as fetch_metrics
 
 
 def _first_monday(year: int, month: int) -> date:
@@ -72,10 +72,9 @@ def ingest_panel_wide(panel: pd.DataFrame, country_code: str, root: pathlib.Path
              OVERWRITE_OR_IGNORE 1);
             """
         )
-    
     finally:
-        con.close()
-
+        if con is not None:
+            con.close()
 
 
 def ingest_panels_for_all_countries(
@@ -133,13 +132,20 @@ def ingest_panels_for_all_countries(
     # Iterate & Ingest
     for _, row in country_df.iterrows():
         iso_code = row["iso2Code"]
-        
+
+        # Build the panel (robust to missing/empty series)
         panel = fetch_metrics.build_country_panel(
-            iso_code, 
-            indicators, 
-            start=start, 
-            end=end, 
-            tidy_fetch=True
+            iso_code,
+            indicators,
+            start=start,
+            end=end,
+            tidy_fetch=True,
         )
-        
+
+        # Skip countries that returned no usable rows across all indicators
+        if panel is None or panel.empty:
+            print(f"[{iso_code}] No World Bank rows for selected indicators — skipping write.")
+            continue
+
         ingest_panel_wide(panel, iso_code, root)
+        print(f"[{iso_code}] Wrote panel with {panel.shape[0]} years × {panel.shape[1]} indicators.")

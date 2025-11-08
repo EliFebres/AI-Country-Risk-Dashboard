@@ -1,11 +1,9 @@
-# backend/utils/url_resolver.py
-from __future__ import annotations
 import json
-from typing import Optional
-from urllib.parse import urlparse, parse_qs
-
 import requests
+
+from typing import Optional
 from bs4 import BeautifulSoup
+from urllib.parse import urlparse, parse_qs
 
 
 # Keep a realistic UA; some endpoints return different HTML otherwise

@@ -1,15 +1,14 @@
-# backend/utils/fetch_links.py
-# pip install feedparser httpx trafilatura
-import asyncio
-import datetime as dt
-from typing import List, Dict
-from urllib.parse import urlencode, quote_plus
 import re
 import html
-
-import feedparser
 import httpx
+import asyncio
+import feedparser
 import trafilatura
+import datetime as dt
+
+from typing import List, Dict
+from urllib.parse import urlencode, quote_plus
+
 
 UA = "Mozilla/5.0 (compatible; ai-country-risk/1.0)"
 
@@ -93,6 +92,7 @@ def gnews_rss(
     country: str = "US",
     build_summary: bool = True,
     summary_words: int = 240,
+    max_age_days: int | None = 30,   # NEW: limit by age (None = no filter)
 ) -> List[Dict]:
     """
     Return Google News RSS items. If expand=True, also fetch and extract each article's main text.
@@ -106,15 +106,30 @@ def gnews_rss(
       - 'snippet_html': str (original RSS summary with HTML)
       - ['text','word_count'] present when expand=True and extraction succeeds
       - ['summary','summary_word_count'] present when build_summary=True
+
+    Args:
+        max_age_days: If set, discard items older than this many days (items
+                      without a publish date are discarded).
     """
     url = _gnews_url(query, lang=lang, country=country)
     feed = feedparser.parse(url)
 
+    cutoff = None
+    if max_age_days is not None:
+        cutoff = dt.datetime.now(dt.timezone.utc) - dt.timedelta(days=max_age_days)
+
     items: List[Dict] = []
-    for e in feed.entries[:max_results]:
-        published = None
+    for e in feed.entries:
+        # Parse published time (UTC-aware)
+        published_dt = None
         if getattr(e, "published_parsed", None):
-            published = dt.datetime(*e.published_parsed[:6]).isoformat() + "Z"
+            published_dt = dt.datetime(*e.published_parsed[:6], tzinfo=dt.timezone.utc)
+
+        # Age filter
+        if cutoff is not None:
+            if (published_dt is None) or (published_dt < cutoff):
+                continue
+
         raw_summary = getattr(e, "summary", "") or ""
         plain_summary = _strip_html(raw_summary)
 
@@ -128,21 +143,25 @@ def gnews_rss(
         items.append({
             "title": getattr(e, "title", "") or "",
             "link": getattr(e, "link", "") or "",
-            "published": published,
+            "published": published_dt.isoformat().replace("+00:00", "Z") if published_dt else None,
             "source": source_title,
-            "snippet": plain_summary,       # cleaned (no links/HTML)
-            "snippet_html": raw_summary,    # original HTML (kept just in case)
+            "snippet": plain_summary,
+            "snippet_html": raw_summary,
         })
 
-    # Optionally expand with article body text
+        # Stop once we have enough recent items
+        if len(items) >= max_results:
+            break
+
+    # Optionally expand with article body text (limit to number of kept items)
     if expand and items:
         try:
             _ = asyncio.get_running_loop()  # raises RuntimeError if none
-            items = _expand_items_sync(items, max_articles=max_results, max_chars=extract_chars)
+            items = _expand_items_sync(items, max_articles=len(items), max_chars=extract_chars)
         except RuntimeError:
-            items = asyncio.run(_expand_items_async(items, max_articles=max_results, max_chars=extract_chars))
+            items = asyncio.run(_expand_items_async(items, max_articles=len(items), max_chars=extract_chars))
 
-    # Build longer plain-text summaries (prefer extracted 'text', fallback to 'snippet')
+    # Build longer plain-text summaries
     if build_summary and items:
         for e in items:
             base = e.get("text") or e.get("snippet") or ""
