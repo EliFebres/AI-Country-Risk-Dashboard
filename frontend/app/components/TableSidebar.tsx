@@ -31,7 +31,7 @@ export default function TableSidebar({
   data,                             // ⬅️ prefer parent-provided data
   onSelectCountry,
 }: TableSidebarProps) {
-  const panelWidth = 'min(420px, 25vw)'; // expanded width
+  const panelWidth = 'min(420px, 25vw)'; // desktop width (mobile uses 100vw via media query)
   const fadeMs = Math.max(120, Math.round(durationMs * 0.6));
   const collapseMs = 260; // expand/collapse slide duration
 
@@ -282,7 +282,7 @@ export default function TableSidebar({
           top: 0;
           left: 0;
           height: 100dvh;
-          width: var(--w);
+          width: var(--w); /* desktop width; on phones we override to 100vw */
           background: rgba(14,14,14,0.96);
           color: #fff;
           border-right: 1px solid rgba(255,255,255,0.08);
@@ -299,14 +299,24 @@ export default function TableSidebar({
             transform var(--collapseMs, 260ms) var(--easing, ease);
           transform: translateX(0);
           overflow: hidden;
+
+          /* Mobile touch polish */
+          touch-action: pan-y;
+          overscroll-behavior-x: contain;
         }
         .sidebar.closed { clip-path: inset(0 100% 0 0); opacity: 0; pointer-events: none; }
         .sidebar.open   { clip-path: inset(0 0 0 0);     opacity: 1; pointer-events: auto; }
 
-        /* When collapsed, slide the entire panel fully offscreen (no rail left behind) */
+        /* When collapsed, slide the entire panel offscreen (no rail left behind) */
         .sidebar.isCollapsed {
           transform: translateX(calc(-1 * var(--w)));
           pointer-events: none; /* clicks go to map; expander handles reopening */
+        }
+
+        /* Phones: full-width overlay and correct collapse distance */
+        @media (max-width: 768px) {
+          .sidebar { width: 100vw; }
+          .sidebar.isCollapsed { transform: translateX(-100%); }
         }
 
         /* Collapse button (only visible while expanded) */
@@ -335,21 +345,34 @@ export default function TableSidebar({
           align-items: center;
           gap: 12px;
           padding: 14px 16px;
+          padding-left: calc(16px + env(safe-area-inset-left, 0px)); /* iOS notch safe area */
           border-bottom: 1px solid rgba(255,255,255,0.08);
         }
         .title { display: flex; flex-direction: column; }
         .title strong { font-size: 18px; line-height: 1.2; }
         .subtitle { opacity: 0.7; font-size: 12px; }
 
-        .content { padding: 8px 0 12px; overflow: hidden; flex: 1; }
+        .content {
+          padding: 8px 0 12px;
+          overflow: hidden;
+          flex: 1;
+        }
 
         .tableWrap {
           height: 100%;
           overflow: auto;
           padding: 0 8px 0 12px;
+          padding-left: calc(12px + env(safe-area-inset-left, 0px));  /* safe area */
+          padding-right: calc(8px + env(safe-area-inset-right, 0px)); /* safe area */
         }
 
-        .tbl { width: 100%; border-collapse: separate; border-spacing: 0; font-size: 13px; }
+        .tbl {
+          width: 100%;
+          border-collapse: separate;
+          border-spacing: 0;
+          font-size: 13px;
+          table-layout: fixed; /* prevent overflow on narrow screens */
+        }
         thead th {
           position: sticky; top: 0; z-index: 1;
           background: rgba(20,20,20,0.98);
@@ -384,10 +407,16 @@ export default function TableSidebar({
           100% { background-position: -200% 0; }
         }
 
-        td { padding: 8px 10px; vertical-align: middle; }
+        td { padding: 8px 10px; vertical-align: middle; overflow: hidden; }
         .num { color: rgba(255,255,255,0.7); width: 44px; text-align: right; }
-        .nameCell { display: flex; align-items: center; gap: 8px; }
-        .name { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .nameCell { display: flex; align-items: center; gap: 8px; min-width: 0; }
+        .name {
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          display: inline-block;
+          max-width: 100%;
+        }
 
         .dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; box-shadow: 0 0 0 1px rgba(0,0,0,0.4); }
 
