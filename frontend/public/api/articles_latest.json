@@ -2,64 +2,71 @@
   {
     "iso2": "AR",
     "name": "Argentina",
-    "as_of": "2025-11-06",
+    "as_of": "2025-11-08",
     "articles": [
       {
-        "url": "https://apnews.com/article/argentina-politics-guillermo-francos-milei-498529fa796d4705bb5ed052785a48bb",
-        "title": "Argentina’s chief of staff resigns, heralding change for President Milei after election win - AP News",
-        "source": "AP News",
-        "published_at": "2025-11-01 04:59:00+00",
-        "img_url": "https://dims.apnews.com/dims4/default/e0388e3/2147483647/strip/true/crop/7366x4143+0+384/resize/1440x810!/quality/90/?url=https%3A%2F%2Fassets.apnews.com%2F5f%2F99%2Fa033b44dc2e255eb2151f9577609%2F02623e219e3c426bae95e94fa8a99e28"
+        "url": "https://abcnews.go.com/International/wireStory/argentinas-chief-staff-resigns-heralding-change-president-milei-127080588",
+        "title": "Argentina's chief of staff resigns, heralding change for President Milei after election win - abcnews.go.com",
+        "source": "abcnews.go.com",
+        "published_at": "2025-11-01 04:44:15+00",
+        "img_url": "https://i.abcnewsfe.com/a/4bdebe3f-82e3-459c-8c66-df80932c2e39/wirestory_498529fa796d4705bb5ed052785a48bb_16x9.jpg?w=1600"
       },
       {
-        "url": "https://www.law.nyu.edu/news/juan-curutchet-92-alumnus-argentina-central-bank",
-        "title": "Juan Curutchet LLM ’92 leads the Central Bank of Argentina at a pivotal economic moment - NYU Law School",
-        "source": "NYU Law School",
-        "published_at": "2025-10-23 07:00:00+00",
-        "img_url": "https://www.law.nyu.edu/sites/default/files/2025-10/OHO_Hero_Curutchet_Juan_01.jpg"
+        "url": "https://www.aljazeera.com/economy/2025/10/20/argentinas-central-bank-says-it-signed-20bn-currency-swap-deal-with-us",
+        "title": "Argentina’s central bank says it signed $20bn currency swap deal with US - Al Jazeera",
+        "source": "Al Jazeera",
+        "published_at": "2025-10-20 07:00:00+00",
+        "img_url": "https://www.aljazeera.com/wp-content/uploads/2025/10/AP25287746661799-1760484200.jpg?resize=1920%2C1440"
       },
       {
-        "url": "https://www.reuters.com/world/americas/argentinas-central-bank-says-it-signed-20-billion-currency-swap-deal-with-us-2025-10-20/",
-        "title": "Argentina's central bank says it signed $20 billion currency swap deal with US - Reuters",
-        "source": "Reuters",
-        "published_at": "2025-10-21 07:00:00+00",
-        "img_url": null
+        "url": "https://www.gisreportsonline.com/r/javier-milei-argentina/",
+        "title": "Javier Milei’s economic policy in Argentina - GIS Reports",
+        "source": "GIS Reports",
+        "published_at": "2025-10-17 07:00:00+00",
+        "img_url": "https://www.gisreportsonline.com/wp-content/uploads/2025/10/gettyimages-1845166563-1140x760.jpg"
       }
     ]
   },
   {
     "iso2": "AU",
     "name": "Australia",
-    "as_of": "2025-11-06",
+    "as_of": "2025-11-08",
     "articles": [
+      {
+        "url": "https://www.dailymail.co.uk/news/article-15267079/China-Australia-war.html",
+        "title": "Navy officer's chilling warning: How war with China could reach Australian shores and bring the nation to its knees - and how the military is already bracing to be on the new frontline - Daily Mail",
+        "source": "Daily Mail",
+        "published_at": "2025-11-07 14:41:44+00",
+        "img_url": "https://i.dailymail.co.uk/1s/2025/11/07/03/103673817-0-image-a-18_1762485420631.jpg"
+      },
+      {
+        "url": "https://www.reuters.com/world/asia-pacific/stonepeak-debut-195-million-debt-security-australia-2025-11-05/",
+        "title": "Stonepeak to debut $195 million debt security in Australia - Reuters",
+        "source": "Reuters",
+        "published_at": "2025-11-06 03:03:00+00",
+        "img_url": null
+      },
       {
         "url": "https://finimize.com/content/australias-central-bank-holds-rates-as-inflation-stays-sticky",
         "title": "Australia’s Central Bank Holds Rates As Inflation Stays Sticky - Finimize",
         "source": "Finimize",
         "published_at": "2025-11-05 04:28:51+00",
         "img_url": "https://finimize-img.imgix.net/https%3A%2F%2Fchivas-assets.s3-eu-west-1.amazonaws.com%2Fstatic%2Fimages%2FG2572240_xml.jpeg?ixlib=python-3.1.2&s=8de6cbb6155f1d6b4f916c63b2912f9e"
-      },
-      {
-        "url": "https://www.semafor.com/article/11/04/2025/australia-warns-of-beijings-south-china-sea-military-build-up",
-        "title": "Australia warns of Beijing’s South China Sea military build-up - https-//www.semafor.com",
-        "source": "https-//www.semafor.com",
-        "published_at": "2025-11-04 12:44:00+00",
-        "img_url": "https://img.semafor.com/2edc64bf8c4b85530ff92361ac3073a5e8fbd472-1600x1067.jpg?rect=0,114,1600,840&w=1200&h=630&q=75&auto=format"
-      },
-      {
-        "url": "https://cisoseries.com/cybersecurity-news-australia-badcandy-warning-cisco-firewall-attack-aardvark-eats-bugs/",
-        "title": "Cybersecurity News: Australia BadCandy warning, Cisco firewall attack, Aardvark eats bugs - CISO Series",
-        "source": "CISO Series",
-        "published_at": "2025-11-03 11:00:00+00",
-        "img_url": "https://media.cisoseries.com/wp-content/uploads/2025/11/Cybersecurity-Headlines-2025-11-03.png"
       }
     ]
   },
   {
     "iso2": "AT",
     "name": "Austria",
-    "as_of": "2025-11-06",
+    "as_of": "2025-11-08",
     "articles": [
+      {
+        "url": "https://mezha.net/eng/bukvy/austria-supports-just-and-stable-peace-in-ukraine-with-strong-security-guarantees/",
+        "title": "Austria Supports Just and Stable Peace in Ukraine with Strong Security Guarantees - Букви",
+        "source": "Букви",
+        "published_at": "2025-11-08 16:24:33+00",
+        "img_url": "https://mezha.net/eng/kd_image_generate/austria-supports-just-and-stable-peace-in-ukraine-with-strong-security-guarantees/519335.jpg?ver=0.0.4"
+      },
       {
         "url": "https://icds.ee/en/austrias-neutrality-at-70-is-it-still-fit-for-purpose/",
         "title": "Austria’s Neutrality At 70 —Is It Still Fit for Purpose? - International Centre for Defence and Security",
@@ -68,144 +75,144 @@
         "img_url": "https://icds.ee/static/austria_politics_71611-1024x683.jpg"
       },
       {
-        "url": "https://kyivindependent.com/austria-drops-objections-paves-way-for-eus-19th-russia-sanctions-package/",
-        "title": "Austria drops objections, paves way for EU’s 19th Russia sanctions package - The Kyiv Independent",
-        "source": "The Kyiv Independent",
-        "published_at": "2025-10-18 07:00:00+00",
-        "img_url": "https://assets.kyivindependent.com/content/images/2023/07/GettyImages-1512920640.jpeg"
-      },
-      {
-        "url": "https://www.bmeia.gv.at/en/ministerium/presse/aktuelles/alle/2025/10/together-for-a-safer-future-dialogue-forum-on-austrias-security-strategy",
-        "title": "Together for a Safer Future – Dialogue Forum on Austria’s Security Strategy - BMEIA - Außenministerium Österreich",
-        "source": "BMEIA - Außenministerium Österreich",
-        "published_at": "2025-10-18 07:00:00+00",
-        "img_url": "https://www.bmeia.gv.at/fileadmin/_processed_/2/3/csm_Sicherheitsstrategie_Salzburg_c3423b6f97.jpg"
+        "url": "https://euromaidanpress.com/2025/10/19/austria-was-the-last-holdout-now-its-greenlighting-the-eus-19th-russia-sanctions-round/",
+        "title": "Austria was the last holdout — now it’s greenlighting the EU’s 19th Russia sanctions round - Euromaidan Press",
+        "source": "Euromaidan Press",
+        "published_at": "2025-10-19 07:00:00+00",
+        "img_url": "https://euromaidanpress.com/wp-content/uploads/2025/10/Austrian_Flag-1.jpg"
       }
     ]
   },
   {
     "iso2": "BD",
     "name": "Bangladesh",
-    "as_of": "2025-11-06",
+    "as_of": "2025-11-08",
     "articles": [
       {
-        "url": "https://stratnewsglobal.com/neighbours/bangladesh/bangladesh-army-on-edge-as-plans-for-referendum-go-forward/",
-        "title": "Bangladesh Army On Edge As Plans For Referendum Go Forward - StratNews Global",
-        "source": "StratNews Global",
-        "published_at": "2025-11-06 01:30:26+00",
-        "img_url": "https://stratnewsglobal.com/wp-content/uploads/2025/08/2025-08-05-14-45-6bae9962bb433b6ff4a6d57c94821095-1.jpg"
+        "url": "https://www.devdiscourse.com/article/law-order/3687618-troop-withdrawal-bangladesh-military-steps-back",
+        "title": "Troop Withdrawal: Bangladesh Military Steps Back - Devdiscourse",
+        "source": "Devdiscourse",
+        "published_at": "2025-11-06 14:54:41+00",
+        "img_url": "https://www.devdiscourse.com/remote.axd?https://devdiscourse.blob.core.windows.net/aiimagegallery/05_10_2025_01_16_38_1612909.png?width=920&format=jpeg"
       },
       {
-        "url": "https://kmsnews.org/kms/2025/11/02/bangladesh-military-delegations-visit-to-pakistan-signaling-shift-toward-strategic-autonomy-beyond-india.html",
-        "title": "Bangladesh military delegation’s visit to Pakistan signaling shift toward strategic autonomy beyond India - Kashmir Media Service",
-        "source": "Kashmir Media Service",
-        "published_at": "2025-11-02 12:23:03+00",
-        "img_url": "https://kmsnews.org/kms/assests/2025/11/Screenshot-2025-11-02-171542.png"
+        "url": "https://www.gisreportsonline.com/r/bangladesh-preelection/",
+        "title": "Stability eludes Bangladesh as election date is set - GIS Reports",
+        "source": "GIS Reports",
+        "published_at": "2025-11-06 07:00:00+00",
+        "img_url": "https://www.gisreportsonline.com/wp-content/uploads/2025/11/police-intercept-demonstrators-in-dhaka-1140x760.jpg"
       },
       {
-        "url": "https://www.borderlens.com/2025/10/16/arakan-army-accuses-bangladesh-military-of-aiding-militants-warns-of-regional-fallout/",
-        "title": "Arakan Army accuses Bangladesh military of aiding militants, warns of regional fallout - The Borderlens",
-        "source": "The Borderlens",
-        "published_at": "2025-10-16 07:00:00+00",
-        "img_url": "https://www.borderlens.com/wp-content/uploads/2025/10/Arakan-Army.webp"
+        "url": "https://thefinancialexpress.com.bd/views/views/monetary-policy-under-duress-the-imperative-for-a-facilitative-bangladesh-bank",
+        "title": "Monetary policy under duress: The imperative for a facilitative Bangladesh Bank - The Financial Express",
+        "source": "The Financial Express",
+        "published_at": "2025-10-20 07:03:26+00",
+        "img_url": "https://tfe-bd.sgp1.cdn.digitaloceanspaces.com/posts/121748/the-financial-express-bangladesh-bank.jpg"
       }
     ]
   },
   {
     "iso2": "BE",
     "name": "Belgium",
-    "as_of": "2025-11-06",
+    "as_of": "2025-11-08",
     "articles": [
       {
-        "url": "https://www.eunews.it/en/2025/11/05/belgium-on-alert-national-security-council-to-meet-after-drone-incursions-at-airports-and-military-bases/",
-        "title": "Belgium on alert: National Security Council to meet after drone incursions at airports and military bases - Eunews",
-        "source": "Eunews",
-        "published_at": "2025-11-05 13:50:12+00",
-        "img_url": "https://www.eunews.it/wp-content/uploads/2025/11/AFP__20251105__833X4G3__v1__HighRes__BelgiumTransportAviationTravel-1024x683.jpg"
+        "url": "https://www.defensenews.com/global/europe/2025/11/07/german-luftwaffe-dispatches-drone-defense-experts-to-help-belgium/",
+        "title": "German Luftwaffe dispatches drone-defense experts to help Belgium - Defense News",
+        "source": "Defense News",
+        "published_at": "2025-11-07 16:29:40+00",
+        "img_url": "https://www.armytimes.com/resizer/v2/MPV26F3HXFA3NGIJVAY5ROOULA.jpg?width=1200&auth=a900d2a2bb3f41fb4af3e18a36c79ce19a01d42e745c0c192f5ee4243b998977"
       },
       {
-        "url": "https://www.bbc.com/news/articles/cd721zdzr4xo",
-        "title": "Belgium: Suspected jihadist drone plot against Prime Minister Bart De Wever foiled - BBC",
-        "source": "BBC",
-        "published_at": "2025-10-10 07:00:00+00",
-        "img_url": "https://ichef.bbci.co.uk/news/1024/branded_news/0580/live/4d7f28e0-a5dd-11f0-92db-77261a15b9d2.jpg"
+        "url": "https://www.bloomberg.com/news/articles/2025-11-06/belgium-delays-budget-to-december-averting-government-collapse",
+        "title": "Belgium Delays Budget to December, Averting Government Collapse - Bloomberg.com",
+        "source": "Bloomberg.com",
+        "published_at": "2025-11-06 14:45:21+00",
+        "img_url": "https://assets.bwbx.io/images/users/iqjWHBFdfxIU/ibIw7_tLQZRs/v0/1200x800.jpg"
+      },
+      {
+        "url": "https://brusselssignal.eu/2025/11/belgium-government-to-resign-if-no-budget-by-christmas/",
+        "title": "Belgium government to resign if no budget by Christmas - Brussels Signal",
+        "source": "Brussels Signal",
+        "published_at": "2025-11-06 13:49:20+00",
+        "img_url": "https://brusselssignal.eu/content/uploads/2025/11/cropped-WhatsApp-Image-2025-11-06-at-16.35.36-2.jpeg"
       }
     ]
   },
   {
     "iso2": "BR",
     "name": "Brazil",
-    "as_of": "2025-11-06",
+    "as_of": "2025-11-08",
     "articles": [
       {
-        "url": "https://www.reuters.com/world/americas/brazil-central-bank-holds-rates-sticks-very-prolonged-pause-message-2025-11-05/",
-        "title": "Brazil central bank holds rates, signals confidence in maintaining stance - Reuters",
-        "source": "Reuters",
-        "published_at": "2025-11-05 23:07:46+00",
-        "img_url": null
+        "url": "https://latinamericanpost.com/americas/brazils-bloody-mirror-the-pcc-the-cv-and-a-war-the-state-keeps-losing/",
+        "title": "Brazil’s Bloody Mirror: The PCC, the CV, and a War the State Keeps Losing - LatinAmerican Post",
+        "source": "LatinAmerican Post",
+        "published_at": "2025-11-08 15:30:28+00",
+        "img_url": "https://latinamericanpost.com/wp-content/uploads/2025/11/Rio-de-Janeiro.jpg"
       },
       {
-        "url": "https://www.reuters.com/world/americas/lawyers-brazils-bolsonaro-request-review-coup-plot-sentencing-2025-10-27/",
-        "title": "Lawyers for Brazil ex-president Bolsonaro request shorter sentence in coup plot - Reuters",
-        "source": "Reuters",
-        "published_at": "2025-10-27 07:00:00+00",
-        "img_url": null
+        "url": "https://m.investing.com/news/economy-news/brazil-central-bank-holds-selic-rate-at-15-amid-inflation-concerns-93CH-4336700?ampMode=1",
+        "title": "Brazil central bank holds Selic rate at 15% amid inflation concerns - Investing.com",
+        "source": "Investing.com",
+        "published_at": "2025-11-06 09:58:00+00",
+        "img_url": "https://i-invdn-com.investing.com/news/bankofamerica_800x533_L_1412747844.jpg"
       },
       {
-        "url": "https://thedefensepost.com/2025/10/07/india-brazil-barter-aircraft/",
-        "title": "India, Brazil Weigh Barter Deal for Military Aircraft - The Defense Post",
-        "source": "The Defense Post",
-        "published_at": "2025-10-07 07:00:00+00",
-        "img_url": "https://thedefensepost.com/wp-content/uploads/2025/06/49061285308_67de46bd86_o-scaled.jpg"
+        "url": "https://www.aljazeera.com/news/2025/10/28/brazils-ex-president-bolsonaro-appeals-27-year-sentence-for-attempted-coup",
+        "title": "Brazil’s ex-president Bolsonaro appeals 27-year sentence for attempted coup - Al Jazeera",
+        "source": "Al Jazeera",
+        "published_at": "2025-10-28 07:00:00+00",
+        "img_url": "https://www.aljazeera.com/wp-content/uploads/2025/09/getty_68c83d2aef-1757953323.jpg?resize=1920%2C1440"
       }
     ]
   },
   {
     "iso2": "CA",
     "name": "Canada",
-    "as_of": "2025-11-06",
+    "as_of": "2025-11-08",
     "articles": [
       {
-        "url": "https://www.wsws.org/en/articles/2025/11/06/azih-n06.html",
-        "title": "Carney’s 2025 “Canada Strong” federal budget: Austerity to fund rearmament, war and corporate profits - World Socialist Web Site",
-        "source": "World Socialist Web Site",
-        "published_at": "2025-11-06 02:24:50+00",
-        "img_url": "https://www.wsws.org/asset/85ef7a7b-6ac4-4a94-a526-fbb32fb9524b?rendition=1600x900"
+        "url": "https://indianexpress.com/article/world/canadas-carney-survives-key-budget-votes-averts-winter-election-10353831/",
+        "title": "Canada’s Carney survives key budget votes, averts winter election - The Indian Express",
+        "source": "The Indian Express",
+        "published_at": "2025-11-08 13:24:36+00",
+        "img_url": "https://images.indianexpress.com/2025/11/us_6e22b9.jpg"
       },
       {
-        "url": "https://news.futunn.com/en/post/64454854/bank-of-canada-gov-macklem-tells-lawmakers-rate-policy-at",
-        "title": "Bank of Canada Gov. Macklem Tells Lawmakers Rate Policy at 'Right' Level - 富途牛牛",
-        "source": "富途牛牛",
-        "published_at": "2025-11-06 01:28:20+00",
-        "img_url": "https://newsfile.futunn.com/news-thumbnail/20240703/public/17199789925533301820326-news-thumbnail/20240703/public/17199789925539839059772.jpg"
+        "url": "https://www.wsj.com/articles/bank-of-canada-gov-macklem-tells-lawmakers-rate-policy-at-right-level-5f41d1cc?gaa_at=eafs&gaa_n=AWEtsqe88BKmlHcgGJXsu8VKVAdodchJTcvolZ989CEHlhkYqCzdDk9ZutVr&gaa_ts=690f7ad5&gaa_sig=5PoLyPCoVUFI8iO_sisnNWDG18t7Su4zIbB9y12kvJmW5hKgCSivhXyljqBSzwE2gW3AJfbb9IIKeDb3qmH5Cw%3D%3D",
+        "title": "Bank of Canada Gov. Macklem Tells Lawmakers Rate Policy at ‘Right’ Level - The Wall Street Journal",
+        "source": "The Wall Street Journal",
+        "published_at": "2025-11-05 23:37:00+00",
+        "img_url": null
       },
       {
-        "url": "https://michiganadvance.com/2025/11/03/trump-trade-war-with-canada-could-usher-chinese-cars-into-the-u-s/",
-        "title": "Trump trade war with Canada could usher Chinese cars into the U.S. - Michigan Advance",
-        "source": "Michigan Advance",
-        "published_at": "2025-11-03 12:04:52+00",
-        "img_url": "https://michiganadvance.com/wp-content/uploads/2025/11/GettyImages-1452280978-2048x1534.jpg"
+        "url": "https://www.cbsnews.com/news/canada-mark-carney-trump-anti-tariff-ad-apology-doug-ford/",
+        "title": "Canada's Prime Minister Mark Carney says he apologized to Trump over anti-tariff ad - CBS News",
+        "source": "CBS News",
+        "published_at": "2025-11-01 15:25:00+00",
+        "img_url": "https://assets1.cbsnewsstatic.com/hub/i/r/2025/11/01/6367747b-a66f-4068-86a8-44c431d5ba30/thumbnail/1200x630/7397c3d9fd8b17f72c20d6ab3295affa/ap25286628900629.jpg"
       }
     ]
   },
   {
     "iso2": "CL",
     "name": "Chile",
-    "as_of": "2025-11-06",
+    "as_of": "2025-11-08",
     "articles": [
+      {
+        "url": "https://swarajyamag.com/news-brief/india-deepens-latin-american-trade-ties-eyes-critical-mineral-security-through-ftas-with-peru-and-chile",
+        "title": "India Deepens Latin American Trade Ties, Eyes Critical Mineral Security Through FTAs With Peru And Chile - Swarajyamag",
+        "source": "Swarajyamag",
+        "published_at": "2025-11-06 08:14:14+00",
+        "img_url": "https://swarajya.gumlet.io/swarajya/2025-08-15/72nzqa3e/PM-Modi-on-Critical-Minerals?w=1200&h=600&format=jpg"
+      },
       {
         "url": "https://www.upi.com/Top_News/World-News/2025/10/31/chile-constitutional-reform-border-security/5601761933416/",
         "title": "Chile's president pushes constitutional reform for more border control - upi.com",
         "source": "upi.com",
         "published_at": "2025-10-31 18:10:39+00",
         "img_url": "https://cdnph.upi.com/sv/ph/og/i/5601761933416/2025/1/17619341592638/v1.5/Chiles-president-pushes-constitutional-reform-for-more-border-control.jpg"
-      },
-      {
-        "url": "https://www.bloomberg.com/news/articles/2025-10-28/chile-central-bank-keeps-interest-rate-at-4-75",
-        "title": "Chile Central Bank Keeps Interest Rate at 4.75%, Guarding Against Inflation - Bloomberg.com",
-        "source": "Bloomberg.com",
-        "published_at": "2025-10-28 22:48:04+00",
-        "img_url": "https://assets.bwbx.io/images/users/iqjWHBFdfxIU/i5HR_IYlOlOM/v1/1200x800.jpg"
       },
       {
         "url": "https://www.as-coa.org/articles/poll-tracker-chiles-2025-presidential-election",
@@ -219,36 +226,43 @@
   {
     "iso2": "CN",
     "name": "China",
-    "as_of": "2025-11-06",
+    "as_of": "2025-11-08",
     "articles": [
       {
-        "url": "https://www.defensepriorities.org/opinion/chinas-flashy-aircraft-carriers-are-no-threat-to-us-national-security/",
-        "title": "China’s flashy aircraft carriers are no threat to U.S. national security - Defense Priorities",
-        "source": "Defense Priorities",
-        "published_at": "2025-11-05 22:52:15+00",
-        "img_url": "https://www.defensepriorities.org/wp-content/uploads/2025/09/SOUTH-CHINA-SEA-May-3-2016-The-aircraft-carrier-USS-John-C.-Stennis-CVN-74-transits-through-the-South-China-Sea-scaled.jpg"
+        "url": "https://www.reuters.com/world/china/germany-re-examine-security-relevant-china-trade-policies-2025-11-08/",
+        "title": "Germany to re-examine 'security-relevant' China trade policies - Reuters",
+        "source": "Reuters",
+        "published_at": "2025-11-08 14:47:53+00",
+        "img_url": null
       },
       {
-        "url": "https://scanx.trade/stock-market-news/global/people-s-bank-of-china-resumes-government-bond-purchases-after-9-month-hiatus/23852810",
-        "title": "People's Bank of China Resumes Government Bond Purchases After 9-Month Hiatus - scanx.trade",
-        "source": "scanx.trade",
-        "published_at": "2025-11-05 01:57:04+00",
-        "img_url": "http://news-images.dhan.co/people-s-bank-of-china-resumes-government-bond-purchases-after-9-month-hiatus.jpg"
+        "url": "https://www.defenseone.com/threats/2025/11/pacific-soldiers-push-forward-transformation-eye-china/409412/",
+        "title": "Pacific soldiers push forward with transformation, with an eye on China - Defense One",
+        "source": "Defense One",
+        "published_at": "2025-11-07 21:10:34+00",
+        "img_url": "https://cdn.defenseone.com/media/img/cd/2025/11/07/9075858/open-graph.jpg"
       },
       {
-        "url": "https://www.theparliamentmagazine.eu/news/article/how-europe-became-collateral-damage-in-the-uschina-trade-war",
-        "title": "How Europe became 'collateral damage' in the US-China trade war - The Parliament Magazine",
-        "source": "The Parliament Magazine",
-        "published_at": "2025-11-03 16:32:33+00",
-        "img_url": "https://www.theparliamentmagazine.eu/siteimg/share/ugc-1/fullnews/news/25370/25214_original.jpg"
+        "url": "https://www.cnn.com/2025/11/07/world/video/china-missiles-military-satellite-vrtc",
+        "title": "Exclusive: Satellite images show dramatic growth of China’s military production sites - CNN",
+        "source": "CNN",
+        "published_at": "2025-11-07 17:25:00+00",
+        "img_url": "https://media.cnn.com/api/v1/images/stellar/prod/251107-china-missiles-satellite-thumbnail-1-clean.png?c=16x9&q=w_800,c_fill"
       }
     ]
   },
   {
     "iso2": "CO",
     "name": "Colombia",
-    "as_of": "2025-11-06",
+    "as_of": "2025-11-08",
     "articles": [
+      {
+        "url": "https://www.codepink.org/washington_targets_petro",
+        "title": "Washington Targets Colombia’s Progressive President in Unprecedented Sanctions Move - CODEPINK - Women for Peace",
+        "source": "CODEPINK - Women for Peace",
+        "published_at": "2025-11-07 21:12:29+00",
+        "img_url": "https://assets.nationbuilder.com/codepink/pages/64034/meta_images/original/image_%281%29.jpg?1762548493"
+      },
       {
         "url": "https://www.tradingview.com/news/reuters.com,2025:newsml_S0N3O601D:0-colombia-central-bank-revises-inflation-predictions-for-this-year-next-upward/",
         "title": "Colombia central bank revises inflation predictions for this year, next, upward - TradingView",
@@ -257,32 +271,32 @@
         "img_url": "https://s.tradingview.com/static/images/illustrations/news-story.jpg"
       },
       {
-        "url": "https://www.investing.com/news/world-news/colombias-central-bank-holds-interest-rate-at-925-amid-inflation-concerns-93CH-4325180",
-        "title": "Colombia’s central bank holds interest rate at 9.25% amid inflation concerns - Investing.com",
-        "source": "Investing.com",
-        "published_at": "2025-10-31 19:01:32+00",
+        "url": "https://in.investing.com/news/world-news/colombias-central-bank-holds-interest-rate-at-925-amid-inflation-concerns-93CH-5078317",
+        "title": "Colombia’s central bank holds interest rate at 9.25% amid inflation concerns - Investing.com India",
+        "source": "Investing.com India",
+        "published_at": "2025-10-31 19:00:53+00",
         "img_url": null
-      },
-      {
-        "url": "https://www.thehindu.com/news/international/us-imposes-sanctions-on-colombias-president-and-family-members-over-drug-trade-allegations/article70202223.ece",
-        "title": "U.S. imposes sanctions on Colombia’s President and family members over drug trade allegations - The Hindu",
-        "source": "The Hindu",
-        "published_at": "2025-10-25 07:00:00+00",
-        "img_url": "https://th-i.thgim.com/public/incoming/x2668/article70202884.ece/alternates/LANDSCAPE_1200/2025-10-25T002457Z_1005575808_RC2OIHA6C02W_RTRMADP_3_COLOMBIA-POLITICS.JPG"
       }
     ]
   },
   {
     "iso2": "DK",
     "name": "Denmark",
-    "as_of": "2025-11-06",
+    "as_of": "2025-11-08",
     "articles": [
       {
-        "url": "https://securityboulevard.com/2025/11/denmarks-digital-defense-2025-ai-security-cutting-cyber-losses-by-billions/",
-        "title": "Denmark’s Digital Defense 2025: AI Security Cutting Cyber Losses by Billions - Security Boulevard",
-        "source": "Security Boulevard",
-        "published_at": "2025-11-04 23:51:05+00",
-        "img_url": "https://securityboulevard.com/wp-content/uploads/2018/01/TwitterLogo-002.jpg"
+        "url": "https://www.pbs.org/newshour/world/denmarks-government-aims-to-ban-access-to-social-media-for-children-aged-under-15",
+        "title": "Denmark’s government aims to ban access to social media for children aged under 15 - PBS",
+        "source": "PBS",
+        "published_at": "2025-11-07 18:02:24+00",
+        "img_url": "https://d3i6fh83elv35t.cloudfront.net/static/2021/10/GettyImages-1182116418-1024x731.jpg"
+      },
+      {
+        "url": "https://www.travelandtourworld.com/news/article/thailand-joins-denmark-saudi-arabia-brazil-poland-france-and-india-as-germany-issues-new-travel-advisory-amid-border-restrictions-rising-security-threats-and-entry-fee-changes/",
+        "title": "Thailand Joins Denmark, Saudi Arabia, Brazil, Poland, France, And India As Germany Issues New Travel Advisory Amid Border Restrictions, Rising Security Threats, And Entry Fee Changes - Travel And Tour World",
+        "source": "Travel And Tour World",
+        "published_at": "2025-11-07 11:12:37+00",
+        "img_url": "https://www.travelandtourworld.com/wp-content/uploads/2025/11/freepik__a-stunning-beach-in-tha.jpg"
       },
       {
         "url": "https://www.atlanticcouncil.org/event/denmarks-defense-minister-on-transatlantic-security-on-natos-northeastern-flank/",
@@ -290,27 +304,27 @@
         "source": "Atlantic Council",
         "published_at": "2025-10-22 07:00:00+00",
         "img_url": "https://www.atlanticcouncil.org/wp-content/uploads/2025/10/Social-10-22-25-SCSS-Transatlantic-security-on-NATOs-Northeastern-flank.jpg"
-      },
-      {
-        "url": "https://www.androidcentral.com/apps-software/denmark-prime-minister-says-social-media-is-stealing-our-childrens-childhood",
-        "title": "Denmark's Prime Minister says social media is 'stealing our children's childhood.' Is it? - Android Central",
-        "source": "Android Central",
-        "published_at": "2025-10-11 07:00:00+00",
-        "img_url": "https://cdn.mos.cms.futurecdn.net/k7c2VW8eHbWtSaCgzLAa4P-2048-80.jpeg"
       }
     ]
   },
   {
     "iso2": "EG",
     "name": "Egypt",
-    "as_of": "2025-11-06",
+    "as_of": "2025-11-08",
     "articles": [
       {
-        "url": "https://www.middleeastmonitor.com/20251105-israeli-report-warns-of-potential-egypt-saudi-military-alliance/",
-        "title": "Israeli report warns of potential Egypt–Saudi military alliance - Middle East Monitor",
-        "source": "Middle East Monitor",
-        "published_at": "2025-11-05 09:03:00+00",
-        "img_url": null
+        "url": "https://www.egyptindependent.com/turkey-issues-genocide-arrest-warrants-against-netanyahu-and-other-israeli-officials/",
+        "title": "Turkey issues ‘genocide’ arrest warrants against Netanyahu and other Israeli officials - Egypt Independent",
+        "source": "Egypt Independent",
+        "published_at": "2025-11-08 13:28:59+00",
+        "img_url": "https://amayei.nyc3.digitaloceanspaces.com/2025/11/c-gettyimages-2238130926_jpg.jpg"
+      },
+      {
+        "url": "https://www.longwarjournal.org/archives/2025/11/israeli-defense-minister-declares-war-on-drones-smuggling-weapons-from-egypt.php",
+        "title": "Israeli defense minister declares ‘war’ on drones smuggling weapons from Egypt - The Long War Journal",
+        "source": "The Long War Journal",
+        "published_at": "2025-11-07 17:24:56+00",
+        "img_url": "https://www.longwarjournal.org/wp-content/uploads/2025/11/israel-katz-meeting-800.jpg"
       },
       {
         "url": "https://www.yemenonline.info/politics/10629",
@@ -318,145 +332,167 @@
         "source": "Yemen Online",
         "published_at": "2025-11-04 17:10:29+00",
         "img_url": "https://www.yemenonline.info/media/thumbs/news/1762276107019612800.png"
-      },
-      {
-        "url": "https://kenyanwallstreet.com/egypts-bank-keeps-interest-rate-unchanged",
-        "title": "Egypt's Central Bank Keeps Interest Rate Unchanged Despite Rising Inflation - The Kenyan Wallstreet",
-        "source": "The Kenyan Wallstreet",
-        "published_at": "2025-10-28 12:21:34+00",
-        "img_url": "https://assets.kenyanwallstreet.com/assets/c38c9490-f426-44f8-9ec4-375242c2751a.jpg"
       }
     ]
   },
   {
     "iso2": "FI",
     "name": "Finland",
-    "as_of": "2025-11-06",
+    "as_of": "2025-11-08",
     "articles": [
       {
-        "url": "https://www.turkiyetoday.com/nation/finland-values-turkiyes-security-role-in-europe-backs-defense-industry-partnership-3209508",
-        "title": "Finland values Türkiye's security role in Europe, backs defense industry partnership - Türkiye Today",
-        "source": "Türkiye Today",
-        "published_at": "2025-11-05 15:50:22+00",
-        "img_url": "https://img.turkiyetoday.com/images/2025/11/5/finland-values-turkiyes-security-role-in-europe-backs-defense-industry-partnership-3209508.jpg"
+        "url": "https://www.aa.com.tr/en/europe/finland-s-president-warns-of-new-nuclear-age-amid-rising-security-threats/3734497",
+        "title": "Finland’s president warns of 'new nuclear age' amid rising security threats - Anadolu Ajansı",
+        "source": "Anadolu Ajansı",
+        "published_at": "2025-11-04 08:24:10+00",
+        "img_url": "https://cdnuploads.aa.com.tr/uploads/Contents/2025/11/04/thumbs_b_c_eabfe1721a5b20ad173116d77ecd8f70.jpg?v=110940"
       },
       {
-        "url": "https://www.turkiyetoday.com/world/finlands-president-warns-world-has-entered-new-nuclear-age-amid-rising-tensions-3209489",
-        "title": "Finland’s president warns world has entered ‘new nuclear age’ amid rising tensions - Türkiye Today",
-        "source": "Türkiye Today",
-        "published_at": "2025-11-05 08:50:26+00",
-        "img_url": "https://img.turkiyetoday.com/images/2025/11/5/finlands-president-warns-world-has-entered-new-nuclear-age-amid-rising-tensions-3209489.jpg"
+        "url": "https://primeminister.kz/en/news/prime-minister-of-kazakhstan-olzhas-bektenov-discusses-with-president-of-finland-alexander-stubb-issues-of-developing-trade-and-economic-cooperation-30660",
+        "title": "Prime Minister of Kazakhstan Olzhas Bektenov Discusses with President of Finland Alexander Stubb Issues of Developing Trade and Economic Cooperation - Official Information Source of the - Үкімет",
+        "source": "Үкімет",
+        "published_at": "2025-10-28 07:00:00+00",
+        "img_url": "https://primeminister.kz/assets/media/535454.jpg"
       },
       {
-        "url": "https://www.firstpost.com/world/finland-president-stubb-interview-with-firstpost-ukraine-russia-war-trump-peace-plan-13947515.html",
-        "title": "How can Ukraine end war with Russia? Finland’s President Stubb says it should ‘learn from our mistake’ - Firstpost",
-        "source": "Firstpost",
-        "published_at": "2025-11-03 13:51:16+00",
-        "img_url": "https://images.firstpost.com/uploads/2025/09/Untitled-design-2025-09-24T125825.474-2025-09-531c23b59a33d5699591855ca3f9058f.jpg?im=FitAndFill=(1200,675)"
+        "url": "https://valtioneuvosto.fi/en/-/prime-minister-orpo-meets-with-ukrainian-president-zelenskyy-at-european-council-zelenskyy-expresses-gratitude-to-finland",
+        "title": "Prime Minister Orpo meets with Ukrainian President Zelenskyy at European Council – Zelenskyy expresses gratitude to Finland - Finnish Government - Valtioneuvosto",
+        "source": "Valtioneuvosto",
+        "published_at": "2025-10-24 08:26:06+00",
+        "img_url": "https://valtioneuvosto.fi/documents/194055633/231297728/Orpo+ja+Zelenskyi+23.10.2025.jpg/ae9e459b-175e-2cde-f632-b42d20c00777?t=1761229446452"
       }
     ]
   },
   {
     "iso2": "FR",
     "name": "France",
-    "as_of": "2025-11-06",
+    "as_of": "2025-11-08",
     "articles": [
       {
-        "url": "https://foreignpolicy.com/2025/11/05/france-mali-al-qaeda-terrorism-sahel-macron-trump-nigeria/",
-        "title": "France’s Failure in Mali Threatens the World - Foreign Policy",
-        "source": "Foreign Policy",
-        "published_at": "2025-11-05 16:47:30+00",
-        "img_url": "https://foreignpolicy.com/wp-content/uploads/2025/11/france-mali-al-qaeda-terrorism-sahel-macron-trump-nigeria-1233389353.jpg?w=1000"
+        "url": "https://onu.delegfrance.org/france-welcomes-the-adoption-of-the-resolution-lifting-the-security-council",
+        "title": "France welcomes the adoption of the resolution lifting the sanctions against Syrian President - France ONU",
+        "source": "France ONU",
+        "published_at": "2025-11-06 21:45:14+00",
+        "img_url": "https://onu.delegfrance.org/IMG/arton15992.jpg?1762465286"
       },
       {
-        "url": "https://www.lemonde.fr/en/politics/article/2025/11/04/for-france-s-prime-minister-a-budget-endurance-race_6747076_5.html",
-        "title": "For France's prime minister, a budget 'endurance race' - Le Monde.fr",
-        "source": "Le Monde.fr",
-        "published_at": "2025-11-04 04:00:05+00",
-        "img_url": "https://img.lemde.fr/2025/10/14/0/0/5834/3889/1440/960/60/0/7d10f6e_ftp-import-images-1-mivhcysugvn1-2025-10-14t135153z-1426455426-rc2pbhagkldm-rtrmadp-3-france-politics.JPG"
+        "url": "https://www.banque-france.fr/en/publications-and-statistics/publications/do-stablecoins-affect-monetary-policy-transmission",
+        "title": "Do stablecoins affect monetary policy transmission? - Banque de France",
+        "source": "Banque de France",
+        "published_at": "2025-11-06 12:55:51+00",
+        "img_url": "https://www.banque-france.fr/sites/bdf_espaces2/themes/custom/bdf_espaces2/assets/images/default.png"
+      },
+      {
+        "url": "https://www.euractiv.com/news/frances-2026-budget-talks-stall-amid-fears-of-government-bypass/",
+        "title": "France’s 2026 budget talks stall amid fears of government bypass - Euractiv",
+        "source": "Euractiv",
+        "published_at": "2025-11-04 16:13:55+00",
+        "img_url": "https://www.euractiv.com/content/uploads/sites/2/2025/11/GettyImages-2243572343.jpg"
       }
     ]
   },
   {
     "iso2": "DE",
     "name": "Germany",
-    "as_of": "2025-11-06",
+    "as_of": "2025-11-08",
     "articles": [
       {
-        "url": "https://mezha.net/eng/bukvy/germany-s-national-security-council-holds-inaugural-meeting-on-hybrid-threats/",
-        "title": "Germany's National Security Council Holds Inaugural Meeting on Hybrid Threats - Букви",
-        "source": "Букви",
-        "published_at": "2025-11-05 19:23:42+00",
-        "img_url": "https://mezha.net/eng/kd_image_generate/germany-s-national-security-council-holds-inaugural-meeting-on-hybrid-threats/496991.jpg?ver=0.0.4"
+        "url": "https://www.washingtonpost.com/world/2025/11/08/germany-defense-minister-boris-pistorius/",
+        "title": "Germany’s gruff defense minister aims to make his country ‘war-ready’ - The Washington Post",
+        "source": "The Washington Post",
+        "published_at": "2025-11-08 16:30:31+00",
+        "img_url": "https://www.washingtonpost.com/wp-apps/imrs.php?src=https://arc-anglerfish-washpost-prod-washpost.s3.amazonaws.com/public/3F6YBJG4R5FPJC7W2WWGMTPNDA_size-normalized.jpg&w=1440"
       },
       {
-        "url": "https://www.bloomberg.com/news/articles/2025-11-05/germany-clears-1-9-billion-in-defense-orders-in-military-boost",
-        "title": "Germany Clears €1.9 Billion in Defense Orders in Military Boost - Bloomberg.com",
-        "source": "Bloomberg.com",
-        "published_at": "2025-11-05 19:04:45+00",
-        "img_url": "https://assets.bwbx.io/images/users/iqjWHBFdfxIU/ipsUr7JtFwnM/v1/1200x715.jpg"
+        "url": "https://www.reuters.com/world/china/germany-re-examine-security-relevant-china-trade-policies-2025-11-08/",
+        "title": "Germany to re-examine 'security-relevant' China trade policies - Reuters",
+        "source": "Reuters",
+        "published_at": "2025-11-08 14:47:53+00",
+        "img_url": null
       },
       {
-        "url": "https://syrianobserver.com/syrian-actors/syrian-president-sharaa-expected-to-visit-germany-preceded-by-foreign-ministers-diplomatic-mission.html",
-        "title": "Syrian President Sharaa Expected to Visit Germany, Preceded by Foreign Minister’s Diplomatic Mission - The Syrian Observer",
-        "source": "The Syrian Observer",
-        "published_at": "2025-11-04 22:08:47+00",
-        "img_url": "https://syrianobserver.com/wp-content/uploads/2025/11/President-al-Sharaa-Chairs-Supreme-Development-Council-to-Review-Investment-Strategy.jpg"
+        "url": "https://ecre.org/germany-merz-under-fire-for-racist-comment-%E2%80%95-government-possibly-close-to-deportation-deal-with-taliban-%E2%80%95-coalition-disagreement-over-deportation-centres-%E2%80%95-p/",
+        "title": "GERMANY: Merz under fire for ‘racist’ comment ― Government possibly close to deportation deal with Taliban ― Coalition disagreement over deportation centres ― Parliament votes to scrap fast-track citizenship ― Council of Europe visit focused on migratio - European Council on Refugees and Exiles (ECRE) |",
+        "source": "European Council on Refugees and Exiles (ECRE) |",
+        "published_at": "2025-10-23 07:00:00+00",
+        "img_url": "https://ecre.org/wp-content/uploads/2025/02/GERMANY-2025-1080x675.png"
       }
     ]
   },
   {
     "iso2": "GR",
     "name": "Greece",
-    "as_of": "2025-11-06",
+    "as_of": "2025-11-08",
     "articles": [
       {
-        "url": "https://greekreporter.com/2025/11/05/germany-proposal-armored-vehicles-transform-greece-military/",
-        "title": "Germany’s Proposal for 400 Armored Vehicles Could Transform Greece’s Military Power - GreekReporter.com",
-        "source": "GreekReporter.com",
-        "published_at": "2025-11-05 16:39:44+00",
-        "img_url": "https://greekreporter.com/wp-content/uploads/2025/11/german-leopard-credit-wikimedia-commons-Boevaya-mashina-cc-by-sa-4-0.jpg"
+        "url": "https://www.turkiyetoday.com/region/general-floros-calls-turkiye-enemy-says-greece-lacks-defense-capability-3209620",
+        "title": "General Floros calls Türkiye 'enemy,' says Greece lacks defense capability - Türkiye Today",
+        "source": "Türkiye Today",
+        "published_at": "2025-11-08 10:27:00+00",
+        "img_url": "https://img.turkiyetoday.com/images/2025/11/8/general-floros-calls-turkiye-enemy-says-greece-lacks-defense-capability-3209620.jpg"
       },
       {
-        "url": "https://www.euronews.com/2025/10/17/greeces-parliament-approves-bill-extending-working-hours-despite-nationwide-protests",
-        "title": "Greece's parliament approves bill extending working hours despite nationwide protests - Euronews.com",
-        "source": "Euronews.com",
-        "published_at": "2025-10-17 07:00:00+00",
-        "img_url": "https://static.euronews.com/articles/stories/09/51/47/51/1200x675_cmsv2_732e52ed-e500-57a6-9ff1-14f6f1fc99d9-9514751.jpg"
+        "url": "https://mezha.net/eng/bukvy/ukraine-to-import-american-lng-via-greece-to-boost-energy-security/",
+        "title": "Ukraine to Import American LNG via Greece to Boost Energy Security - Букви",
+        "source": "Букви",
+        "published_at": "2025-11-07 22:07:32+00",
+        "img_url": "https://mezha.net/eng/kd_image_generate/ukraine-to-import-american-lng-via-greece-to-boost-energy-security/517672.jpg?ver=0.0.4"
       },
       {
-        "url": "https://defence24.com/geopolitics/france-and-greece-a-new-military-alliance",
-        "title": "France and Greece - A new military alliance - Defence24.com",
-        "source": "Defence24.com",
-        "published_at": "2025-10-17 07:00:00+00",
-        "img_url": "https://cdn.defence24.pl/2025/10/14/320x180px/QQw2MN7KkjoL4trGHijQ3feQUR9WzqLahC9oGsg7.gixf.png"
+        "url": "https://www.tovima.com/politics/greece-us-sign-economic-security-declaration-in-athens/",
+        "title": "Greece, US Sign Economic Security Declaration in Athens - tovima.com",
+        "source": "tovima.com",
+        "published_at": "2025-11-07 21:25:52+00",
+        "img_url": "https://www.tovima.com/wp-content/uploads/2025/11/07/guilfoyle_proclamation.jpg"
       }
     ]
   },
   {
     "iso2": "HK",
     "name": "Hong Kong SAR, China",
-    "as_of": "2025-11-06",
-    "articles": []
+    "as_of": "2025-11-08",
+    "articles": [
+      {
+        "url": "https://kpmg.com/cn/en/home/media/press-releases/2025/11/hk-s-private-wealth-management-industry-sees-robust-growth-as-client-confidence-reaches-three-year-high.html",
+        "title": "Hong Kong's Private Wealth Management Industry Sees ... - KPMG",
+        "source": "KPMG",
+        "published_at": "2025-11-06 03:03:36+00",
+        "img_url": "https://assets.kpmg.com/is/image/kpmg/hk-observation-wheel:cq5dam.web.1200.600"
+      },
+      {
+        "url": "https://www.indexbox.io/store/hong-kong-sar-china-honey-market-analysis-forecast-size-trends-and-insights/",
+        "title": "Hong Kong SAR, China's Honey Market Report 2025 - Prices, Size, Forecast, and Companies - IndexBox",
+        "source": "IndexBox",
+        "published_at": "2025-11-01 07:00:00+00",
+        "img_url": "https://www.indexbox.io/landing/img/prod_img/Honey.webp"
+      },
+      {
+        "url": "https://www.jll.com/en-hk/newsroom/hong-kong-office-market-posts-strong-third-quarter-rebound-amid-rising-leasing-demand",
+        "title": "Hong Kong office market posts strong third quarter rebound amid rising leasing demand - JLL",
+        "source": "JLL",
+        "published_at": "2025-10-21 07:00:00+00",
+        "img_url": "https://www.jll.com/content/dam/jllcom/non-text/images/stock/news/25-newsroom-hong-kong-office-market-posts-strong-third-quarter.jpg"
+      }
+    ]
   },
   {
     "iso2": "HU",
     "name": "Hungary",
-    "as_of": "2025-11-06",
+    "as_of": "2025-11-08",
     "articles": [
       {
-        "url": "https://europeanconservative.com/articles/news/eu-parliament-libe-hungary-rule-of-law-hybrid-regime-accusations/",
-        "title": "EU Parliament Reignites Article 7 Offensive in Political War on Hungary - The European Conservative",
-        "source": "The European Conservative",
-        "published_at": "2025-11-05 17:12:27+00",
-        "img_url": "https://europeanconservative.com/wp-content/uploads/2025/11/tineke-strik.jpg"
+        "url": "https://www.reuters.com/business/energy/hungarys-waiver-us-sanctions-russia-energy-is-indefinite-minister-says-2025-11-08/",
+        "title": "Hungary's waiver from US sanctions on Russia energy is indefinite, minister says - Reuters",
+        "source": "Reuters",
+        "published_at": "2025-11-08 16:52:23+00",
+        "img_url": null
       },
       {
-        "url": "https://sis.gov.eg/en/presidency/presidents-receptions/president-el-sisi-meets-prime-minister-of-hungary/",
-        "title": "President El-Sisi praises Hungary’s support for Egypt’s positions within EU institutions - الهيئة العامة للاستعلامات",
-        "source": "الهيئة العامة للاستعلامات",
-        "published_at": "2025-11-05 16:13:55+00",
-        "img_url": null
+        "url": "https://www.nbcnews.com/world/hungary/trump-boosts-hungary-far-right-orban-russian-energy-sanctions-carve-rcna242543",
+        "title": "Trump boosts Hungary's far-right Orbán with Russian energy sanctions carve-out - NBC News",
+        "source": "NBC News",
+        "published_at": "2025-11-08 13:33:21+00",
+        "img_url": "https://media-cldnry.s-nbcnews.com/image/upload/t_nbcnews-fp-1200-630,f_auto,q_auto:best/rockcms/2025-11/251107-donald-trump-viktor-orban-mn-1250-399c09.jpg"
       },
       {
         "url": "https://www.investing.com/news/economy-news/hungarys-central-bank-keeps-policy-rate-at-65-93CH-4299547",
@@ -470,27 +506,27 @@
   {
     "iso2": "IN",
     "name": "India",
-    "as_of": "2025-11-06",
+    "as_of": "2025-11-08",
     "articles": [
       {
-        "url": "https://www.washingtonpost.com/world/2025/11/05/india-bihar-elections-modi-bjp/",
-        "title": "Elections in India’s poorest state put Modi’s party to the test - The Washington Post",
-        "source": "The Washington Post",
-        "published_at": "2025-11-05 16:00:05+00",
-        "img_url": "https://www.washingtonpost.com/wp-apps/imrs.php?src=https://arc-anglerfish-washpost-prod-washpost.s3.amazonaws.com/public/7XNAOXHIB5TKW3LSNP6C2PCVFM.jpg&w=1440"
+        "url": "https://nationalsecurityjournal.org/india-leases-russias-stealth-nuclear-attack-submarines/",
+        "title": "India Leases Russia’s ‘Stealth’ Nuclear Attack Submarines - National Security Journal",
+        "source": "National Security Journal",
+        "published_at": "2025-11-08 16:14:47+00",
+        "img_url": "https://nationalsecurityjournal.org/wp-content/uploads/2025/06/Akula-Class-Submarine-from-Russian-Navy.jpg"
       },
       {
-        "url": "https://www.reuters.com/world/india/india-central-bank-minutes-show-room-rate-cuts-inflation-outlook-softens-2025-10-15/",
-        "title": "India central bank minutes show room for rate cuts as inflation outlook softens - Reuters",
-        "source": "Reuters",
-        "published_at": "2025-10-15 07:00:00+00",
-        "img_url": null
+        "url": "https://www.indiatoday.in/world/story/india-operation-sindoor-pakistan-plans-unified-command-of-armed-forces-munir-27th-amendment-2815328-2025-11-08",
+        "title": "After India war lessons, Pakistan plans a unified command. More power for Munir? - India Today",
+        "source": "India Today",
+        "published_at": "2025-11-08 07:12:48+00",
+        "img_url": "https://akm-img-a-in.tosshub.com/indiatoday/images/story/202511/pakistan-army-chief-asim-munir-162109695-16x9.png?VersionId=fHqPKu0mLqfLg51S8MwbobNs2.VKUiQn"
       },
       {
-        "url": "https://www.reuters.com/world/india/indian-central-bank-launch-pilot-deposit-tokenisation-official-says-2025-10-07/",
-        "title": "Indian central bank to launch pilot for certificates of deposit tokenisation, official says - Reuters",
-        "source": "Reuters",
-        "published_at": "2025-10-11 07:00:00+00",
+        "url": "https://www.pacom.mil/Media/NEWS/News-Article-View/Article/4328344/us-india-strengthen-defense-ties-at-22nd-military-cooperation-group/",
+        "title": "U.S., India strengthen defense ties at 22nd Military Cooperation Group - pacom.mil",
+        "source": "pacom.mil",
+        "published_at": "2025-11-05 05:20:51+00",
         "img_url": null
       }
     ]
@@ -498,168 +534,189 @@
   {
     "iso2": "ID",
     "name": "Indonesia",
-    "as_of": "2025-11-06",
+    "as_of": "2025-11-08",
     "articles": [
       {
-        "url": "https://www.businesstimes.com.sg/international/asean/indonesias-q3-growth-cools-protests-policy-shifts-test-investor-confidence",
-        "title": "Indonesia’s Q3 growth cools as protests, policy shifts test investor confidence - The Business Times",
-        "source": "The Business Times",
-        "published_at": "2025-11-05 04:29:00+00",
-        "img_url": "https://cassette.sphdigital.com.sg/image/businesstimes/c744759635bc06111eb1e2ea04af5722682f66c349960578e5bf9625b1dadfb2?w=1200&f=webp"
+        "url": "https://www.foxnews.com/sports/team-israel-gymnastics-security-cleared-athletes-enter-indonesia-ban-safety",
+        "title": "Israel gymnastics team says its security cleared athletes to enter Indonesia despite being banned for 'safety' - Fox News",
+        "source": "Fox News",
+        "published_at": "2025-11-07 13:05:10+00",
+        "img_url": "https://static.foxnews.com/foxnews.com/content/uploads/2025/10/gymnast-pro-palestine-protest-split-2.jpg"
       },
       {
-        "url": "https://www.thestar.com.my/aseanplus/aseanplus-news/2025/11/03/indonesia-central-bank-to-direct-monetary-policy-to-maintain-stability-support-growth",
-        "title": "Indonesia central bank to direct monetary policy to maintain stability, support growth - The Star",
-        "source": "The Star",
-        "published_at": "2025-11-03 10:28:00+00",
-        "img_url": "https://apicms.thestar.com.my/uploads/images/2025/11/03/3603774.jpg"
+        "url": "https://asia.nikkei.com/business/finance/indonesian-banks-brace-for-government-policy-headwinds-after-profit-slump",
+        "title": "Indonesian banks brace for government policy headwinds after profit slump - Nikkei Asia",
+        "source": "Nikkei Asia",
+        "published_at": "2025-11-05 00:08:00+00",
+        "img_url": "https://images.ft.com/v3/image/raw/https%3A%2F%2Fcms-image-bucket-productionv3-ap-northeast-1-a7d2.s3.ap-northeast-1.amazonaws.com%2Fimages%2F6%2F7%2F4%2F5%2F11645476-1-eng-GB%2F250ff406d5ee-2a.jpg?width=1260&fit=cover&gravity=faces&dpr=2&quality=medium&source=nar-cms&format=auto&height=630"
       },
       {
-        "url": "https://www.netinfluencer.com/tiktok-regains-indonesia-operating-license-after-sharing-protest-data-with-government/",
-        "title": "TikTok Regains Indonesia Operating License After Sharing Protest Data With Government - Net Influencer",
-        "source": "Net Influencer",
-        "published_at": "2025-10-07 07:00:00+00",
-        "img_url": "https://www.netinfluencer.com/wp-content/uploads/2025/10/tiktok-regains-indonesia-operating-license-after-sharing-protest-data-with-government-20251007_142804-af9587-1000x600.png"
+        "url": "https://uk.finance.yahoo.com/news/indonesia-may-buy-four-more-070556923.html",
+        "title": "Indonesia may buy four more Airbus A400M military planes, president says - Yahoo Finance UK",
+        "source": "Yahoo Finance UK",
+        "published_at": "2025-11-03 07:05:00+00",
+        "img_url": "https://media.zenfs.com/en/reuters.com/9aeff9c57699be1a41fce3cc6287931d"
       }
     ]
   },
   {
     "iso2": "IE",
     "name": "Ireland",
-    "as_of": "2025-11-06",
+    "as_of": "2025-11-08",
     "articles": [
       {
-        "url": "https://www.peoplesworld.org/article/in-ireland-a-popular-mandate-against-the-government/",
-        "title": "In Ireland, a popular mandate against the government - People's World",
-        "source": "People's World",
-        "published_at": "2025-11-05 19:00:29+00",
-        "img_url": "https://www.peoplesworld.org/wp-content/uploads/2025/11/Catherine-Connoly-Ireland.png"
+        "url": "https://www.irishtimes.com/ireland/2025/11/08/ireland-considers-asking-eu-nations-for-security-help-during-presidency-including-warship/",
+        "title": "Ireland may seek aid of French warship to boost security during EU presidency - The Irish Times",
+        "source": "The Irish Times",
+        "published_at": "2025-11-08 06:03:01+00",
+        "img_url": "https://www.irishtimes.com/resizer/v2/XFQB7EIKMMMLI4BF3TRWHSRKO4.jpg?smart=true&auth=ad4f48eef39bca2844c03955320ded84818e3aacfd361499bf09d5b84a8c7459&width=1200&height=630"
+      },
+      {
+        "url": "https://www.eurasiareview.com/07112025-irelands-anti-israel-president-oped/",
+        "title": "Ireland’s Anti-Israel President – OpEd - Eurasia Review",
+        "source": "Eurasia Review",
+        "published_at": "2025-11-07 17:30:46+00",
+        "img_url": null
+      },
+      {
+        "url": "https://www.thesun.ie/money/16066393/irelands-central-cryptocurrency-coinbase-fine/",
+        "title": "Ireland's Central Bank slaps cryptocurrency firm Coinbase with €21.5m fine - The Irish Sun",
+        "source": "The Irish Sun",
+        "published_at": "2025-11-06 14:16:11+00",
+        "img_url": "https://www.thesun.ie/wp-content/uploads/sites/3/2025/11/newspress-collage-e8uf8gcl0-1762437649864.jpg?quality=90&strip=all&1762437657&w=1920&h=1080&crop=1"
       }
     ]
   },
   {
     "iso2": "IL",
     "name": "Israel",
-    "as_of": "2025-11-06",
+    "as_of": "2025-11-08",
     "articles": [
       {
-        "url": "https://www.timesofisrael.com/media-bill-wont-give-government-direct-editorial-control-but-risks-putting-press-in-biased-moneyed-hands/",
-        "title": "Media bill won’t give government direct editorial control, but risks putting press in biased, moneyed hands - The Times of Israel",
-        "source": "The Times of Israel",
-        "published_at": "2025-11-05 14:48:40+00",
-        "img_url": "https://static-cdn.toi-media.com/www/uploads/2025/11/F230501YS310-e1762353456105.jpg"
+        "url": "https://thecradle.co/articles-id/34177",
+        "title": "'PR stunt': Israel rejects arrest warrants issued by Turkiye for Netanyahu - thecradle.co",
+        "source": "thecradle.co",
+        "published_at": "2025-11-08 13:46:25+00",
+        "img_url": "https://thecradle-main.oss-eu-central-1.aliyuncs.com/public/articles/98c881ee-bca7-11f0-91b8-00163e02c055.webp"
       },
       {
-        "url": "https://www.nbcnews.com/world/israel/israel-idf-lawyer-arrest-leaked-abuse-video-palestinian-prisoners-gaza-rcna241541",
-        "title": "How the arrest of the military's top lawyer over a leaked abuse video has rocked Israel - NBC News",
-        "source": "NBC News",
-        "published_at": "2025-11-04 16:00:54+00",
-        "img_url": "https://media-cldnry.s-nbcnews.com/image/upload/t_nbcnews-fp-1200-630,f_auto,q_auto:best/rockcms/2025-11/251103-tomer-yerushalmi-rs-cb45f1.jpg"
+        "url": "https://www.koco.com/article/israel-rocked-by-scandal-as-top-military-lawyer-resigns-goes-missing-is-found-and-thrown-into-jail/69274991",
+        "title": "Scandal in Israel: Leaked video of prisoner abuse leads to military lawyer's arrest - KOCO",
+        "source": "KOCO",
+        "published_at": "2025-11-07 23:54:00+00",
+        "img_url": "https://kubrick.htvapps.com/htv-prod-media.s3.amazonaws.com/images/ap2690e85052ba37.jpg?crop=1.00xw:0.847xh;0,0.0600xh&resize=1200:*"
       },
       {
-        "url": "https://www.reuters.com/world/middle-east/israels-2026-budget-may-hold-key-governments-survival-or-new-elections-2025-11-04/",
-        "title": "Israel's 2026 budget may hold key to government's survival or new elections - Reuters",
-        "source": "Reuters",
-        "published_at": "2025-11-04 15:49:06+00",
-        "img_url": null
+        "url": "https://www.ynetnews.com/business/article/rjnasfnkzx",
+        "title": "Pressure mounts on Israel's central bank to cut interest rates - Ynetnews",
+        "source": "Ynetnews",
+        "published_at": "2025-11-02 07:24:33+00",
+        "img_url": "https://ynet-pic1.yit.co.il/picserver6/crop_images/2024/02/25/BJ4Fbh00ha/BJ4Fbh00ha_0_16_1024_577_0_large.jpg"
       }
     ]
   },
   {
     "iso2": "IT",
     "name": "Italy",
-    "as_of": "2025-11-06",
+    "as_of": "2025-11-08",
     "articles": [
       {
-        "url": "https://english.elpais.com/international/2025-11-03/arrest-in-italy-shines-a-light-on-the-murky-ties-between-the-mafia-neo-fascists-and-the-secret-service-during-the-cold-war.html",
-        "title": "Arrest in Italy shines a light on the murky ties between the Mafia, neo-fascists and the secret service during the Cold War - EL PAÍS English",
-        "source": "EL PAÍS English",
-        "published_at": "2025-11-03 17:28:10+00",
-        "img_url": "https://imagenes.elpais.com/resizer/v2/B6BHK6WRC5I7PNEBYBIRYPKQXQ.jpg?auth=5ea6db035d285c61f7c222a8bf159714ef46d1445ece91bfb0f74d36a5f86de4&width=1200"
+        "url": "https://en.yenisafak.com/world/italy-moves-to-rebuild-economic-relations-with-syrias-new-government-3710316",
+        "title": "Italy moves to rebuild economic relations with Syria's new government - Yeni Safak English",
+        "source": "Yeni Safak English",
+        "published_at": "2025-11-06 21:32:47+00",
+        "img_url": "https://img.piri.net/piri/upload/3/2025/11/7/b4111036-vnk7m7mqt6b4k0avwt2rbh.webp"
       },
       {
-        "url": "https://www.pen-international.org/news/italy-writer-roberto-saviano-found-guilty-of-defaming-italian-prime-minister",
-        "title": "Italy: Writer Roberto Saviano found guilty of defaming Italian Prime Minister - PEN International",
-        "source": "PEN International",
-        "published_at": "2025-10-12 07:00:00+00",
-        "img_url": "http://static1.squarespace.com/static/628f9ae10b12c8255bd8814d/6298db625ac70e646e1763c6/65282b407898d15d4138bf66/1702983063874/Saviano+%281%29.jpg?format=1500w"
+        "url": "https://ecre.org/italy-prime-minister-joins-other-eu-leaders-for-informal-migration-summit-media-investigation-into-italy-albania-migration-deal-humanitarians-on-trial-in-sicily-icc-rule/",
+        "title": "ITALY: Prime Minister joins other EU leaders for informal migration summit – Media investigation into Italy-Albania migration deal – Humanitarians on trial in Sicily – ICC rules on Italy’s handling of Almasri case – Italy-Libya MoU renewed | European Council on - European Council on Refugees and Exiles (ECRE) |",
+        "source": "European Council on Refugees and Exiles (ECRE) |",
+        "published_at": "2025-10-30 13:28:07+00",
+        "img_url": "https://ecre.org/wp-content/uploads/2025/03/ITALY-2025.jpg"
       },
       {
-        "url": "https://www.nytimes.com/2025/10/08/world/europe/democracy-athens-forum-italy-protesters.html",
-        "title": "A New Security Decree Weighs Heavily on Italy’s Young Protesters - The New York Times",
-        "source": "The New York Times",
-        "published_at": "2025-10-08 07:00:00+00",
-        "img_url": null
+        "url": "https://www.aa.com.tr/en/europe/italy-closer-to-recognizing-palestine-after-gaza-agreement-prime-minister/3716381",
+        "title": "Italy closer to recognizing Palestine after Gaza agreement: Prime minister - Anadolu Ajansı",
+        "source": "Anadolu Ajansı",
+        "published_at": "2025-10-14 07:00:00+00",
+        "img_url": "https://cdnuploads.aa.com.tr/uploads/Contents/2025/10/14/thumbs_b_c_f5ec26f36704a9eb9aa7c44b0a180611.jpg?v=021636"
       }
     ]
   },
   {
     "iso2": "JP",
     "name": "Japan",
-    "as_of": "2025-11-06",
+    "as_of": "2025-11-08",
     "articles": [
       {
-        "url": "https://theins.ru/en/politics/286516",
-        "title": "Iron Lady 2.0: Japan’s first female prime minister is taking a harder line than most of her predecessors - theins.ru",
-        "source": "theins.ru",
-        "published_at": "2025-11-05 12:11:06+00",
-        "img_url": "https://theins.ru/storage/post/286516/screen20251105-1-2z9iaw.png?1762397274"
+        "url": "https://news.usni.org/2025/11/06/overview-of-japans-defense-budget-request-for-fiscal-year-2026",
+        "title": "Overview of Japan’s Defense Budget Request for Fiscal Year 2026 - USNI News",
+        "source": "USNI News",
+        "published_at": "2025-11-06 20:51:00+00",
+        "img_url": "https://news.usni.org/wp-content/uploads/2025/11/Screenshot-2025-11-06-at-3.26.41-PM.png"
       },
       {
-        "url": "https://gfmag.com/economics-policy-regulation/japan-first-female-prime-minister-faces-crossroads/",
-        "title": "Japan: First Female Prime Minister Faces Crossroads - Global Finance Magazine",
-        "source": "Global Finance Magazine",
-        "published_at": "2025-11-05 10:54:47+00",
-        "img_url": "https://s44650.pcdn.co/wp-content/uploads/2025/11/Japan-Prime-Minister-scaled.png"
+        "url": "https://goodauthority.org/news/sanae-takaichi-japan-new-prime-minister-foreign-policy-challenges/",
+        "title": "Japan’s new prime minister faces big foreign policy challenges - Good Authority",
+        "source": "Good Authority",
+        "published_at": "2025-11-06 14:55:45+00",
+        "img_url": "https://goodauthority.org/wp-content/uploads/2025/11/2048px-Sanae_Takaichi_20251021_press_conference_1.jpg"
       },
       {
-        "url": "https://www.ft.com/content/2c5e23f9-d261-477e-9931-4095cef9da8d",
-        "title": "Scott Bessent calls on Japan to let central bank fight inflation - Financial Times",
-        "source": "Financial Times",
-        "published_at": "2025-10-29 06:33:45+00",
-        "img_url": "https://images.ft.com/v3/image/raw/https%3A%2F%2Fd1e00ek4ebabms.cloudfront.net%2Fproduction%2F368e4cb5-9150-45f7-ae5b-911a047645ca.jpg?source=next-barrier-page"
+        "url": "https://www.reuters.com/world/asia-pacific/bank-japan-must-tread-carefully-normalizing-policy-central-bank-official-says-2025-10-16/",
+        "title": "Bank of Japan must tread carefully in normalizing policy, central bank official says - Reuters",
+        "source": "Reuters",
+        "published_at": "2025-10-16 07:00:00+00",
+        "img_url": null
       }
     ]
   },
   {
     "iso2": "KZ",
     "name": "Kazakhstan",
-    "as_of": "2025-11-06",
+    "as_of": "2025-11-08",
     "articles": [
       {
-        "url": "https://primeminister.kz/en/news/prime-minister-of-kazakhstan-olzhas-bektenov-discusses-trade-and-economic-cooperation-with-united-states-presidential-special-representative-for-south-and-central-asia-sergio-gor-and-united-states-first-deputy-secretary-of-state-christopher-landau-30664",
-        "title": "Prime Minister of Kazakhstan Olzhas Bektenov Discusses Trade and Economic Cooperation with United States Presidential Special Representative for South and Central Asia Sergio Gor and United States First Deputy Secretary of State Christopher Landau - - PrimeMinister.kz",
-        "source": "PrimeMinister.kz",
-        "published_at": "2025-10-29 12:42:01+00",
-        "img_url": "https://primeminister.kz/assets/media/3543433545354.jpg"
+        "url": "https://thediplomat.com/2025/11/in-kazakhstan-energy-security-is-increasingly-in-danger/",
+        "title": "In Kazakhstan, Energy Security Is Increasingly in Danger - The Diplomat – Asia-Pacific Current Affairs Magazine",
+        "source": "The Diplomat – Asia-Pacific Current Affairs Magazine",
+        "published_at": "2025-11-03 13:33:36+00",
+        "img_url": "https://thediplomat.com/wp-content/uploads/2025/11/sizes/td-story-s-2/thediplomat_2025-11-03-221321.jpg"
       },
       {
         "url": "https://www.ifri.org/en/papers/kazakhstan-after-double-shock-2022-political-economic-and-military-consequences",
-        "title": "Kazakhstan After the Double Shock of 2022: Political, Economic and Military Consequences - Institut français des relations internationales (Ifri)",
-        "source": "Institut français des relations internationales (Ifri)",
+        "title": "Kazakhstan After the Double Shock of 2022: Political, Economic and Military Consequences - Ifri - Institut français des relations internationales",
+        "source": "Ifri - Institut français des relations internationales",
         "published_at": "2025-10-28 12:00:00+00",
         "img_url": "http://www.ifri.org/sites/default/files/2025-10/shutterstock_2072871230.jpg"
       },
       {
-        "url": "https://finance.liga.net/en/ekonomika/novosti/kazakhstan-raises-interest-rate-to-record-18-inflation-is-higher-than-in-ukraine",
-        "title": "Kazakhstan raises interest rate to record 18%: inflation is higher than in Ukraine - finance.liga.net",
-        "source": "finance.liga.net",
+        "url": "https://timesca.com/kazakhstans-central-bank-raises-base-rate-to-18-amid-surging-inflation/",
+        "title": "Kazakhstan’s Central Bank Raises Base Rate to 18% Amid Surging Inflation - The Times Of Central Asia",
+        "source": "The Times Of Central Asia",
         "published_at": "2025-10-10 07:00:00+00",
-        "img_url": "https://storage.liga.net/images/general/social/social-4594577-en.png?v=1760081258"
+        "img_url": "https://timesca.com/wp-content/uploads/2025/10/photo_2025-10-10-14.52.45.jpeg"
       }
     ]
   },
   {
     "iso2": "KE",
     "name": "Kenya",
-    "as_of": "2025-11-06",
+    "as_of": "2025-11-08",
     "articles": [
       {
-        "url": "https://dawan.africa/news/us-vice-president-vances-kenya-visit-a-test-of-diplomacy-trade-and-trust",
-        "title": "U.S. Vice President Vance’s Kenya Visit: A Test of Diplomacy, Trade, and Trust - Dawan Africa",
-        "source": "Dawan Africa",
-        "published_at": "2025-11-03 17:57:47+00",
-        "img_url": "https://dawan.africa/api/media/file/jd%20vance(1).jpg"
+        "url": "https://nation.africa/kenya/news/gender/promises-without-budget-kenya-s-new-women-s-security-and-peace-plan-faces-financial-obstacles-5255946",
+        "title": "Promises without budget: Kenya’s new women's security and peace plan faces financial obstacles - Daily Nation",
+        "source": "Daily Nation",
+        "published_at": "2025-11-08 12:00:00+00",
+        "img_url": "https://nation.africa/resource/image/5255966/landscape_ratio3x2/1200/800/338d0a74c4f76d7448d81b7244b3693d/an/turkana-women-pic.jpg"
+      },
+      {
+        "url": "https://www.mod.go.ke/news/commander-kenya-army-chairs-kenya-military-academy-control-board-meeting/",
+        "title": "COMMANDER KENYA ARMY CHAIRS KENYA MILITARY ACADEMY CONTROL BOARD MEETING - Ministry of Defence – Kenya",
+        "source": "Ministry of Defence – Kenya",
+        "published_at": "2025-11-07 05:58:18+00",
+        "img_url": "https://www.mod.go.ke/wp-content/uploads/2025/11/4-1.jpeg"
       },
       {
         "url": "https://apnews.com/article/kenya-raila-odinga-funeral-a4fb047c8b39a81e2b8d0580c99f3121",
@@ -667,174 +724,181 @@
         "source": "AP News",
         "published_at": "2025-10-19 07:00:00+00",
         "img_url": "https://dims.apnews.com/dims4/default/9813955/2147483647/strip/true/crop/2798x1574+0+89/resize/1440x810!/quality/90/?url=https%3A%2F%2Fassets.apnews.com%2Fa3%2F5c%2F186bd5c8c499e4819febdccca7a1%2F7f39de4108084e769ea3bc6a398bd715"
-      },
-      {
-        "url": "https://www.reuters.com/world/africa/kenya-central-bank-cuts-policy-rate-by-25-basis-points-2025-10-07/",
-        "title": "Kenya central bank cuts policy rate as inflation well within target - Reuters",
-        "source": "Reuters",
-        "published_at": "2025-10-07 07:00:00+00",
-        "img_url": null
       }
     ]
   },
   {
     "iso2": "LU",
     "name": "Luxembourg",
-    "as_of": "2025-11-06",
+    "as_of": "2025-11-08",
     "articles": [
       {
-        "url": "https://gouvernement.lu/en/gouvernement/luc-frieden/actualites.gouvernement2024%2Ben%2Bactualites%2Btoutes_actualites%2Bcommuniques%2B2025%2B10-octobre%2B13-frieden-strategie-nationale-resilience.html",
-        "title": "\"Lëtz prepare!\": Luc Frieden presents the National Resilience Strategy - The Luxembourg Government - Le gouvernement luxembourgeois",
-        "source": "Le gouvernement luxembourgeois",
-        "published_at": "2025-10-13 07:00:00+00",
-        "img_url": "http://gouvernement.lu/etc.clientlibs/gouvernement2024/clientlibs/base/resources/images/share/en/sharedFB.png"
+        "url": "https://globalarbitrationreview.com/article/panel-in-place-luxembourg-sanctions-dispute",
+        "title": "Panel in place for Luxembourg sanctions dispute - Global Arbitration Review",
+        "source": "Global Arbitration Review",
+        "published_at": "2025-11-07 21:46:09+00",
+        "img_url": "https://d2qu5xmcgmzxnb.cloudfront.net/ewogICAgICAgICAgICAgICAgICAgICAgICAiYnVja2V0IjogImZpbGVzLmxici5jbG91ZCIsCiAgICAgICAgICAgICAgICAgICAgICAgICJrZXkiOiAicHVibGljLzIwMjQtMDEvRnJpZG1hbi5qcGciLAogICAgICAgICAgICAgICAgICAgICAgICAiZWRpdHMiOiB7CiAgICAgICAgICAgICAgICAgICAgICAgICAgInJlc2l6ZSI6IHsKICAgICAgICAgICAgICAgICAgICAgICAgICAgICJ3aWR0aCI6IDk0NSwKICAgICAgICAgICAgICAgICAgICAgICAgICAgICJoZWlnaHQiOiA1MjYsCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAiZml0IjogImNvdmVyIgogICAgICAgICAgICAgICAgICAgICAgICAgIH0KICAgICAgICAgICAgICAgICAgICAgICAgfQogICAgICAgICAgICAgICAgICAgIH0="
       },
       {
-        "url": "https://www.luxtimes.lu/luxembourg/prime-minister-not-surprised-by-worst-poll-rating-in-decades/95942728.html",
-        "title": "Prime minister ‘not surprised’ by worst poll rating in decades - Luxembourg Times",
-        "source": "Luxembourg Times",
-        "published_at": "2025-10-08 07:00:00+00",
-        "img_url": "https://img.wort.lu/public/politik/vugp2s-luc-frieden.jpeg/alternates/SIXTEEN_NINE_1200/Luc-Frieden.jpeg"
+        "url": "https://www.azernews.az/nation/249062.html",
+        "title": "Ministerial meetings on regional security and interconnectivity underway in Luxembourg - AzerNews",
+        "source": "AzerNews",
+        "published_at": "2025-10-20 07:00:00+00",
+        "img_url": "https://www.azernews.az/media/2025/10/11/eu_azerbaijan_flags_310817_1.jpg"
       },
       {
-        "url": "https://www.eunews.it/en/2025/10/07/luxembourg-prime-minister-frieden-revives-idea-of-a-two-speed-europe/",
-        "title": "Luxembourg Prime Minister Frieden revives idea of a two-speed Europe - Eunews",
-        "source": "Eunews",
-        "published_at": "2025-10-07 07:00:00+00",
-        "img_url": "https://www.eunews.it/wp-content/uploads/2025/10/20251007_EP-191448B_FM2_EG_004-1024x683.jpg"
+        "url": "https://mod.gov.ua/en/news/denys-shmyhal-holds-official-meetings-in-luxembourg-military-assistance-it-cooperation-and-sanctions-against-the-aggressor-in-focus",
+        "title": "Denys Shmyhal holds official meetings in Luxembourg: military assistance, IT cooperation, and sanctions against the aggressor in focus - Міністерство оборони України",
+        "source": "Міністерство оборони України",
+        "published_at": "2025-10-16 18:20:00+00",
+        "img_url": "https://mod.gov.ua/assets/whatsapp-image-2025-10-16-at-21-13-21-9f19275d0e.webp"
       }
     ]
   },
   {
     "iso2": "MY",
     "name": "Malaysia",
-    "as_of": "2025-11-06",
+    "as_of": "2025-11-08",
     "articles": [
       {
-        "url": "https://en.vietnamplus.vn/malaysia-can-terminate-reciprocal-trade-agreement-with-us-at-any-time-post331971.vnp",
-        "title": "Malaysia can terminate reciprocal trade agreement with US at any time - Vietnam+ (VietnamPlus)",
-        "source": "Vietnam+ (VietnamPlus)",
-        "published_at": "2025-11-05 14:29:30+00",
-        "img_url": "https://mediaen.vietnamplus.vn/images/f579a678cf9e90879541752073c26005fab6217d3e55bbbaf67ab3b10ec825d14deafee91f1fd939c59748d7196f070179bcf9faf4a4af87156edc3933638f0f/untitled.png.webp"
+        "url": "https://www.bernama.com/tv/news.php?id=2487817",
+        "title": "TRUMP PRAISES MALAYSIA'S SECURITY SUCCESS DURING ASEAN SUMMIT - PM ANWAR - bernama",
+        "source": "bernama",
+        "published_at": "2025-11-06 08:29:24+00",
+        "img_url": "https://www.bernama.com/storage/photos/0bf4f5b1e040927b59ab540b95913376690c3e49e4760-medium"
       },
       {
-        "url": "https://www.travelandtourworld.com/news/article/thailand-strengthens-travel-warnings-amid-security-concerns-and-rising-tensions-with-malaysia-and-cambodia-but-new-flight-routes-provide-hope-for-tourists/",
-        "title": "Thailand Strengthens Travel Warnings Amid Security Concerns and Rising Tensions with Malaysia and Cambodia, But New Flight Routes Provide Hope for Tourists - Travel And Tour World",
-        "source": "Travel And Tour World",
-        "published_at": "2025-11-03 11:20:35+00",
-        "img_url": "https://www.travelandtourworld.com/wp-content/uploads/2025/11/freepik__in-the-vibrant-landscap.jpg"
+        "url": "https://www.theguardian.com/world/2025/nov/05/malaysia-defends-trump-us-trade-deal",
+        "title": "Malaysia defends Trump trade deal after critics warn it will compromise country’s sovereignty - The Guardian",
+        "source": "The Guardian",
+        "published_at": "2025-11-05 00:51:00+00",
+        "img_url": "https://i.guim.co.uk/img/media/1dd24c52fa22f6302156a08d7127e309931e4fc8/0_58_2667_2133/master/2667.jpg?width=1200&height=630&quality=85&auto=format&fit=crop&precrop=40:21,offset-x50,offset-y0&overlay-align=bottom%2Cleft&overlay-width=100p&overlay-base64=L2ltZy9zdGF0aWMvb3ZlcmxheXMvdGctZGVmYXVsdC5wbmc&enable=upscale&s=7e6c01e30863b9ecbeb76dd9eec6365e"
       },
       {
-        "url": "https://www.reuters.com/world/china/us-china-seek-avoid-trade-war-escalation-salvage-trump-xi-meeting-malaysia-talks-2025-10-25/",
-        "title": "US, China seek to avoid trade war escalation, salvage Trump-Xi meeting in Malaysia talks - Reuters",
-        "source": "Reuters",
-        "published_at": "2025-10-25 07:00:00+00",
-        "img_url": null
+        "url": "https://www.dailysabah.com/business/economy/china-us-plan-malaysia-talks-to-ease-trade-war",
+        "title": "China, US plan Malaysia talks to ease trade war | Daily Sabah - Daily Sabah",
+        "source": "Daily Sabah",
+        "published_at": "2025-10-23 07:00:00+00",
+        "img_url": "https://idsb.tmgrup.com.tr/ly/uploads/images/2025/10/23/thumbs/1200x675/407801.jpg"
       }
     ]
   },
   {
     "iso2": "MX",
     "name": "Mexico",
-    "as_of": "2025-11-06",
+    "as_of": "2025-11-08",
     "articles": [
       {
-        "url": "https://www.latimes.com/world-nation/story/2025-11-05/mexico-president-sheinbaum-sexual-harassment",
-        "title": "Mexico's president was groped on the street. Now she's waging a war against rampant sexual harassment - Los Angeles Times",
-        "source": "Los Angeles Times",
-        "published_at": "2025-11-05 21:18:00+00",
-        "img_url": "https://ca-times.brightspotcdn.com/dims4/default/80491d7/2147483647/strip/true/crop/4465x2344+0+348/resize/1200x630!/quality/75/?url=https%3A%2F%2Fcalifornia-times-brightspot.s3.amazonaws.com%2F12%2F6a%2Fbab9706a4745a2155b962b321ac4%2Fhttps-delivery-gettyimages.com%2Fdownloads%2F1529617818"
+        "url": "https://www.fdd.org/analysis/2025/11/08/iranian-plot-to-assassinate-israeli-ambassador-to-mexico-foiled/",
+        "title": "Iranian Plot to Assassinate Israeli Ambassador to Mexico Foiled - Foundation for Defense of Democracies",
+        "source": "Foundation for Defense of Democracies",
+        "published_at": "2025-11-08 15:46:27+00",
+        "img_url": null
       },
       {
-        "url": "https://www.tradingview.com/news/reuters.com,2025:newsml_L6N3WC0U3:0-mexico-s-central-bank-likely-to-cut-key-interest-rate-next-week/",
-        "title": "Mexico's central bank likely to cut key interest rate next week - TradingView",
-        "source": "TradingView",
-        "published_at": "2025-10-31 17:20:00+00",
-        "img_url": "https://s.tradingview.com/static/images/illustrations/news-story.jpg"
+        "url": "https://mexicobusiness.news/finance/news/mexicos-inflation-hits-357-october-line-outlook",
+        "title": "Mexico’s Inflation Hits 3.57% in October, in Line With Outlook - Mexico Business News",
+        "source": "Mexico Business News",
+        "published_at": "2025-11-07 19:07:39+00",
+        "img_url": "https://mexicobusiness.news/sites/default/files/styles/crop_16_9/public/2025-11/inflation-1.jpg?h=920929c4&itok=XLQZ1bZ5"
       },
       {
-        "url": "https://halifax.citynews.ca/2025/10/08/mexico-president-vows-thorough-investigation-into-the-killing-of-6-civilians-by-soldiers/",
-        "title": "Mexico president vows thorough investigation into the killing of 6 civilians by soldiers - CityNews Halifax",
-        "source": "CityNews Halifax",
-        "published_at": "2025-10-08 07:00:00+00",
-        "img_url": "https://halifax.citynews.ca/wp-content/blogs.dir/sites/5/2025/10/7fe4ccf61d4308e43f4808d92c2894a3efcd17b4668b6d73bfe6ff62cd48026f.jpg"
+        "url": "https://unn.ua/en/news/perus-congress-declared-mexicos-president-persona-non-grata",
+        "title": "Peru's Congress declared Mexico's president persona non grata - Українські Національні Новини",
+        "source": "Українські Національні Новини",
+        "published_at": "2025-11-07 08:09:55+00",
+        "img_url": "https://unn.ua/img/2025/11/07/1762502995-4948-large.webp"
       }
     ]
   },
   {
     "iso2": "MN",
     "name": "Mongolia",
-    "as_of": "2025-11-06",
+    "as_of": "2025-11-08",
     "articles": [
       {
-        "url": "https://www.straitstimes.com/asia/east-asia/mongolias-top-court-blocks-bid-to-oust-prime-minister-deepening-political-deadlock",
-        "title": "Mongolia’s top court blocks bid to oust prime minister, deepening political deadlock - The Straits Times",
-        "source": "The Straits Times",
-        "published_at": "2025-10-23 08:04:14+00",
-        "img_url": "https://cassette.sphdigital.com.sg/image/straitstimes/d52f7658949841f1d279203f34bcf9191317f28b0d4636498b7556691e0355bc"
+        "url": "https://www.reuters.com/world/china/mongolias-top-court-rules-parliament-vote-ousting-prime-minister-is-2025-10-22/",
+        "title": "Mongolia's top court blocks bid to oust prime minister, deepening political deadlock - Reuters",
+        "source": "Reuters",
+        "published_at": "2025-10-23 07:00:00+00",
+        "img_url": null
       },
       {
-        "url": "https://thediplomat.com/2025/10/with-presidential-visit-mongolia-and-india-envisage-stronger-economic-links/",
-        "title": "With Presidential Visit, Mongolia and India Envisage Stronger Economic Links - The Diplomat – Asia-Pacific Current Affairs Magazine",
-        "source": "The Diplomat – Asia-Pacific Current Affairs Magazine",
+        "url": "https://m.akipress.com/news:856599:President_of_Mongolia_and_Prime_Minister_of_India_discuss_uranium,_defence_and_oil_refinery_project/",
+        "title": "President of Mongolia and Prime Minister of India discuss uranium, defence and oil refinery project - AKIpress News Agency",
+        "source": "AKIpress News Agency",
         "published_at": "2025-10-16 07:00:00+00",
-        "img_url": null
+        "img_url": "https://cdn-1.aki.kg/cdn-st-0/qgo/G/en-856599.1760606877.b.jpg"
+      },
+      {
+        "url": "https://www.ei-ie.org/en/item/31503:mongolia-amid-ongoing-educators-sit-ins-trade-union-brings-their-demands-to-the-government",
+        "title": "Mongolia: Amid ongoing educators’ sit-ins, trade union brings their demands to the Government - Education International",
+        "source": "Education International",
+        "published_at": "2025-10-10 07:00:00+00",
+        "img_url": "https://www.ei-ie.org/image/THkXRCnLTAuocdKHHZySXNygPlOKFZc35kFrCGfi.jpg/lead.jpg"
       }
     ]
   },
   {
     "iso2": "MA",
     "name": "Morocco",
-    "as_of": "2025-11-06",
+    "as_of": "2025-11-08",
     "articles": [
       {
-        "url": "https://www.democracynow.org/2025/11/3/headlines/un_security_council_backs_moroccos_plan_for_western_sahara",
-        "title": "U.N. Security Council Backs Morocco’s Plan for Western Sahara - Democracy Now!",
-        "source": "Democracy Now!",
-        "published_at": "2025-11-03 15:34:01+00",
-        "img_url": "https://www.democracynow.org/images/headlines/61/79661/full_hd/hl11-Western-Sahara-UN.jpg"
+        "url": "https://www.travelandtourworld.com/news/article/netherlands-joins-morocco-denmark-france-and-germany-as-us-issues-new-travel-advisory-amid-escalating-security-threats-and-stricter-border-entry-requirements-new-updates-you-need-to-know/",
+        "title": "Netherlands Joins Morocco, Denmark, France, And Germany As US Issues New Travel Advisory Amid Escalating Security Threats And Stricter Border Entry Requirements: New Updates You Need To Know - Travel And Tour World",
+        "source": "Travel And Tour World",
+        "published_at": "2025-11-06 08:22:20+00",
+        "img_url": "https://www.travelandtourworld.com/wp-content/uploads/2025/11/freepik__a-beautiful-town-in-net.jpg"
       },
       {
-        "url": "https://www.moroccoworldnews.com/2025/10/266106/spanish-government-denies-conflict-with-morocco-rejects-voxs-conspiracy-claims/",
-        "title": "Spanish Government Denies Conflict with Morocco, Rejects Vox’s ‘Conspiracy’ Claims - Morocco World News",
+        "url": "https://www.moroccoworldnews.com/2025/11/266330/mehdi-yaroub-wins-unanimous-election-as-new-gam-president/",
+        "title": "Mehdi Yaroub Wins Unanimous Election as New GAM President - Morocco World News",
         "source": "Morocco World News",
-        "published_at": "2025-10-31 18:14:34+00",
-        "img_url": "https://www.moroccoworldnews.com/wp-content/uploads/2025/10/fotonoticia_20251030181711_1920-1140x815-1.jpg"
+        "published_at": "2025-11-03 11:01:33+00",
+        "img_url": "https://www.moroccoworldnews.com/wp-content/uploads/2025/11/Mehdi-Yaroub-Wins-Unanimous-Election-as-New-GAM-President.jpg"
       },
       {
         "url": "https://www.france24.com/en/middle-east/20251019-morocco-social-reforms-protests-government",
         "title": "Morocco vows social reforms after youth-led protests shake government - France 24",
         "source": "France 24",
         "published_at": "2025-10-20 07:00:00+00",
-        "img_url": null
+        "img_url": "https://s.france24.com/media/display/87804404-ab6c-11f0-8bf1-005056a97e36/w:1280/p:16x9/AP25276795535486.jpg"
       }
     ]
   },
   {
     "iso2": "NL",
     "name": "Netherlands",
-    "as_of": "2025-11-06",
+    "as_of": "2025-11-08",
     "articles": [
       {
-        "url": "https://www.tubefilter.com/2025/11/05/election-day-zohran-mamdani-rob-jetten-tiktok/",
-        "title": "From New York to the Netherlands, Election Day went well for TikTok’s favorite politicians - Tubefilter",
-        "source": "Tubefilter",
-        "published_at": "2025-11-05 22:17:15+00",
-        "img_url": "https://www.tubefilter.com/wp-content/uploads/2025/11/zohran-mamdani.jpg"
+        "url": "https://www.globaltrademag.com/china-agrees-to-talks-with-netherlands-on-nexperia-chip-supply/",
+        "title": "China Agrees to Talks with Netherlands on Nexperia Chip Supply - Global Trade Magazine",
+        "source": "Global Trade Magazine",
+        "published_at": "2025-11-08 15:59:41+00",
+        "img_url": "https://www.globaltrademag.com/wp-content/uploads/2025/08/2epeaxsc.png"
       },
       {
-        "url": "https://www.reuters.com/world/belgium-netherlands-sign-missile-defense-system-agreement-belgian-minister-says-2025-10-15/",
-        "title": "Belgium, Netherlands to sign missile defense system agreement, Belgian minister says - Reuters",
-        "source": "Reuters",
-        "published_at": "2025-10-15 07:00:00+00",
-        "img_url": null
+        "url": "https://igrownews.com/the-fresh-foodcast-by-the-netherlands-explores-food-security-and-sustainability-in-the-gulf-region/",
+        "title": "The Fresh FoodCast by the Netherlands Explores Food Security and Sustainability in the Gulf Region - iGrow News",
+        "source": "iGrow News",
+        "published_at": "2025-11-08 15:35:33+00",
+        "img_url": "https://igrownews.com/wp-content/uploads/2025/11/The-Fresh-FoodCast-scaled.jpg"
+      },
+      {
+        "url": "https://www.cer.eu/insights/what-dutch-elections-mean-netherlands-and-europe",
+        "title": "What the Dutch elections mean for the Netherlands and for Europe - Centre for European Reform (CER)",
+        "source": "Centre for European Reform (CER)",
+        "published_at": "2025-11-05 11:52:31+00",
+        "img_url": "https://www.cer.eu/sites/default/files/styles/spotlight/public/Jetten_Wilders_sl.jpg?itok=Xuw9Gz96"
       }
     ]
   },
   {
     "iso2": "NZ",
     "name": "New Zealand",
-    "as_of": "2025-11-06",
+    "as_of": "2025-11-08",
     "articles": [
       {
         "url": "https://www.roymorgan.com/findings/10054-nz-national-voting-intention-october-2025",
@@ -851,25 +915,25 @@
         "img_url": "https://storage.united24media.com/og/5/9d/4ff863241738956113882330a62dc9d5.jpg"
       },
       {
-        "url": "https://www.reuters.com/world/asia-pacific/new-zealand-q3-cpi-rises-1-previous-quarter-2025-10-19/",
-        "title": "New Zealand inflation hits 3%, top of central bank's target band - Reuters",
-        "source": "Reuters",
-        "published_at": "2025-10-19 07:00:00+00",
-        "img_url": null
+        "url": "https://au.finance.yahoo.com/news/zealand-shares-inch-amid-signs-042644323.html",
+        "title": "New Zealand Shares Inch Up Amid Signs of Easing US-China Trade War; Mercury Appoints Chief People Officer - Yahoo Finance Australia",
+        "source": "Yahoo Finance Australia",
+        "published_at": "2025-10-20 07:00:00+00",
+        "img_url": "https://media.zenfs.com/en/mt_newswires_au_792/b81a860b48e2c8bf3babbced41f97e3a"
       }
     ]
   },
   {
     "iso2": "NG",
     "name": "Nigeria",
-    "as_of": "2025-11-06",
+    "as_of": "2025-11-08",
     "articles": [
       {
-        "url": "https://von.gov.ng/nigerian-government-determined-to-end-security-challenges-information-minister/",
-        "title": "Nigerian Government Determined To End Security Challenges – Information Minister - Voice of Nigeria",
-        "source": "Voice of Nigeria",
-        "published_at": "2025-11-05 18:24:38+00",
-        "img_url": "https://von.gov.ng/wp-content/uploads/2025/11/information-minister.png"
+        "url": "https://www.tradingview.com/news/reuters.com,2025-11-07:newsml_Zaw6J4H6H:0-sng-nigeria-economy-rebounding-inflation-easing-finance-minister-declares/",
+        "title": "SNG: Nigeria: Economy rebounding, inflation easing, Finance Minister declares - TradingView",
+        "source": "TradingView",
+        "published_at": "2025-11-07 09:49:43+00",
+        "img_url": "https://s.tradingview.com/static/images/illustrations/news-story.jpg"
       },
       {
         "url": "https://www.aa.com.tr/en/africa/nigerias-president-appoints-new-military-chiefs-in-major-shake-up-after-arrest-of-alleged-coup-plotters/3726164",
@@ -879,74 +943,74 @@
         "img_url": "https://cdnuploads.aa.com.tr/uploads/Contents/2025/10/24/thumbs_b_c_019fc6c97c9deb28601a666a5fc097a1.jpg?v=221834"
       },
       {
-        "url": "https://africacheck.org/fact-checks/meta-programme-fact-checks/no-nigerias-electoral-commission-chair-nominee-was-not-part",
-        "title": "No, Nigeria’s electoral commission chair nominee was not part of president Tinubu’s legal team at election tribunal - Africa Check",
-        "source": "Africa Check",
-        "published_at": "2025-10-15 07:00:00+00",
-        "img_url": "https://africacheck.org/sites/default/files/styles/standard_med/public/media/images/2025-10/TinubuClaim_False.png?h=8d4a34d3"
+        "url": "https://von.gov.ng/central-bank-pledges-to-keep-lowering-nigerias-inflation/",
+        "title": "Central Bank Pledges to Keep Lowering Nigeria’s Inflation - Voice of Nigeria",
+        "source": "Voice of Nigeria",
+        "published_at": "2025-10-17 07:00:00+00",
+        "img_url": "https://von.gov.ng/wp-content/uploads/2025/10/cardoso.webp"
       }
     ]
   },
   {
     "iso2": "NO",
     "name": "Norway",
-    "as_of": "2025-11-06",
+    "as_of": "2025-11-08",
     "articles": [
       {
-        "url": "https://www.thetimes.com/world/russia-ukraine-war/article/norway-may-use-wealth-fund-to-back-100bn-eu-war-loan-to-ukraine-k6368tcdk",
-        "title": "Norway may use wealth fund to back €100bn EU war loan to Ukraine - The Times",
-        "source": "The Times",
-        "published_at": "2025-11-05 13:10:02+00",
-        "img_url": "https://www.thetimes.com/imageserver/image/%2Ffe0c972a-ba5e-4dc7-a425-68879738aacf.jpg?crop=4134%2C2325%2C0%2C216&resize=1200"
+        "url": "https://www.canadianaffairs.news/2025/11/08/will-war-profiteer-norway-come-to-ukraines-financial-rescue/",
+        "title": "Will ‘war profiteer’ Norway come to Ukraine’s financial rescue? - canadian affairs",
+        "source": "canadian affairs",
+        "published_at": "2025-11-08 10:00:00+00",
+        "img_url": "https://i0.wp.com/www.canadianaffairs.news/wp-content/uploads/2025/11/pexels-photo-18976587.jpeg?fit=1880%2C1253&ssl=1"
       },
       {
-        "url": "https://militaryembedded.com/radar-ew/sensors/air-defense-components-to-be-acquired-by-norway-from-kongsberg",
-        "title": "Air defense components to be acquired by Norway from Kongsberg - Military Embedded Systems",
-        "source": "Military Embedded Systems",
-        "published_at": "2025-11-03 16:34:13+00",
-        "img_url": "https://data.militaryembedded.com/uploads/resize/1256/756/external/data.militaryembedded.com/uploads/articles/primary_images/1762187604.jpg"
+        "url": "https://www.wsj.com/articles/norways-central-bank-confirms-it-is-in-no-rush-to-lower-borrowing-costs-further-993dc76e?gaa_at=eafs&gaa_n=AWEtsqevcXrGIZZtTAlWv2TzTLBrrz-TmMkaN9dEOF_uUYnXtjY9y_6vomfc&gaa_ts=690f7f1c&gaa_sig=5fLQUKpyxM8ETQ2D3rtRFR-8HrK18X3k-QuZ0a7ifsxKjmMEMFQgcOhXCoJicU5hiQaQLaUVP7XHyVY6rZ5owA%3D%3D",
+        "title": "Norway’s Central Bank Confirms It Is in No Rush to Lower Borrowing Costs Further - The Wall Street Journal",
+        "source": "The Wall Street Journal",
+        "published_at": "2025-11-07 06:13:00+00",
+        "img_url": null
       },
       {
-        "url": "https://markets.financialcontent.com/stocks/article/marketminute-2025-10-10-norways-inflation-jumps-to-36-surprising-markets-and-challenging-norges-banks-easing-path",
-        "title": "Norway's Inflation Jumps to 3.6%, Surprising Markets and Challenging Norges Bank's Easing Path - FinancialContent",
-        "source": "FinancialContent",
-        "published_at": "2025-10-10 07:00:00+00",
-        "img_url": "https://marketminute.ghost.io/content/images/size/w1200/2025/10/9b562a11-c8b0-4569-940a-6979afbe3015.png"
+        "url": "https://www.yicaiglobal.com/news/ciie-european-firms-in-shanghai-norways-northerntech-bets-on-localization-to-bring-iot-security-expertise-to-china",
+        "title": "[CIIE] Norway's Northern.tech Bets on Localization to Bring IoT Security Expertise to China - Yicai Global",
+        "source": "Yicai Global",
+        "published_at": "2025-11-07 04:58:04+00",
+        "img_url": "http://img.yicaiglobal.com/src/image/2025/11/102899039620805.jpg"
       }
     ]
   },
   {
     "iso2": "PK",
     "name": "Pakistan",
-    "as_of": "2025-11-06",
+    "as_of": "2025-11-08",
     "articles": [
       {
-        "url": "https://www.azernews.az/nation/249837.html",
-        "title": "Pakistan's Prime Minister congratulates President Ilham Aliyev on Victory Day - AzerNews",
-        "source": "AzerNews",
-        "published_at": "2025-11-05 15:48:00+00",
-        "img_url": "https://www.azernews.az/media/2025/11/05/thumbs_b_c_232fd9c514b826fe7b65c97767908039.jpg"
+        "url": "https://khybernews.tv/amendment-seeks-to-extend-presidential-immunity-to-pakistans-prime-minister/",
+        "title": "Amendment Seeks to Extend Presidential Immunity to Pakistan’s Prime Minister - Khyber News",
+        "source": "Khyber News",
+        "published_at": "2025-11-08 13:32:45+00",
+        "img_url": "https://khybernews.tv/wp-content/uploads/2025/11/govt-moves-extend-criminal-immunity-prime-minister-alongside-president-1762604816-8952.jpg"
       },
       {
-        "url": "https://dunyanews.tv/en/Business/914569-world-bank-warns-inflation-in-pakistan-to-rise-due-to-floods",
-        "title": "World Bank warns inflation in Pakistan to rise due to floods - Dunya News",
-        "source": "Dunya News",
-        "published_at": "2025-10-27 21:10:00+00",
-        "img_url": "https://img.dunyanews.tv/news/2025/October/10-28-25/news_big_images/914569_82557571.jpg"
+        "url": "https://www.tradingview.com/news/reuters.com,2025:newsml_L1N3W80C8:0-pakistan-central-bank-holds-interest-rate-at-11-for-fourth-time-in-a-row/",
+        "title": "Pakistan central bank holds interest rate at 11% for fourth time in a row - TradingView",
+        "source": "TradingView",
+        "published_at": "2025-10-27 10:50:26+00",
+        "img_url": "https://s.tradingview.com/static/images/illustrations/news-story.jpg"
       },
       {
-        "url": "https://www.arabnews.pk/node/2620426/pakistan",
-        "title": "Pakistan central bank holds key policy rate at 11 percent for fourth straight meeting - Arab News PK",
-        "source": "Arab News PK",
-        "published_at": "2025-10-27 11:12:43+00",
-        "img_url": "https://www.arabnews.pk/sites/default/files/styles/660x371_watermarkpakistan/public/main-image/2025/10/27/4652484-75256416.jpg?itok=b0nYHopt"
+        "url": "https://www.arabnews.com/node/2619146/pakistan",
+        "title": "Pakistan central bank official says working to enable trade settlements in local currencies - Arab News",
+        "source": "Arab News",
+        "published_at": "2025-10-16 07:00:00+00",
+        "img_url": "https://www.arabnews.com/sites/default/files/styles/660x371_watermarksaudi/public/main-image/2025/10/16/4649195-1730063390.jpg?itok=MbAtp-FE"
       }
     ]
   },
   {
     "iso2": "PE",
     "name": "Peru",
-    "as_of": "2025-11-06",
+    "as_of": "2025-11-08",
     "articles": [
       {
         "url": "https://www.latintimes.com/diplomatic-tensions-escalate-peru-cuts-ties-mexico-over-asylum-offer-ousted-prime-minister-591263",
@@ -963,103 +1027,110 @@
         "img_url": "https://www.elciudadano.com/wp-content/uploads/2019/09/el-ciudadano-img-1.png"
       },
       {
-        "url": "https://insightcrime.org/news/can-perus-new-president-jose-jeri-win-his-war-on-crime/",
-        "title": "Can Peru’s New President José Jerí Win His ‘War on Crime’? - InSight Crime",
-        "source": "InSight Crime",
-        "published_at": "2025-10-29 16:01:51+00",
-        "img_url": "https://insightcrime.org/wp-content/uploads/2025/10/Operacion-Ciclon-Presidencia-de-Peru.jpeg"
+        "url": "https://www.dw.com/en/peru-lawmakers-remove-president-successor-vows-war-on-crime/a-74300885",
+        "title": "Peru lawmakers remove president, successor vows war on crime - DW",
+        "source": "DW",
+        "published_at": "2025-10-10 07:00:00+00",
+        "img_url": "https://static.dw.com/image/74300858_6.jpg"
       }
     ]
   },
   {
     "iso2": "PH",
     "name": "Philippines",
-    "as_of": "2025-11-06",
+    "as_of": "2025-11-08",
     "articles": [
       {
-        "url": "https://www.defensenews.com/global/asia-pacific/2025/11/05/philippines-tests-new-battle-plan-for-fending-off-invaders-alone/",
-        "title": "Philippines tests new battle plan for fending off invaders alone - Defense News",
-        "source": "Defense News",
-        "published_at": "2025-11-05 10:08:31+00",
-        "img_url": "https://www.armytimes.com/resizer/v2/JTAWJJL5XJESJNG75MMHT5HUM4.jpg?width=1200&auth=c7b2e8753353c41c8780c97f372825f76bdd269ffee2adb732fd210926db848a"
+        "url": "https://unn.ua/en/news/philippines-claimed-icc-issued-arrest-warrant-for-ex-president-dutertes-ally-over-drug-war-court-denied",
+        "title": "Philippines claimed ICC issued arrest warrant for ex-President Duterte's ally over drug war: court denied - Українські Національні Новини",
+        "source": "Українські Національні Новини",
+        "published_at": "2025-11-08 11:02:52+00",
+        "img_url": "https://unn.ua/img/2025/11/08/1762599824-3457-large.webp"
       },
       {
-        "url": "https://www.justsecurity.org/123592/philippines-mindanao-elections-delayed/",
-        "title": "Post-Conflict Election in the Southern Philippines Postponed for Third Time: Is Peace Unraveling? - Just Security",
-        "source": "Just Security",
-        "published_at": "2025-10-30 12:53:29+00",
-        "img_url": "https://www.justsecurity.org/wp-content/uploads/2025/10/GettyImages-1243244106.jpg"
+        "url": "https://www.visiontimes.com/2025/11/07/philippines-targets-ccp-with-northern-luzon-war-drills-to-bolster-defense.html",
+        "title": "Philippines Targets CCP with Northern Luzon War Drills to Bolster Defense - Vision Times",
+        "source": "Vision Times",
+        "published_at": "2025-11-07 17:00:45+00",
+        "img_url": "https://img.visiontimes.com/2025/11/p3703082a863433813.jpg"
       },
       {
-        "url": "https://www.pm.gc.ca/en/news/readouts/2025/10/26/prime-minister-carney-meets-president-philippines-ferdinand-marcos-jr",
-        "title": "Prime Minister Carney meets with President of the Philippines Ferdinand Marcos Jr. - pm.gc.ca",
-        "source": "pm.gc.ca",
-        "published_at": "2025-10-26 04:45:00+00",
-        "img_url": "https://www.pm.gc.ca/sites/pm/files/media/override_sharing/2025-07/PM_Readout_EN_0.png"
+        "url": "http://eng.chinamil.com.cn/2025xb/W/A_251464/16419914.html",
+        "title": "Deepening Japan–Philippines defense cooperation disrupts regional stability - China Military Online",
+        "source": "China Military Online",
+        "published_at": "2025-11-05 09:54:34+00",
+        "img_url": "http://eng.chinamil.com.cn/template/tenant207/t1831/img/brand.png"
       }
     ]
   },
   {
     "iso2": "PL",
     "name": "Poland",
-    "as_of": "2025-11-06",
+    "as_of": "2025-11-08",
     "articles": [
       {
-        "url": "https://finimize.com/content/poland-cuts-interest-rates-as-inflation-slows-more-than-expected",
-        "title": "Poland Cuts Interest Rates As Inflation Slows More Than Expected - Finimize",
-        "source": "Finimize",
-        "published_at": "2025-11-05 19:58:02+00",
-        "img_url": "https://finimize-img.imgix.net/https%3A%2F%2Fchivas-assets.s3-eu-west-1.amazonaws.com%2Fstatic%2Fimages%2Ftag_reuters_com_2025_newsml_APN65QAQB_1450303280.jpeg?ixlib=python-3.1.2&s=e7069d4c3e74a8a69e8d0dada4912b25"
+        "url": "https://newsukraine.rbc.ua/news/poland-s-parliament-blocks-president-s-bid-1762612364.html",
+        "title": "Poland's parliament blocks president's bid to change Ukrainian aid and historical law rules - RBC-Ukraine",
+        "source": "RBC-Ukraine",
+        "published_at": "2025-11-08 14:34:00+00",
+        "img_url": "https://newsukraine.rbc.ua/static/img/_/n/_navrotskiy_gettyimages_2233828314_8d946a1e83e432d406f8e9afb907750b_1300x820_6b122ac5824243f3c3aa807564dd3251_650x410.jpg"
       },
       {
-        "url": "https://www.globalbankingandfinance.com/poland-jsw-seven",
-        "title": "Poland's government in talks with banks over loans for miner JSW, minister says - Global Banking And Finance Awards®",
-        "source": "Global Banking And Finance Awards®",
-        "published_at": "2025-11-05 12:14:04+00",
-        "img_url": "https://www.globalbankingandfinance.com/cdn-cgi/image/quality=auto,format=webp/https://cdn.sanity.io/images/v0gkry1w/production/7921503f79b23cb2fd8e8096eea215358719daf3-640x430.webp"
+        "url": "https://metro.co.uk/2025/11/08/poland-train-400-000-civilians-largest-military-readiness-drive-since-world-war-ii-24651545/",
+        "title": "Poland to train 400,000 civilians in 'largest military readiness drive' since World War II - Metro.co.uk",
+        "source": "Metro.co.uk",
+        "published_at": "2025-11-08 12:51:00+00",
+        "img_url": "https://metro.co.uk/wp-content/uploads/2025/11/GettyImages-2239251433-5bda_1762606309.jpg?quality=90&strip=all&w=1200&h=630&crop=1"
       },
       {
-        "url": "https://notesfrompoland.com/2025/10/29/polish-presidents-office-seeks-criminal-charges-against-justice-minister/",
-        "title": "Polish president’s office seeks criminal charges against justice minister - Notes From Poland",
+        "url": "https://notesfrompoland.com/2025/11/08/president-vetoes-government-plan-to-create-polands-first-new-national-park-in-24-years/",
+        "title": "President vetoes government plan to create Poland’s first new national park in 24 years - Notes From Poland",
         "source": "Notes From Poland",
-        "published_at": "2025-10-29 11:08:40+00",
-        "img_url": "https://notesfrompoland.com/wp-content/uploads/2025/10/002_Minister_Zbigniew_Bogucki_Konferencja_prasowa_28-10-2025_MB2_8338.jpga_.jpeg"
+        "published_at": "2025-11-08 10:55:36+00",
+        "img_url": "https://notesfrompoland.com/wp-content/uploads/2025/11/005_Karol_Nawrocki_Posiedzenie_RBN_11-09-2025_LB_20464-1a.jpg"
       }
     ]
   },
   {
     "iso2": "PT",
     "name": "Portugal",
-    "as_of": "2025-11-06",
+    "as_of": "2025-11-08",
     "articles": [
       {
-        "url": "https://www.streetwisereports.com/article/2025/10/30/portugal-declares-major-tungsten-project-a-national-defense-priority.html",
-        "title": "Portugal Declares Major Tungsten Project a National Defense Priority - streetwisereports.com",
-        "source": "streetwisereports.com",
-        "published_at": "2025-10-31 09:47:48+00",
-        "img_url": "https://www.streetwisereports.com/images/tram-4379656_640.jpg"
+        "url": "https://newsukraine.rbc.ua/news/portugal-moves-to-expel-belarusians-who-fled-1762611368.html",
+        "title": "Portugal moves to expel Belarusians who fled war in Ukraine - RBC-Ukraine",
+        "source": "RBC-Ukraine",
+        "published_at": "2025-11-08 14:17:30+00",
+        "img_url": "https://newsukraine.rbc.ua/static/img/_/p/_portugaliya_robota_gettyimages_1401331932_6e8bda694ff9ccd8adf2f91ad49aad9f_1300x820_b6623b64de723cd452962c91465d0c19_650x410.jpg"
       },
       {
-        "url": "https://m.economictimes.com/nri/migrate/portugal-government-agrees-with-far-right-to-toughen-nationality-rules/articleshow/124888375.cms",
-        "title": "Portugal government agrees with far right to toughen nationality rules - The Economic Times",
-        "source": "The Economic Times",
-        "published_at": "2025-10-29 04:06:58+00",
-        "img_url": "https://img.etimg.com/thumb/width-1200,height-900,imgsize-261718,resizemode-75,msid-124888375/nri/migrate/portugal-government-agrees-with-far-right-to-toughen-nationality-rules.jpg"
+        "url": "https://www.aman-alliance.org/Home/ContentDetail/96950",
+        "title": "Business News - Portugal: PM discusses beefed-up Embraer partnership with Brazil's president - Alliance of Mediterranean News Agencies",
+        "source": "Alliance of Mediterranean News Agencies",
+        "published_at": "2025-11-08 08:47:24+00",
+        "img_url": "https://cdn.aman-alliance.org/news_agencylogo/LUSA.png"
       },
       {
-        "url": "https://www.essential-business.pt/2025/10/20/portugals-centre-right-ad-coalition-government-declares-was-on-corruption-and-red-tape/",
-        "title": "Portugal’s centre-right AD coalition government “declares war\" on corruption and red tape - - Essential Business",
-        "source": "- Essential Business",
-        "published_at": "2025-10-20 18:33:23+00",
-        "img_url": "https://www.essential-business.pt/wp-content/uploads/2025/10/566207897_1221890783307091_2311754571505466236_n.jpg"
+        "url": "https://www.aman-alliance.org/Home/ContentDetail/96926",
+        "title": "Business News - Portugal: Government done everything to avoid repeat of Lisbon airport chaos - Alliance of Mediterranean News Agencies",
+        "source": "Alliance of Mediterranean News Agencies",
+        "published_at": "2025-11-08 08:32:28+00",
+        "img_url": "https://cdn.aman-alliance.org/news_agencylogo/LUSA.png"
       }
     ]
   },
   {
     "iso2": "QA",
     "name": "Qatar",
-    "as_of": "2025-11-06",
+    "as_of": "2025-11-08",
     "articles": [
+      {
+        "url": "https://thepeninsulaqatar.com/article/07/11/2025/qatar-cybersecurity-agency-warns-of-serious-android-security-threat",
+        "title": "Qatar cybersecurity agency warns of serious Android security threat - The Peninsula Qatar",
+        "source": "The Peninsula Qatar",
+        "published_at": "2025-11-07 17:45:37+00",
+        "img_url": "https://thepeninsulaqatar.com/get/maximage/20251107_1762537504-396.jpg?1762537504"
+      },
       {
         "url": "https://mofa.gov.qa/en/qatar/latest-articles/latest-news/details/1444/11/15/prime-minister-and-minister-of-foreign-affairs-meets-president-of-france-qatar-friendship-group",
         "title": "Prime Minister and Minister of Foreign Affairs Meets President of France-Qatar Friendship Group - وزارة الخارجية القطرية",
@@ -1073,55 +1144,55 @@
         "source": "The Peninsula Qatar",
         "published_at": "2025-11-04 17:08:47+00",
         "img_url": "https://thepeninsulaqatar.com/get/maximage/20251104_1762276062-525.jpeg?1762276062"
-      },
-      {
-        "url": "https://www.qatar-tribune.com/article/199562/business/ministry-of-finance-qatar-central-bank-attend-usqbc-reception",
-        "title": "Ministry of Finance, Qatar Central Bank attend USQBC reception - Qatar Tribune",
-        "source": "Qatar Tribune",
-        "published_at": "2025-10-17 07:00:00+00",
-        "img_url": "https://www.qatar-tribune.com/watanqatartribune/uploads/images/2025/10/17/310039.jpg"
       }
     ]
   },
   {
     "iso2": "RO",
     "name": "Romania",
-    "as_of": "2025-11-06",
+    "as_of": "2025-11-08",
     "articles": [
+      {
+        "url": "https://www.msn.com/en-us/money/markets/class-war-in-romania-austerity-and-the-dismantling-of-trade-unions/ar-AA1Q3lka?ocid=finance-verthp-feeds",
+        "title": "Class War In Romania: Austerity And The Dismantling Of Trade Unions - MSN",
+        "source": "MSN",
+        "published_at": "2025-11-08 15:50:13+00",
+        "img_url": null
+      },
+      {
+        "url": "https://www.politico.eu/article/romania-and-bulgaria-scramble-to-protect-russian-refineries-as-trump-sanctions-loom/",
+        "title": "Romania and Bulgaria scramble to protect Russian refineries as Trump sanctions loom - politico.eu",
+        "source": "politico.eu",
+        "published_at": "2025-11-07 18:05:00+00",
+        "img_url": "https://www.politico.eu/cdn-cgi/image/width=1200,height=630,fit=crop,quality=80,onerror=redirect/wp-content/uploads/2025/11/07/GettyImages-1239355542-scaled.jpg"
+      },
       {
         "url": "https://www.thebulwark.com/p/nigeria-romania-trump-foreign-policy-chaos",
         "title": "Threatening Nigeria? Leaving Romania? The Chaos of Trump’s Foreign Policy - The Bulwark",
         "source": "The Bulwark",
         "published_at": "2025-11-04 12:34:20+00",
         "img_url": "https://substackcdn.com/image/fetch/$s_!ip2C!,w_1200,h_600,c_fill,f_jpg,q_auto:good,fl_progressive:steep,g_auto/https%3A%2F%2Fsubstack-post-media.s3.amazonaws.com%2Fpublic%2Fimages%2Fb8ad4ff5-d7a1-4879-a4ed-eacbf5875f21_5392x3592.jpeg"
-      },
-      {
-        "url": "https://www.romania-insider.com/cristian-geanaliu-executive-director-global-markets-garanti-bbva-romania-inflation-between-monetary",
-        "title": "Cristian Geanaliu, Executive Director, Global Markets, Garanti BBVA Romania: Inflation between monetary policy and fiscal reality - Romania Insider",
-        "source": "Romania Insider",
-        "published_at": "2025-10-16 07:00:00+00",
-        "img_url": "https://cdn.romania-insider.com/sites/default/files/styles/article_large_image/public/2025-10/cristian_geanaliu_garanti_bbva.jpg"
-      },
-      {
-        "url": "https://seenews.com/news/world-bank-cuts-romanias-2025-gdp-growth-forecast-to-0-4-percent-1282940",
-        "title": "World Bank cuts Romania's 2025 GDP growth forecast to 0.4% - SeeNews",
-        "source": "SeeNews",
-        "published_at": "2025-10-08 07:00:00+00",
-        "img_url": null
       }
     ]
   },
   {
     "iso2": "RU",
     "name": "Russia",
-    "as_of": "2025-11-06",
+    "as_of": "2025-11-08",
     "articles": [
       {
-        "url": "https://kyivindependent.com/russian-defense-chief-calls-for-immediate-preparations-for-nuclear-testing/",
-        "title": "Russia should 'begin preparations for full-scale nuclear tests immediately,' defense minister says - The Kyiv Independent",
-        "source": "The Kyiv Independent",
-        "published_at": "2025-11-05 14:17:11+00",
-        "img_url": "https://assets.kyivindependent.com/content/images/2024/11/GettyImages-2151001892.jpg"
+        "url": "https://www.reuters.com/world/trump-meet-hungarys-orban-discuss-russian-oil-economic-cooperation-2025-11-07/",
+        "title": "US grants Hungary exemption on Russia sanctions after warm Trump-Orban meeting - Reuters",
+        "source": "Reuters",
+        "published_at": "2025-11-08 00:47:39+00",
+        "img_url": null
+      },
+      {
+        "url": "https://www.pbs.org/newshour/world/eu-tightens-visa-restrictions-on-russian-nationals-over-ukraine-war-potential-security-risks",
+        "title": "EU tightens visa restrictions on Russian nationals over Ukraine war, potential security risks - PBS",
+        "source": "PBS",
+        "published_at": "2025-11-07 23:23:34+00",
+        "img_url": "https://d3i6fh83elv35t.cloudfront.net/static/2025/11/2022-09-30T092708Z_851749763_RC2LRW9EBEPG_RTRMADP_3_UKRAINE-CRISIS-FINLAND-BORDER-1024x683.jpg"
       },
       {
         "url": "https://www.arabictrader.com/en/news/central-banks/198670/the-central-bank-of-russia-lowers-the-interest-rate-to-165",
@@ -1129,62 +1200,48 @@
         "source": "المتداول العربي",
         "published_at": "2025-10-24 12:22:26+00",
         "img_url": null
-      },
-      {
-        "url": "https://www.themoscowtimes.com/2025/10/08/world-bank-cuts-russias-growth-outlook-warns-of-long-term-stagnation-a90745",
-        "title": "World Bank Cuts Russia's Growth Outlook, Warns of Long-Term Stagnation - The Moscow Times",
-        "source": "The Moscow Times",
-        "published_at": "2025-10-08 07:00:00+00",
-        "img_url": "https://static.themoscowtimes.com/image/og/e0/90745__e05624a8b2c91f39b67fc57b8b4ebf87.jpg"
       }
     ]
   },
   {
     "iso2": "SA",
     "name": "Saudi Arabia",
-    "as_of": "2025-11-06",
+    "as_of": "2025-11-08",
     "articles": [
       {
-        "url": "https://nationalsecurityjournal.org/saudi-arabia-might-soon-fly-the-f-35-stealth-fighter/",
-        "title": "Saudi Arabia Might Soon Fly the F-35 Stealth Fighter - National Security Journal",
-        "source": "National Security Journal",
-        "published_at": "2025-11-05 20:36:54+00",
-        "img_url": "https://nationalsecurityjournal.org/wp-content/uploads/2025/11/F-35-Stealth-Fighter-Under-Belly.jpg"
+        "url": "https://www.pgurus.com/the-architecture-of-security-secondment-pakistans-military-deployments-and-private-contracting-in-saudi-arabia-qatar-and-the-uae/",
+        "title": "Security for survival: Inside Pakistan’s military deployments across Saudi Arabia, Qatar, and the UAE - PGurus",
+        "source": "PGurus",
+        "published_at": "2025-11-08 05:19:10+00",
+        "img_url": "https://www.pgurus.com/wp-content/uploads/2025/11/Pakistans-Gulf-deployments-explained-The-real-architecture-behind-Saudi-and-Qatari-defense-ties-1.jpg"
       },
       {
-        "url": "https://www.washingtontimes.com/news/2025/nov/5/saudi-arabia-orchestrates-syrias-white-house-debut-al-sharaa-seeks/",
-        "title": "Saudi Arabia orchestrates Syria’s White House debut as Al-Sharaa seeks sanctions relief - Washington Times",
-        "source": "Washington Times",
-        "published_at": "2025-11-05 17:24:08+00",
+        "url": "https://president.az/en/articles/view/70477",
+        "title": "From Mohammed bin Salman bin Abdulaziz Al Saud, Crown Prince and Prime Minister of the Kingdom of Saudi Arabia - President.az",
+        "source": "President.az",
+        "published_at": "2025-11-04 11:30:37+00",
+        "img_url": "https://static.president.az/assets/president-administration-cd9d828859c913129ca1bcc7618a9c73a4aebc5034302517f360bc44f964b10e.png"
+      },
+      {
+        "url": "https://www.realcleardefense.com/articles/2025/11/04/a_us-saudi_arabia_security_pact_is_a_terrible_idea_1145115.html",
+        "title": "A U.S.-Saudi Arabia Security Pact is a Terrible Idea - RealClearDefense",
+        "source": "RealClearDefense",
+        "published_at": "2025-11-04 11:26:35+00",
         "img_url": null
-      },
-      {
-        "url": "https://timesofindia.indiatimes.com/world/middle-east/saudi-arabia-viral-video-of-security-officer-at-grand-mosque-sparks-public-outcry-and-official-action/articleshow/125102664.cms",
-        "title": "Saudi Arabia: Viral video of security officer at Grand Mosque sparks public outcry and official action - Times of India",
-        "source": "Times of India",
-        "published_at": "2025-11-05 07:09:00+00",
-        "img_url": "https://static.toiimg.com/thumb/msid-125103805,width-1070,height-580,imgsize-1070206,resizemode-75,overlay-toi_sw,pt-32,y_pad-40/photo.jpg"
       }
     ]
   },
   {
     "iso2": "SG",
     "name": "Singapore",
-    "as_of": "2025-11-06",
+    "as_of": "2025-11-08",
     "articles": [
       {
-        "url": "https://mofa.gov.qa/en/qatar/latest-articles/latest-news/details/2025/11/02/prime-minister-and-minister-of-foreign-affairs-meets-coordinating-minister-for-national-security-and-minister-for-home-affairs-of-singapore",
-        "title": "Prime Minister and Minister of Foreign Affairs Meets Coordinating Minister for National Security and Minister for Home Affairs of Singapore - وزارة الخارجية القطرية",
-        "source": "وزارة الخارجية القطرية",
-        "published_at": "2025-11-02 12:42:28+00",
-        "img_url": "https://mofa.gov.qa/images/default-source/default-album/img_5393.jpg?sfvrsn=e38e0d38_1"
-      },
-      {
-        "url": "https://www.pm.gc.ca/en/news/news-releases/2025/10/29/prime-minister-carney-strengthens-trade-and-economic",
-        "title": "Prime Minister Carney strengthens trade and economic partnerships with Singapore - pm.gc.ca",
-        "source": "pm.gc.ca",
-        "published_at": "2025-10-29 06:43:56+00",
-        "img_url": "https://www.pm.gc.ca/sites/pm/files/media/override_sharing/priority_override/2025-10/NR_PM_Signapore_251027_EN.png"
+        "url": "https://finance.yahoo.com/news/prime-minister-carney-strengthens-trade-071300388.html",
+        "title": "Prime Minister Carney strengthens trade and economic partnerships with Singapore - Yahoo Finance",
+        "source": "Yahoo Finance",
+        "published_at": "2025-10-29 07:13:00+00",
+        "img_url": "https://media.zenfs.com/en/cnwgroup.com/294f218414a0ed48773782262fa0aa71"
       },
       {
         "url": "https://www.malaymail.com/news/singapore/2025/10/14/singapores-central-bank-holds-policy-steady-amid-easing-inflation-steady-growth/194501",
@@ -1192,55 +1249,62 @@
         "source": "Malay Mail",
         "published_at": "2025-10-14 07:00:00+00",
         "img_url": "https://www.malaymail.com/malaymail/uploads/images/2025/10/14/304048.JPG"
+      },
+      {
+        "url": "https://www.cnbc.com/2025/10/14/singapore-gdp-expands-at-slowest-pace-in-two.html",
+        "title": "Singapore warns of slower 2026 growth after third-quarter GDP beats expectations - CNBC",
+        "source": "CNBC",
+        "published_at": "2025-10-13 07:00:00+00",
+        "img_url": "https://image.cnbcfm.com/api/v1/image/108211558-1760404057920-gettyimages-2208383472-AFP_39CQ4BA.jpeg?v=1760404068&w=1920&h=1080"
       }
     ]
   },
   {
     "iso2": "ZA",
     "name": "South Africa",
-    "as_of": "2025-11-06",
+    "as_of": "2025-11-08",
     "articles": [
       {
-        "url": "https://www.polity.org.za/article/sa-cyril-ramaphosa-address-by-south-africas-president-to-the-house-parliament-state-visit-in-bern-switzerland-29102025-2025-10-31",
-        "title": "SA: Cyril Ramaphosa: Address by South Africa's President, to the House Parliament State Visit In Bern, Switzerland (29/10/2025) - Polity.org.za",
-        "source": "Polity.org.za",
-        "published_at": "2025-10-31 08:49:00+00",
-        "img_url": null
+        "url": "https://www.foxnews.com/politics/state-dept-says-g20-boycott-tied-south-africas-government-sponsored-discrimination-against-afrikaners",
+        "title": "State Dept says G20 boycott tied to South Africa’s ‘government-sponsored discrimination’ against Afrikaners - Fox News",
+        "source": "Fox News",
+        "published_at": "2025-11-08 11:24:12+00",
+        "img_url": "https://static.foxnews.com/foxnews.com/content/uploads/2025/11/cyril-ramaphosa-g20.jpg"
       },
       {
-        "url": "https://adf-magazine.com/2025/10/south-africa-demonstrates-military-accountability-with-ombuds-conference/",
-        "title": "South Africa Demonstrates Military Accountability With Ombuds Conference - Africa Defense Forum",
-        "source": "Africa Defense Forum",
-        "published_at": "2025-10-28 18:35:27+00",
-        "img_url": "https://adf-magazine.com/wp-content/uploads/2025/10/OMBUDSMAN1.jpg"
+        "url": "https://www.bloomberg.com/news/articles/2025-10-23/s-africa-needs-reforms-to-counter-us-tariffs-central-bank-says",
+        "title": "South Africa Needs Reforms to Counter US Tariffs, Central Bank Says - Bloomberg.com",
+        "source": "Bloomberg.com",
+        "published_at": "2025-10-23 07:00:00+00",
+        "img_url": "https://assets.bwbx.io/images/users/iqjWHBFdfxIU/i8yh5QMASwOk/v1/1200x800.jpg"
       },
       {
-        "url": "https://www.reuters.com/world/africa/south-african-policymakers-agree-lowering-inflation-target-timing-still-an-issue-2025-10-09/",
-        "title": "South African policymakers agree on lowering inflation target, timing still an issue - Reuters",
-        "source": "Reuters",
-        "published_at": "2025-10-09 07:00:00+00",
-        "img_url": null
+        "url": "https://www.cnbcafrica.com/2025/global-debt-tops-g20-agenda-south-african-central-bank-chief-says/",
+        "title": "Global debt tops G20 agenda, South African central bank chief says - CNBC Africa",
+        "source": "CNBC Africa",
+        "published_at": "2025-10-16 07:00:00+00",
+        "img_url": "https://cdn.cnbc.africa/wp-content/uploads/2025/10/25R2DCR22BJARFBPXNCJNWZ6NQ-scaled.jpg"
       }
     ]
   },
   {
     "iso2": "KR",
     "name": "South Korea",
-    "as_of": "2025-11-06",
+    "as_of": "2025-11-08",
     "articles": [
       {
-        "url": "https://dsm.forecastinternational.com/2025/11/05/ngls-program-puts-south-koreas-advanced-shipbuilding-front-and-center-for-us-navy/",
-        "title": "NGLS Program Puts South Korea’s Advanced Shipbuilding Front and Center for US Navy - Defense Security Monitor",
-        "source": "Defense Security Monitor",
-        "published_at": "2025-11-05 15:30:33+00",
-        "img_url": "https://dsm.forecastinternational.com/wp-content/uploads/2025/10/unnamed.png"
+        "url": "https://www.aa.com.tr/en/americas/adjustments-in-south-korea-us-military-drills-inevitable-for-possible-trump-kim-jong-un-summit-seoul/3738663",
+        "title": "Adjustments in South Korea-US military drills inevitable for possible Trump-Kim Jong-un summit: Seoul - Anadolu Ajansı",
+        "source": "Anadolu Ajansı",
+        "published_at": "2025-11-08 16:38:49+00",
+        "img_url": "https://cdnuploads.aa.com.tr/uploads/Contents/2025/11/08/thumbs_b_c_4e91d265657d260402923504ed527844.jpg?v=193759"
       },
       {
-        "url": "https://abcnews.go.com/Business/wireStory/south-korean-president-calls-aggressive-ai-spending-budget-127157123",
-        "title": "South Korean president calls for aggressive AI spending in budget speech - abcnews.go.com",
-        "source": "abcnews.go.com",
-        "published_at": "2025-11-04 04:43:51+00",
-        "img_url": "https://i.abcnewsfe.com/a/9d5efc6d-a465-4af6-8899-9577097a8dbb/wirestory_80db48ff3d6cdaabd10b79518d56dc0f_16x9.jpg?w=1600"
+        "url": "https://www.reuters.com/world/asia-pacific/south-koreas-defense-ministry-slams-north-koreas-missile-launch-2025-11-08/",
+        "title": "South Korea's defense ministry slams North Korea's missile launch - Reuters",
+        "source": "Reuters",
+        "published_at": "2025-11-08 00:31:00+00",
+        "img_url": null
       },
       {
         "url": "https://scanx.trade/stock-market-news/global/south-korea-s-inflation-surge-challenges-bank-of-korea-s-rate-strategy/23765794",
@@ -1254,63 +1318,63 @@
   {
     "iso2": "ES",
     "name": "Spain",
-    "as_of": "2025-11-06",
+    "as_of": "2025-11-08",
     "articles": [
       {
-        "url": "https://europeanconservative.com/articles/news/spain-valencia-mazon-resignation/",
-        "title": "Spain’s Opposition Blunders on the Government’s Worst Day - The European Conservative",
-        "source": "The European Conservative",
-        "published_at": "2025-11-03 13:12:59+00",
-        "img_url": "https://europeanconservative.com/wp-content/uploads/2025/11/AFP__20251103__82UB763__v1__HighRes__SpainJusticePolitics-scaled-e1762175133761.jpg"
+        "url": "https://www.majorcadailybulletin.com/news/local/2025/11/08/137927/spain-prime-minister-wages-war-private-jets-and-luxury-travel.html",
+        "title": "Spain Prime Minister wages war on private jets and luxury travel - Majorca Daily Bulletin",
+        "source": "Majorca Daily Bulletin",
+        "published_at": "2025-11-08 12:09:00+00",
+        "img_url": "https://md.gsstatic.es/sfAttachPlugin/social/180767.jpg"
       },
       {
-        "url": "https://thedefensepost.com/2025/11/03/europe-unmanned-military-convoy/",
-        "title": "Spain Debuts ‘Europe’s First’ Unmanned Military Convoy - The Defense Post",
-        "source": "The Defense Post",
-        "published_at": "2025-11-03 13:05:44+00",
-        "img_url": "https://thedefensepost.com/wp-content/uploads/2025/11/convoy.jpeg"
+        "url": "https://montelnews.com/news/5338d32f-2bc7-4935-adfc-86c02dd79282/sanctions-export-constraints-hit-russian-lng-to-spain-analysts",
+        "title": "Sanctions, export constraints hit Russian LNG to Spain – analysts - Montel News",
+        "source": "Montel News",
+        "published_at": "2025-11-07 14:16:39+00",
+        "img_url": "https://c02.purpledshub.com/uploads/sites/7/2025/01/shutterstock_1557493535-scaled.jpg?w=1200"
       },
       {
-        "url": "https://www.reuters.com/world/europe/trump-threatens-tariffs-spain-over-refusal-boost-nato-defense-spending-2025-10-14/",
-        "title": "Trump threatens tariffs on Spain over refusal to boost NATO defense spending - Reuters",
-        "source": "Reuters",
-        "published_at": "2025-10-15 07:00:00+00",
-        "img_url": null
+        "url": "https://table.media/en/europe/news-en/spain-puigdemonts-junts-block-government",
+        "title": "Spain: Puigdemont’s Junts block government - Table.Briefings",
+        "source": "Table.Briefings",
+        "published_at": "2025-11-07 04:00:00+00",
+        "img_url": "https://cdn.table.media/img/assets/uploads/miriam-nogueras-junts-17-sep-2025.jpg?w=1200&h=675&fit=crop&s=684dccb3fceb480ca65a47a86eeba7bb"
       }
     ]
   },
   {
     "iso2": "SE",
     "name": "Sweden",
-    "as_of": "2025-11-06",
+    "as_of": "2025-11-08",
     "articles": [
       {
-        "url": "https://www.webpronews.com/swedens-silent-storm-how-a-software-breach-exposed-1-5-million-lives/",
-        "title": "Sweden’s Silent Storm: How a Software Breach Exposed 1.5 Million Lives - WebProNews",
-        "source": "WebProNews",
-        "published_at": "2025-11-05 13:16:27+00",
-        "img_url": "https://www.webpronews.com/wp-content/uploads/2025/11/article-460-1762315119.jpeg"
+        "url": "https://www.aa.com.tr/en/world/-sweden-ukraine-agree-to-establish-joint-defense-innovation-hub/3737965",
+        "title": "Sweden, Ukraine agree to establish joint defense innovation hub - Anadolu Ajansı",
+        "source": "Anadolu Ajansı",
+        "published_at": "2025-11-07 17:25:57+00",
+        "img_url": "https://cdnuploads.aa.com.tr/uploads/Contents/2025/11/07/thumbs_b_c_bdd01545bd3dc312f1604d92b1f9b81e.jpg?v=202518"
       },
       {
-        "url": "https://securityboulevard.com/2025/11/swedens-cyber-resilience-2025-ai-security-fueling-96-protection-95-compliance/",
-        "title": "Sweden’s Cyber Resilience 2025: AI Security Fueling 96% Protection & 95% Compliance - Security Boulevard",
-        "source": "Security Boulevard",
-        "published_at": "2025-11-04 23:51:05+00",
-        "img_url": "https://securityboulevard.com/wp-content/uploads/2018/01/TwitterLogo-002.jpg"
+        "url": "https://news.inbox.lv/14zfzds-swedish-prime-minister-promised-to-keep-the-most-dangerous-prisoners-for-sweden?language=en",
+        "title": "Swedish Prime Minister Promised to Keep the Most Dangerous Prisoners for Sweden - Inbox.lv",
+        "source": "Inbox.lv",
+        "published_at": "2025-11-06 17:12:30+00",
+        "img_url": "https://news.inbox.eu/w/img/06/28/06280c28812065b5a7.webp"
       },
       {
-        "url": "https://thesun.my/news/world-news/sweden-to-cut-aid-to-serbian-government-over-corruption-concerns/",
-        "title": "Sweden to cut aid to Serbian government over corruption concerns - The Sun Malaysia",
-        "source": "The Sun Malaysia",
-        "published_at": "2025-11-04 03:32:01+00",
-        "img_url": "https://thesun.my/wp-content/uploads/2025/11/swedenflagpexels.webp"
+        "url": "https://www.reuters.com/business/very-important-that-sweden-returns-fiscal-discipline-central-bank-chief-says-2025-10-20/",
+        "title": "Very important that Sweden returns to fiscal discipline, central bank chief says - Reuters",
+        "source": "Reuters",
+        "published_at": "2025-10-21 07:00:00+00",
+        "img_url": null
       }
     ]
   },
   {
     "iso2": "CH",
     "name": "Switzerland",
-    "as_of": "2025-11-06",
+    "as_of": "2025-11-08",
     "articles": [
       {
         "url": "https://m.economictimes.com/markets/stocks/news/pause-cut-or-hike-the-central-bank-playbook-after-the-feds-move/switzerland-holding-the-line/slideshow/124984974.cms",
@@ -1320,25 +1384,25 @@
         "img_url": "https://img.etimg.com/thumb/msid-124984990,width-1070,height-580,overlay-etmarkets/slideshow.jpg"
       },
       {
-        "url": "https://www.bloomberg.com/news/articles/2025-10-29/switzerland-restructures-military-to-boost-defense-capabilities",
-        "title": "Switzerland Restructures Military to Boost Defense Abilities - Bloomberg.com",
-        "source": "Bloomberg.com",
-        "published_at": "2025-10-29 11:56:30+00",
-        "img_url": "https://assets.bwbx.io/images/users/iqjWHBFdfxIU/iUR4hOXYMOO0/v0/1200x800.jpg"
+        "url": "https://www.zawya.com/en/press-release/africa-press-releases/south-africa-minister-nzimande-accompanies-president-ramaphosa-on-official-visit-to-switzerland-fs4ckefs",
+        "title": "South Africa: Minister Nzimande accompanies President Ramaphosa on official visit to Switzerland - ZAWYA",
+        "source": "ZAWYA",
+        "published_at": "2025-10-30 13:04:23+00",
+        "img_url": "https://www.africa-newsroom.com/files/thumb/0fd046400c4f5da/600/418"
       },
       {
-        "url": "https://aviationweek.com/defense/budget-policy-operations/switzerland-eyes-bigger-military-space-role-1b-investment",
-        "title": "Switzerland Eyes Bigger Military Space Role With $1B Investment - Aviation Week Network",
-        "source": "Aviation Week Network",
-        "published_at": "2025-10-13 07:00:00+00",
-        "img_url": "https://aviationweek.com/sites/default/files/2025-10/swissmilspace.jpg"
+        "url": "https://www.swissinfo.ch/eng/foreign-affairs/switzerland-tightens-russia-sanctions-in-finance-and-oil-sectors/90249979",
+        "title": "Switzerland tightens Russia sanctions in finance and oil sectors - SWI swissinfo.ch",
+        "source": "SWI swissinfo.ch",
+        "published_at": "2025-10-30 07:00:00+00",
+        "img_url": "https://www.swissinfo.ch/content/wp-content/uploads/sites/13/2025/10/682298580_highres.jpg?ver=33d7a444&fit=1200,800"
       }
     ]
   },
   {
     "iso2": "TH",
     "name": "Thailand",
-    "as_of": "2025-11-06",
+    "as_of": "2025-11-08",
     "articles": [
       {
         "url": "https://www.travelandtourworld.com/news/article/thailand-issues-urgent-travel-warning-as-uk-urges-tourists-to-avoid-tense-border-regions-amid-rising-security-risks/",
@@ -1366,92 +1430,99 @@
   {
     "iso2": "TR",
     "name": "Turkey",
-    "as_of": "2025-11-06",
+    "as_of": "2025-11-08",
     "articles": [
       {
-        "url": "https://think.ing.com/snaps/turkish-inflation-resumed-downtrend-in-october/",
-        "title": "Turkey’s return to lower inflation opens the door to a December rate cut - ING THINK economic and financial analysis | ING Think",
-        "source": "ING THINK economic and financial analysis | ING Think",
-        "published_at": "2025-11-03 14:15:00+00",
-        "img_url": "https://think.ing.com/uploads/hero/_w800h450/shutterstock_editorial_14344858d.jpg"
+        "url": "https://www.taipeitimes.com/News/world/archives/2025/11/09/2003846916",
+        "title": "Turkey issues arrest warrant for Netanyahu, officials - Taipei Times",
+        "source": "Taipei Times",
+        "published_at": "2025-11-08 16:00:00+00",
+        "img_url": "https://img.taipeitimes.com/images/2025/11/09/P05-251109-305.jpg"
       },
       {
-        "url": "https://lrv.lt/en/news/prime-minister-meets-with-ambassador-of-turkey-to-lithuania-n7Xe/",
-        "title": "Prime Minister meets with Ambassador of Turkey to Lithuania - Lietuvos Respublikos Vyriausybė",
-        "source": "Lietuvos Respublikos Vyriausybė",
-        "published_at": "2025-10-31 17:26:15+00",
-        "img_url": null
+        "url": "https://www.turkishminute.com/2025/11/07/turkeys-central-bank-raises-year-end-inflation-forecast-to-31-33-percent/",
+        "title": "Turkey’s central bank raises year-end inflation forecast to 31–33 percent - Turkish Minute",
+        "source": "Turkish Minute",
+        "published_at": "2025-11-07 14:55:20+00",
+        "img_url": "https://www.turkishminute.com/wp-content/uploads/2023/11/central-bank-e1700738735646.jpg"
       },
       {
-        "url": "https://www.wral.com/news/ap/da7fd-british-prime-minister-starmer-arrives-in-turkey-to-discuss-eurofighter-jet-deal/",
-        "title": "British Prime Minister Starmer arrives in Turkey to discuss Eurofighter jet deal - WRAL.com",
-        "source": "WRAL.com",
-        "published_at": "2025-10-27 19:53:16+00",
-        "img_url": "https://images.wral.com/5be73ff3-98ce-5081-bedf-2349db0846c0?w=1200&h=630"
+        "url": "https://www.bloomberg.com/news/articles/2025-11-07/turkey-central-bank-keeps-end-2026-inflation-target-at-16",
+        "title": "Turkey Central Bank Keeps End-2026 Inflation Target at 16% - Bloomberg.com",
+        "source": "Bloomberg.com",
+        "published_at": "2025-11-07 08:33:41+00",
+        "img_url": "https://assets.bwbx.io/images/users/iqjWHBFdfxIU/icXdZVJ.DWV4/v1/1200x800.jpg"
       }
     ]
   },
   {
     "iso2": "UA",
     "name": "Ukraine",
-    "as_of": "2025-11-06",
+    "as_of": "2025-11-08",
     "articles": [
       {
-        "url": "https://www.independent.co.uk/news/world/europe/ukraine-russia-war-trump-putin-zelensky-pokrovsk-latest-news-b2858773.html",
-        "title": "Ukraine war latest: Putin makes fresh nuclear test demand after Trump threat - The Independent",
-        "source": "The Independent",
-        "published_at": "2025-11-06 01:46:53+00",
-        "img_url": "https://static.independent.co.uk/2025/11/05/14/52/Russian-President-Putin-chairs-Security-Council-meeting-in-Moscow-dgv42oij.jpeg?trim=0,2,0,2&width=1200&height=800&crop=1200:800"
+        "url": "https://www.pravda.com.ua/eng/news/2025/11/08/8006461/",
+        "title": "Orbán is wrong to resist Ukraine's path to EU – Ukrainian deputy prime minister - Українська правда",
+        "source": "Українська правда",
+        "published_at": "2025-11-08 14:33:00+00",
+        "img_url": "https://uimg.pravda.com.ua/buckets/upstatic/images/doc/5/4/712061/540856e9922d90c8592b3fa882d104c9.jpeg?w=1200&q=85&stamp=1762615202"
       },
       {
-        "url": "https://www.thetimes.com/world/russia-ukraine-war/article/norway-may-use-wealth-fund-to-back-100bn-eu-war-loan-to-ukraine-k6368tcdk",
-        "title": "Norway may use wealth fund to back €100bn EU war loan to Ukraine - The Times",
-        "source": "The Times",
-        "published_at": "2025-11-05 13:10:02+00",
-        "img_url": "https://www.thetimes.com/imageserver/image/%2Ffe0c972a-ba5e-4dc7-a425-68879738aacf.jpg?crop=4134%2C2325%2C0%2C216&resize=1200"
+        "url": "https://dsm.forecastinternational.com/2025/11/07/this-week-in-the-russia-ukraine-war-november-7/",
+        "title": "This Week in the Russia-Ukraine War (November 7) - Defense Security Monitor",
+        "source": "Defense Security Monitor",
+        "published_at": "2025-11-07 20:30:47+00",
+        "img_url": "https://dsm.forecastinternational.com/wp-content/uploads/2025/11/Patriot-PAC-2-1024x683.jpg"
       },
       {
-        "url": "https://kyivindependent.com/vegetables-monetary-policy-facebook-how-one-post-about-a-central-bank-decision-fired-up-ukraines-top-economists/",
-        "title": "Vegetables. Monetary policy. Facebook: How one post about a central bank decision fired up Ukraine's top economists - The Kyiv Independent",
-        "source": "The Kyiv Independent",
-        "published_at": "2025-10-29 16:03:53+00",
-        "img_url": "https://assets.kyivindependent.com/content/images/2024/09/GettyImages-1593404106.jpg"
+        "url": "https://www.president.gov.ua/en/news/prezident-ukrayini-ta-premyer-ministerka-yaponiyi-obgovorili-101165",
+        "title": "President of Ukraine and Prime Minister of Japan Discussed Defense Cooperation, Air Defense, and Support for Ukraine’s Energy Sector — Official website of the President of Ukraine - Офіційне інтернет-представництво Президента України",
+        "source": "Офіційне інтернет-представництво Президента України",
+        "published_at": "2025-11-05 11:42:00+00",
+        "img_url": null
       }
     ]
   },
   {
     "iso2": "AE",
     "name": "United Arab Emirates",
-    "as_of": "2025-11-06",
+    "as_of": "2025-11-08",
     "articles": [
+      {
+        "url": "https://eadaily.com/en/news/2025/11/07/in-the-united-arab-emirates-durovs-friend-roman-novak-and-his-wife-were-killed",
+        "title": "In the United Arab Emirates, \"Durov's friend\" Roman Novak and his wife were killed - EADaily",
+        "source": "EADaily",
+        "published_at": "2025-11-07 08:15:00+00",
+        "img_url": "https://img7.eadaily.com/r650x400/o/664/1d2e5877b76f17e623cd9170e580a.jpeg"
+      },
       {
         "url": "https://www.britannica.com/place/United-Arab-Emirates/Finance",
         "title": "United Arab Emirates - Oil, Trade, Investment - Britannica",
         "source": "Britannica",
-        "published_at": "2025-11-03 08:00:00+00",
-        "img_url": "https://www.britannica.com/place/United-Arab-Emirates/com.britannica.mendel.util.entities.Image@6d995fff"
+        "published_at": "2025-11-05 08:00:00+00",
+        "img_url": "https://www.britannica.com/place/United-Arab-Emirates/com.britannica.mendel.util.entities.Image@60a46c69"
       },
       {
-        "url": "https://www.zawya.com/en/press-release/africa-press-releases/united-arab-emirates-uae-ambassador-meets-prime-minister-of-the-niger-ncfv6l9s",
-        "title": "United Arab Emirates (UAE) Ambassador Meets Prime Minister of the Niger - ZAWYA",
-        "source": "ZAWYA",
-        "published_at": "2025-10-30 12:42:53+00",
-        "img_url": "https://www.africa-newsroom.com/files/large/d3ab8a56ab594ce"
-      },
-      {
-        "url": "https://www.smartraveller.gov.au/destinations/middle-east/united-arab-emirates",
-        "title": "United Arab Emirates Travel Advice & Safety - Smartraveller",
-        "source": "Smartraveller",
-        "published_at": "2025-10-20 07:00:00+00",
-        "img_url": null
+        "url": "https://www.britannica.com/place/United-Arab-Emirates",
+        "title": "United Arab Emirates | History, Culture, Population, Map, Flag, Government, & Capital - Britannica",
+        "source": "Britannica",
+        "published_at": "2025-11-05 08:00:00+00",
+        "img_url": "https://www.britannica.com/place/com.britannica.mendel.util.entities.Image@7bab9487"
       }
     ]
   },
   {
     "iso2": "GB",
     "name": "United Kingdom",
-    "as_of": "2025-11-06",
+    "as_of": "2025-11-08",
     "articles": [
+      {
+        "url": "https://nationalsecurityjournal.org/the-united-kingdom-has-a-message-for-the-f-35-stealth-fighter/",
+        "title": "The United Kingdom Has a Message for the F-35 Stealth Fighter - National Security Journal",
+        "source": "National Security Journal",
+        "published_at": "2025-11-07 15:02:00+00",
+        "img_url": "https://nationalsecurityjournal.org/wp-content/uploads/2025/11/United-Kingdom-F-35-Delivery.jpg"
+      },
       {
         "url": "https://natlawreview.com/article/increased-risk-uk-sanctions-enforcement-analysis-recent-sanctions-enforcement",
         "title": "Increased Risk of UK Sanctions Enforcement–An Analysis of Recent Sanctions Enforcement Action in the United Kingdom - The National Law Review",
@@ -1471,42 +1542,56 @@
   {
     "iso2": "US",
     "name": "United States",
-    "as_of": "2025-11-06",
+    "as_of": "2025-11-08",
     "articles": [
       {
-        "url": "https://carnegieendowment.org/research/2025/11/the-united-states-and-iran-must-overcome-four-challenges-for-nuclear-talks-to-succeed?lang=en",
-        "title": "The United States and Iran Must Overcome Four Challenges for Nuclear Talks to Succeed - Carnegie Endowment for International Peace",
-        "source": "Carnegie Endowment for International Peace",
-        "published_at": "2025-11-05 20:01:57+00",
-        "img_url": "https://carnegie-production-assets.s3.amazonaws.com/static/media/images/iran-united-states-negotiations-iStock-1556553330.jpg"
+        "url": "https://www.state.gov/releases/2025/11/united-states-and-greece-sign-economic-security-declaration/",
+        "title": "United States and Greece Sign Economic Security Declaration - U.S. Department of State (.gov)",
+        "source": "U.S. Department of State (.gov)",
+        "published_at": "2025-11-07 12:50:52+00",
+        "img_url": "https://www.state.gov/wp-content/uploads/2025/01/Seal-only_Alabaster.png"
       },
       {
-        "url": "https://www.fxstreet.com/analysis/united-states-will-the-fed-be-sufficiently-cautious-when-it-stops-qt-202511051117",
-        "title": "United States: Will the Fed be sufficiently cautious when it stops QT? - FXStreet",
-        "source": "FXStreet",
-        "published_at": "2025-11-05 11:17:07+00",
-        "img_url": "https://editorial.fxsstatic.com/images/i/Federal-Reserve-Building_4_Medium.png"
+        "url": "https://www.fdd.org/analysis/2025/11/06/united-states-reportedly-eyes-military-foothold-in-damascus-syrian-official-denies-the-claim/",
+        "title": "United States reportedly eyes military foothold in Damascus, Syrian official denies the claim - Foundation for Defense of Democracies",
+        "source": "Foundation for Defense of Democracies",
+        "published_at": "2025-11-06 08:00:00+00",
+        "img_url": null
       },
       {
-        "url": "https://www.hks.harvard.edu/faculty-research/policy-topics/international-relations-security/neither-china-nor-united-states",
-        "title": "Neither China nor the United States scored a conclusive knockout at a recent summit, former ambassador explains - Harvard Kennedy School",
-        "source": "Harvard Kennedy School",
-        "published_at": "2025-11-04 12:00:00+00",
-        "img_url": "https://www.hks.harvard.edu/sites/default/files/medium-hero-images/Article_China-US-25_Banner_2560x1440%20%281%29.jpg"
+        "url": "https://ticotimes.net/2025/11/05/united-states-seeks-homeland-security-offices-in-ecuador",
+        "title": "United States seeks Homeland Security offices in Ecuador - The Tico Times",
+        "source": "The Tico Times",
+        "published_at": "2025-11-06 02:00:00+00",
+        "img_url": "https://ticotimes.net/wp-content/uploads/2025/11/ecuador-homeland-security.jpg"
       }
     ]
   },
   {
     "iso2": "VE",
     "name": "Venezuela",
-    "as_of": "2025-11-06",
+    "as_of": "2025-11-08",
     "articles": [
       {
-        "url": "https://www.defensepriorities.org/opinion/is-donald-trumps-military-campaign-against-drug-traffickers-in-venezuela-legal/",
-        "title": "Is Donald Trump’s military campaign against drug traffickers in Venezuela legal? - Defense Priorities",
-        "source": "Defense Priorities",
-        "published_at": "2025-11-05 23:37:29+00",
-        "img_url": "https://www.defensepriorities.org/wp-content/uploads/2024/05/Amphibious-assault-ship-USS-Bataan-LHD-5-and-Dock-landing-ship-USS-Carter-Hall-LSD-50-transit-in-formation-through-the-Red-Sea-scaled.jpg"
+        "url": "https://www.politico.com/live-updates/2025/11/06/congress/senate-venezuela-vote-00640088",
+        "title": "Senate sinks measure to block military action against Venezuela - Politico",
+        "source": "Politico",
+        "published_at": "2025-11-07 01:35:00+00",
+        "img_url": null
+      },
+      {
+        "url": "https://www.gzeromedia.com/news/watching/what-were-watching-venezuela-clamps-down-on-dissidents-democrats-celebrate-election-successes-leading-economist-warns-of-triple-bubble",
+        "title": "What We’re Watching: Venezuela clamps down on dissidents, Democrats celebrate election successes, Leading economist warns of triple bubble - GZERO Media",
+        "source": "GZERO Media",
+        "published_at": "2025-11-05 17:13:27+00",
+        "img_url": "https://www.gzeromedia.com/media-library/venezuela-s-president-nicolas-maduro-reacts-after-shooting-an-arrow-during-a-rally-on-the-day-of-indigenous-resistance-in-carac.jpg?id=62065109&width=1245&height=700&coordinates=0%2C0%2C0%2C0"
+      },
+      {
+        "url": "https://www.wsj.com/world/americas/venezuela-maduro-coup-trump-battle-96da0d5d?gaa_at=eafs&gaa_n=AWEtsqdxgO6qATK9FzR-ECpGfwPl5GTLql9Xm0MeE3c2oi6Mlhk4e_09G5hZ&gaa_ts=690f815c&gaa_sig=UracQu3TUFCZlcIfA5iJq0updSyxlSNjRkji_TPSogcLHjfahM_CSL4Kb54CAfneESIlz66XEZnV_dUY18CQEQ%3D%3D",
+        "title": "How Venezuela’s Maduro Became Coup-Proof After Years of Military Purges - The Wall Street Journal",
+        "source": "The Wall Street Journal",
+        "published_at": "2025-10-18 07:00:00+00",
+        "img_url": null
       }
     ]
   }

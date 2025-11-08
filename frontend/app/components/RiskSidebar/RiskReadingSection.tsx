@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   ResponsiveContainer,
   AreaChart,
@@ -62,6 +62,20 @@ export default function RiskReadingSection({
     const base = (iso2 || countryName || 'risk').toString().replace(/\s+/g, '-').toUpperCase();
     return `riskGrad-${base}`;
   }, [iso2, countryName]);
+
+  // --- Robust width detection for ResponsiveContainer (prevents zero-width charts)
+  const rowRef = useRef<HTMLDivElement>(null);
+  const [rowWidth, setRowWidth] = useState(0);
+  useEffect(() => {
+    const el = rowRef.current;
+    if (!el) return;
+    const ro = new ResizeObserver((entries) => {
+      const w = entries[0]?.contentRect?.width ?? 0;
+      setRowWidth(w);
+    });
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -190,9 +204,9 @@ export default function RiskReadingSection({
 
   return (
     <>
-      <div className="statsRow" aria-label="Risk stats">
+      <div className="statsRow" aria-label="Risk stats" ref={rowRef}>
         {/* LEFT: Current + Avg with superscript delta */}
-        <div className="statsCol">
+        <div className="statsCol leftCol">
           <div className="bigTitle">Risk Rating</div>
           {statsLoading ? (
             <div className="bigValue muted">Loading…</div>
@@ -230,8 +244,9 @@ export default function RiskReadingSection({
             <div className="bigValue muted">—</div>
           ) : chartData.length > 0 ? (
             <div className="chartWrap">
-              <ResponsiveContainer width="100%" height={120}>
-                <AreaChart data={chartData} margin={{ left: 0, right: 0, top: 8, bottom: 0 }}>
+              {/* Keyed by measured width so ResponsiveContainer recalculates */}
+              <ResponsiveContainer key={rowWidth} width="100%" height={120}>
+                <AreaChart data={chartData} margin={{ left: 4, right: 4, top: 8, bottom: 0 }}>
                   <defs>
                     <linearGradient id={gradId} x1="0" y1="0" x2="0" y2="1">
                       <stop offset="0%" stopColor={currentColor} stopOpacity={0.45} />
@@ -292,20 +307,29 @@ export default function RiskReadingSection({
           padding-top: 0px;
           display: flex;
           flex-direction: column;
+          min-width: 0; /* allow flex children to shrink (fixes chart invisibility) */
         }
-        .rightCol {
-          text-align: right;
-          align-items: stretch;
-        }
-        .chartWrap { width: 100%; }
+        .leftCol { align-items: flex-start; text-align: left; }
+        .rightCol { align-items: stretch; text-align: right; }
+        .chartWrap { width: 100%; min-width: 0; }
 
-        @media (max-width: 520px) {
-          .statsRow { flex-direction: column; }
-          .rightCol { text-align: left; align-items: stretch; }
+        /* MOBILE: stack into two rows and center content */
+        @media (max-width: 680px) {
+          .statsRow {
+            flex-direction: column;
+            align-items: center;
+            gap: 12px;
+          }
+          .statsCol {
+            width: 100%;
+            align-items: center;
+            text-align: center;
+            padding-left: 0;
+            padding-right: 0;
+          }
+          .rightCol { align-items: center; text-align: center; }
+          .chartWrap { width: 100%; max-width: 460px; margin: 4px auto 0; }
         }
-
-        .statsCol:first-child { padding-left: 0; }
-        .statsCol:last-child  { padding-right: 0; }
 
         .bigTitle {
           font-size: 1.95em;

@@ -45,6 +45,10 @@ export default function Map({ bounds, center = [0, 20], zoom = 2.5 }: Props) {
   const DEFAULT_ZOOM = 2.5;    // when clicking off or closing sidebar
   const LOCK_ZOOM_THRESHOLD = 3.5; // if current zoom > 3, don't auto-zoom-out on dismiss
 
+  const MOBILE_BREAKPOINT = 768;
+  const isMobile = () =>
+    typeof window !== 'undefined' && window.innerWidth <= MOBILE_BREAKPOINT;
+
   // --- Helpers (pure) ---
   const colorForRisk = (r: number) => {
     if (r > 0.7) return '#ff2d55';   // red
@@ -52,9 +56,11 @@ export default function Map({ bounds, center = [0, 20], zoom = 2.5 }: Props) {
     return '#39ff14';                // green
   };
 
-  // Sidebar is min(600px, 40vw)
+  // Sidebar is min(600px, 40vw) on desktop; 100vw on phones
   const getSidebarWidthPx = () => {
-    const vwWidth = typeof window !== 'undefined' ? window.innerWidth * 0.40 : 0;
+    if (typeof window === 'undefined') return 0;
+    if (isMobile()) return Math.round(window.innerWidth);
+    const vwWidth = window.innerWidth * 0.40;
     return Math.min(600, Math.round(vwWidth || 0));
   };
 
@@ -62,7 +68,8 @@ export default function Map({ bounds, center = [0, 20], zoom = 2.5 }: Props) {
     const map = mapRef.current;
     if (!map) return;
 
-    const offsetX = Math.round(getSidebarWidthPx() / 2 + 8);
+    // On phones, the sidebar overlays the entire screen, so don't offset the map.
+    const offsetX = isMobile() ? 0 : Math.round(getSidebarWidthPx() / 2 + 8);
 
     const options: any = {
       center: lngLat,

@@ -1,7 +1,7 @@
 // /components/Sidebar/RiskSidebar.tsx
 'use client';
 
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import RiskReadingSection from './RiskSidebar/RiskReadingSection';
 import EconomicGaugeSection from './RiskSidebar/EconomicGaugeSection';
 import AiSummary from './RiskSidebar/AiSummary';
@@ -63,6 +63,49 @@ export default function RiskSidebar({
       ? `Data Last Updated: ${lastUpdatedLocal ?? 'unknown'}`
       : undefined;
 
+  // --- Swipe-to-close for mobile (right → left) ---
+  const [dragX, setDragX] = useState(0);
+  const touchStartRef = useRef<{ x: number; y: number; t: number } | null>(null);
+  const draggingRef = useRef(false);
+
+  const resetDrag = () => setDragX(0);
+
+  const handleTouchStart: React.TouchEventHandler<HTMLElement> = (e) => {
+    if (!open) return;
+    const t = e.touches[0];
+    touchStartRef.current = { x: t.clientX, y: t.clientY, t: performance.now() };
+    draggingRef.current = true;
+  };
+
+  const handleTouchMove: React.TouchEventHandler<HTMLElement> = (e) => {
+    if (!open || !draggingRef.current || !touchStartRef.current) return;
+    const t = e.touches[0];
+    const dx = t.clientX - touchStartRef.current.x;  // negative when swiping left
+    const dy = t.clientY - touchStartRef.current.y;
+
+    // Only react if predominantly horizontal
+    if (Math.abs(dx) > Math.abs(dy)) {
+      // Nudge the panel left up to 100px for feedback (no rubber-banding)
+      setDragX(Math.max(-100, Math.min(0, dx)));
+      // Do NOT call preventDefault; rely on CSS touch-action to manage scrolling
+    }
+  };
+
+  const handleTouchEnd: React.TouchEventHandler<HTMLElement> = () => {
+    if (!open || !draggingRef.current || !touchStartRef.current) {
+      resetDrag();
+      return;
+    }
+    draggingRef.current = false;
+    touchStartRef.current = null;
+
+    // Close if swiped left far enough
+    if (dragX <= -60) {
+      onClose();
+    }
+    resetDrag();
+  };
+
   return (
     <>
       {/* Click anywhere off the panel to close */}
@@ -80,9 +123,18 @@ export default function RiskSidebar({
             ['--revealMs' as any]: `${durationMs}ms`,
             ['--fadeMs' as any]: `${fadeMs}ms`,
             ['--easing' as any]: easing,
-            ['--livePulseMs' as any]: '2200ms', // tweak to speed up / slow down the LIVE blink
+            ['--livePulseMs' as any]: '2200ms',
+            // Live CSS variable for swipe drag
+            ['--dragX' as any]: `${dragX}px`,
           } as React.CSSProperties
         }
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
+        onTouchCancel={() => {
+          draggingRef.current = false;
+          resetDrag();
+        }}
       >
         <header className="bar">
           <div className="titleRow">
@@ -183,13 +235,24 @@ export default function RiskSidebar({
           backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
           z-index: 10; display: flex; flex-direction: column;
           box-shadow: 0 0 24px rgba(0, 0, 0, 0.35);
-          will-change: clip-path, opacity;
+          will-change: clip-path, opacity, transform;
           transition: clip-path var(--revealMs, 360ms) var(--easing, ease),
-                      opacity var(--fadeMs, 220ms) var(--easing, ease);
+                      opacity var(--fadeMs, 220ms) var(--easing, ease),
+                      transform 140ms ease-out;
           container-type: inline-size;
+          /* Allow vertical scrolling; we manage horizontal with swipe and CSS */
+          touch-action: pan-y;
+          overscroll-behavior-x: contain; /* prevent horizontal scroll chaining */
+          /* Live nudge while swiping left */
+          transform: translateX(var(--dragX, 0));
         }
         .sidebar.closed { clip-path: inset(0 100% 0 0); opacity: 0; }
         .sidebar.open   { clip-path: inset(0 0 0 0);   opacity: 1; }
+
+        /* Phones: sidebar takes the full width */
+        @media (max-width: 768px) {
+          .sidebar { width: 100vw; }
+        }
 
         .bar {
           display: flex; align-items: center;

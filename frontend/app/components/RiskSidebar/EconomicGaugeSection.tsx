@@ -148,7 +148,7 @@ function MiniGauge(props: {
       className="gaugeItem"
       title={tooltip ?? title}
       aria-label={aria || title}
-      style={{ width: 'max-content', minWidth: size, margin: '0 auto' }}
+      style={{ width: 'auto', minWidth: size, maxWidth: '100%', margin: '0 auto' }}
     >
       <svg
         width={size}
@@ -179,6 +179,7 @@ function MiniGauge(props: {
         style={{
           width: '100%', textAlign: 'center', fontSize: 11, opacity: 0.7,
           letterSpacing: '0.2px', whiteSpace: 'nowrap', lineHeight: 1.05, overflow: 'hidden', marginTop: 8,
+          textOverflow: 'ellipsis',
         }}
         aria-hidden="true"
       >
@@ -186,7 +187,7 @@ function MiniGauge(props: {
       </div>
 
       <style jsx>{`
-        .gaugeItem { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+        .gaugeItem { display: flex; flex-direction: column; align-items: center; gap: 6px; min-width: 0; }
         .gaugeSvg { display: block; }
       `}</style>
     </div>
@@ -312,20 +313,36 @@ export default function EconomicGaugeSection({
 
       <style jsx>{`
         .muted { opacity: 0.7; }
+
+        /* Desktop-first grid; use minmax(0,1fr) so children can shrink and not overflow */
         .gaugeGrid {
-            width: 100%;
-            display: grid;            
-            grid-auto-flow: column; 
-            justify-content: space-between; 
-            gap: 60px;
-            align-items: center;
-            margin-top: 14px;
+          width: 100%;
+          display: grid;
+          grid-template-columns: repeat(4, minmax(0, 1fr));
+          gap: 24px;
+          align-items: center;
+          justify-items: center; /* center items within cells */
+          margin-top: 14px;
         }
-        @media (min-width: 680px) {
-          .gaugeGrid { grid-template-columns: repeat(4, 1fr); }
+
+        /* Laptops/tablets: 3 columns */
+        @media (max-width: 1024px) {
+          .gaugeGrid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
         }
+
+        /* Phones: 2 columns */
+        @media (max-width: 760px) {
+          .gaugeGrid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; }
+        }
+
+        /* Very narrow phones: 1 column */
+        @media (max-width: 380px) {
+          .gaugeGrid { grid-template-columns: 1fr; gap: 14px; }
+        }
+
         .gaugeCell {
           width: 100%;
+          min-width: 0;  /* critical to prevent overflow */
           display: flex;
           justify-content: center;
           align-items: center;
