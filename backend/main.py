@@ -4,7 +4,7 @@ import pathlib
 import requests
 import pandas as pd
 
-from typing import List, Dict
+from typing import List, Dict, Tuple
 from collections import defaultdict
 from datetime import datetime, timezone
 
@@ -57,18 +57,18 @@ def _has_country_partition(root: pathlib.Path, iso2: str) -> bool:
         return any(p.suffix == ".parquet" for p in part_dir.glob("*.parquet"))
     except Exception:
         return False
-    
-def _parse_date_for_sort(date_str):
-    """Parse publication date for sorting. Returns datetime or epoch for invalid dates."""
+
+def _parse_date_for_sort(date_str: str | None):
+    """Parse publication date for sorting. Returns datetime(1970-01-01) for invalid/missing dates."""
     if not date_str:
         return datetime(1970, 1, 1)
     try:
-        # Try ISO format
+        # Try ISO (allow trailing Z)
         return datetime.fromisoformat(date_str.replace('Z', '+00:00'))
     except Exception:
         pass
     try:
-        # Try date only
+        # Try date-only
         return datetime.strptime(date_str[:10], "%Y-%m-%d")
     except Exception:
         return datetime(1970, 1, 1)
@@ -82,13 +82,13 @@ def _score_article_relevance(article: Dict, country_name: str) -> float:
     summary = (article.get("summary") or article.get("snippet") or "").lower()
     text = f"{title} {summary}"
     country_lower = country_name.lower()
-    
-    # Must mention country
+
+    # Must mention country (very small base if not, to allow backfill as absolute last resort)
     if country_lower not in text:
         return 0.1
-    
+
     score = 0.3  # Base score for mentioning country
-    
+
     # HIGH relevance keywords (government/policy/economy/security)
     high_keywords = [
         'government', 'ministry', 'parliament', 'president', 'prime minister',
@@ -96,86 +96,116 @@ def _score_article_relevance(article: Dict, country_name: str) -> float:
         'election', 'cabinet', 'policy', 'budget', 'fiscal', 'trade',
         'military', 'defense', 'conflict', 'sanctions', 'war', 'coup', 'security'
     ]
-    
+
     # MEDIUM relevance keywords
     medium_keywords = [
         'economy', 'economic', 'finance', 'currency', 'debt', 'growth',
         'minister', 'official', 'regulation', 'law', 'reform'
     ]
-    
+
     # LOW relevance (noise - entertainment/sports)
     noise_keywords = [
         'sport', 'football', 'soccer', 'basketball', 'tennis', 'cricket',
         'music', 'entertainment', 'celebrity', 'festival', 'award',
         'movie', 'film', 'actor', 'singer', 'concert'
     ]
-    
-    # Count matches
+
     high_count = sum(1 for kw in high_keywords if kw in text)
     medium_count = sum(1 for kw in medium_keywords if kw in text)
     noise_count = sum(1 for kw in noise_keywords if kw in text)
-    
-    # Scoring logic
+
     score += min(high_count * 0.15, 0.5)     # Up to +0.5 for high keywords
     score += min(medium_count * 0.08, 0.2)   # Up to +0.2 for medium keywords
-    score -= noise_count * 0.2                # Penalty for noise
-    
-    # Bonus for title mentions (title is more important)
+    score -= noise_count * 0.2               # Penalty for noise
+
+    # Bonus for high keywords in the title
     if any(kw in title for kw in high_keywords):
         score += 0.15
-    
+
     return max(0.0, min(1.0, score))
 
+def _rank_ids_by(
+    ids: List[str],
+    items_by_id: Dict[str, Dict],
+    impact_map: Dict[str, float],
+) -> List[str]:
+    """
+    Rank a list of article IDs by:
+      1) impact DESC
+      2) published recency DESC
+      3) precomputed relevance_score DESC (if present)
+    """
+    def key_fn(aid: str) -> Tuple[float, datetime, float]:
+        it = items_by_id.get(aid, {})
+        impact = float(impact_map.get(aid, 0.0))
+        dt = _parse_date_for_sort(it.get("published"))
+        rel = float(it.get("relevance_score", 0.0))
+        return (impact, dt, rel)
+    return sorted(ids, key=key_fn, reverse=True)
 
 def _fetch_relevant_news(country_name: str, max_articles: int = 20) -> List[Dict]:
     """
-    Fetch news using multiple targeted queries (political, economic, security).
-    Score by relevance and return top max_articles most relevant items.
+    Fetch news via 4 queries:
+      - Broad catch-all (country only)
+      - Government/Political
+      - Economic/Central Bank
+      - Security/Military
+    Score by relevance and return up to max_articles. If the filtered set is < 3,
+    relax the threshold and fill from the broader pool to ensure >=3 when possible.
     """
     queries = [
-        # Query 1: Government/Political
+        # NEW: Broad catch-all to maximize recall; noise is filtered by scoring
+        f'"{country_name}"',
+
+        # Government/Political
         f'"{country_name}" (government OR president OR prime minister OR parliament OR election OR cabinet OR coup OR protest)',
-        
-        # Query 2: Economic/Central Bank
+
+        # Economic/Central Bank
         f'"{country_name}" (central bank OR interest rate OR inflation OR GDP OR currency OR monetary policy OR IMF OR World Bank)',
-        
-        # Query 3: Security/Military
+
+        # Security/Military
         f'"{country_name}" (military OR defense OR conflict OR war OR attack OR sanctions OR security OR terrorism)',
     ]
-    
-    all_items = []
+
+    all_items: List[Dict] = []
     seen_urls = set()
-    
+
     for query in queries:
         items = fetch_links.gnews_rss(
             query=query,
-            max_results=15,  # Fetch 15 per query = 45 total
+            max_results=15,           # up to ~60 raw before de-dupe
             expand=True,
             extract_chars=24000,
             build_summary=True,
             summary_words=240,
         )
-        
-        # Deduplicate by URL
+
         for item in items:
             url = item.get("link", "")
             if url and url not in seen_urls:
                 seen_urls.add(url)
                 all_items.append(item)
-    
-    # Score each article for relevance
+
+    # Score each article
     for item in all_items:
         item["relevance_score"] = _score_article_relevance(item, country_name)
-    
-    # Sort by relevance (highest first)
-    all_items.sort(key=lambda x: x.get("relevance_score", 0), reverse=True)
-    
-    # Filter out low-relevance articles (< 0.3)
-    filtered = [item for item in all_items if item.get("relevance_score", 0) >= 0.3]
-    
-    # Return top max_articles
-    return filtered[:max_articles]
 
+    # High-quality filter first
+    filtered = [it for it in all_items if it.get("relevance_score", 0) >= 0.3]
+    filtered.sort(key=lambda x: (x.get("relevance_score", 0.0), _parse_date_for_sort(x.get("published"))), reverse=True)
+
+    # If we have very few, relax threshold to ensure >=3 (if possible)
+    if len(filtered) < 3:
+        print(f"[{country_name}] Only {len(filtered)} high-relevance items (>=0.3). Relaxing threshold to ensure 3.")
+        relaxed = sorted(
+            all_items,
+            key=lambda x: (x.get("relevance_score", 0.0), _parse_date_for_sort(x.get("published"))),
+            reverse=True,
+        )
+        # Keep top 'max_articles', but ensure at least 3 if available
+        filtered = relaxed[:max(max_articles, 3)]
+
+    return filtered[:max_articles]
 
 def ensure_missing_country_panels(excel_path: pathlib.Path,
                                   root: pathlib.Path,
@@ -223,7 +253,6 @@ def ensure_missing_country_panels(excel_path: pathlib.Path,
         except Exception as e:
             print(f"[{iso2}] ERROR while backfilling panel: {e}")
 
-
 # --- Main -------------------------------------------------------------------
 def main() -> None:
     """Loop countries → payload → news → LLM score → enrich Top-3 images if missing → DB."""
@@ -258,9 +287,9 @@ def main() -> None:
                 deltas=(1, 5),
             )
 
-            # 2) Fetch relevant news using multi-query strategy with relevance filtering
+            # 2) Fetch relevant news using multi-query strategy with relevance filtering (+ BROAD query)
             items = _fetch_relevant_news(country_name or iso2, max_articles=20)
-            
+
             if items:
                 avg_rel = sum(it.get("relevance_score", 0) for it in items) / len(items)
                 print(f"[{iso2}] Fetched {len(items)} articles (avg relevance: {avg_rel:.2f})")
@@ -306,84 +335,97 @@ def main() -> None:
                 seed=42,
             )
 
-            # 4) Rank and select Top-3 using AI's TOPIC CLUSTERING
+            # 4) Rank and select Top-3 using AI's TOPIC CLUSTERING, with guaranteed length=3
             try:
                 # Build maps from AI output
                 article_scores = llm_output.get("news_article_scores") or []
-                imp_map = {}
-                topic_map = {}  # article_id -> topic_group
-                
+                imp_map: Dict[str, float] = {}
+                topic_map: Dict[str, str] = {}  # article_id -> topic_group
+
                 for e in article_scores:
                     if not isinstance(e, dict):
                         continue
                     aid = e.get("id", "")
                     if not aid:
                         continue
-                    
                     try:
                         imp_map[aid] = float(e.get("impact", 0.0))
                     except (ValueError, TypeError):
                         imp_map[aid] = 0.0
-                    
                     topic_map[aid] = e.get("topic_group", "unknown")
-                    
             except Exception:
                 imp_map = {}
                 topic_map = {}
 
             items_by_id = {it.get("id"): it for it in items if isinstance(it, dict) and it.get("id")}
 
-            if imp_map and topic_map:
-                # Group articles by topic_group (AI's clustering)
-                topics = defaultdict(list)
-                for aid, topic_group in topic_map.items():
-                    topics[topic_group].append(aid)
-                
-                # For each topic, select the BEST article:
-                # 1. Highest impact
-                # 2. If tied, most recent publication date
-                topic_representatives = []
-                
-                for topic_group, article_ids in topics.items():
-                    # Sort by: impact DESC, then recency DESC
-                    sorted_ids = sorted(
-                        article_ids,
-                        key=lambda aid: (
-                            imp_map.get(aid, 0.0),  # Higher impact first
-                            _parse_date_for_sort(items_by_id.get(aid, {}).get("published", ""))
-                        ),
-                        reverse=True
-                    )
-                    
-                    # Take the best article from this topic
-                    best_id = sorted_ids[0]
-                    topic_representatives.append((
-                        best_id,
-                        imp_map.get(best_id, 0.0),
-                        topic_group
-                    ))
-                
-                # Sort topic representatives by impact (highest first) and take top 3
-                topic_representatives.sort(key=lambda x: x[1], reverse=True)
-                top_ids = [aid for aid, _, _ in topic_representatives[:3]]
-                
-                # Optional logging to see what AI clustered
-                print(f"[{iso2}] AI identified {len(topics)} distinct topics:")
-                for aid, imp, topic in topic_representatives[:5]:
-                    title = items_by_id.get(aid, {}).get("title", "")[:60]
-                    print(f"  - {topic[:30]:30s} | impact={imp:.2f} | {title}")
-                
-            else:
-                # Fallback: naive sorting by impact if no topic info
+            def ensure_top_three(
+                items_by_id: Dict[str, Dict],
+                imp_map: Dict[str, float],
+                topic_map: Dict[str, str] | None,
+            ) -> List[str]:
+                # If we have impact but no topic info, just impact-rank fallback.
+                if not items_by_id:
+                    return []
+
+                all_ids = list(items_by_id.keys())
+
+                # If we have some impact scores, fill missing ones with 0.0 so ranking is stable
                 if imp_map:
-                    ranked_ids = sorted(
-                        items_by_id.keys(),
-                        key=lambda iid: imp_map.get(iid, float("-inf")),
-                        reverse=True,
-                    )
-                else:
-                    ranked_ids = [it.get("id") for it in items if it.get("id")]
+                    for aid in all_ids:
+                        imp_map.setdefault(aid, 0.0)
+
+                # Prefer topic representatives ONLY if we have >=3 distinct topics
+                if topic_map:
+                    topics = defaultdict(list)
+                    for aid, tg in topic_map.items():
+                        if aid in items_by_id:  # ensure exists
+                            topics[tg].append(aid)
+
+                    topic_reps: List[Tuple[str, float, str]] = []
+                    for tg, ids in topics.items():
+                        # Best in topic by (impact, recency, relevance)
+                        best = _rank_ids_by(ids, items_by_id, imp_map)[0] if ids else None
+                        if best:
+                            topic_reps.append((best, imp_map.get(best, 0.0), tg))
+
+                    topic_reps.sort(key=lambda t: t[1], reverse=True)
+                    distinct_topic_count = len(topics)
+
+                    if distinct_topic_count >= 3:
+                        top_ids = [aid for aid, _, _ in topic_reps[:3]]
+                        print(f"[{iso2}] AI identified {distinct_topic_count} topics (used 1/article).")
+                        return top_ids
+
+                    # If topics <=2, still use the best representative(s) then fill to 3
+                    chosen = [aid for aid, _, _ in topic_reps[:3]]  # at most 2 here typically
+                    remaining = [aid for aid in all_ids if aid not in chosen]
+                    # Rank remaining by (impact, recency, relevance) and fill
+                    ranked_remaining = _rank_ids_by(remaining, items_by_id, imp_map)
+                    needed = 3 - len(chosen)
+                    chosen += ranked_remaining[:max(0, needed)]
+                    print(f"[{iso2}] Only {distinct_topic_count} topic(s). Backfilled to 3 with best remaining.")
+                    return chosen[:3]
+
+                # No topic map at all → fall back to global ranking by impact/recency/relevance
+                ranked = _rank_ids_by(all_ids, items_by_id, imp_map)
+                return ranked[:3]
+
+            # Main selection path
+            if imp_map:
+                top_ids = ensure_top_three(items_by_id, imp_map, topic_map or {})
+            else:
+                # No impact from LLM (edge), fall back to relevance+recency from fetch stage
+                ranked_ids = sorted(
+                    items_by_id.keys(),
+                    key=lambda iid: (
+                        items_by_id[iid].get("relevance_score", 0.0),
+                        _parse_date_for_sort(items_by_id[iid].get("published")),
+                    ),
+                    reverse=True,
+                )
                 top_ids = ranked_ids[:3]
+                print(f"[{iso2}] No LLM impacts. Used relevance+recency fallback.")
 
             # 5) Enrich ONLY the Top-3 with missing images using the advanced scraper
             cb_token = _crawlbase_token()
@@ -392,7 +434,7 @@ def main() -> None:
                     it = items_by_id.get(iid)
                     if not it:
                         continue
-                    if it.get("image"):   # only if image is missing
+                    if it.get("image"):  # only if image is missing
                         continue
                     link = it.get("link") or ""
                     if not isinstance(link, str) or not link.startswith("http"):
@@ -404,7 +446,7 @@ def main() -> None:
                     # Fill image if Crawlbase found one
                     if rec.get("image_url"):
                         it["image"] = rec["image_url"]
-                    # (Optional tiny bonus) backfill published if missing
+                    # Backfill published if missing
                     if (not it.get("published")) and rec.get("published_at"):
                         it["published"] = rec["published_at"]
 
@@ -412,7 +454,6 @@ def main() -> None:
             top_articles = []
             for r, iid in enumerate(top_ids, start=1):
                 it = items_by_id.get(iid, {})
-                impact = None
                 try:
                     impact = float(imp_map.get(iid, 0.0))
                 except Exception:
