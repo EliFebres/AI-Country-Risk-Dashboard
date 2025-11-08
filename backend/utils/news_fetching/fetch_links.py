@@ -5,12 +5,20 @@ import asyncio
 import feedparser
 import trafilatura
 import datetime as dt
+import logging
 
 from typing import List, Dict
-from urllib.parse import urlencode, quote_plus
+from urllib.parse import urlencode, quote_plus, urlparse
 
+from backend.utils.news_fetching.url_resolver import resolve_google_news_url
+
+
+# Quiet noisy warnings from trafilatura
+logging.getLogger("trafilatura").setLevel(logging.ERROR)
+logging.getLogger("trafilatura.core").setLevel(logging.ERROR)
 
 UA = "Mozilla/5.0 (compatible; ai-country-risk/1.0)"
+
 
 def _gnews_url(query: str, lang: str = "en", country: str = "US") -> str:
     """Build a properly encoded Google News RSS search URL."""
@@ -19,6 +27,7 @@ def _gnews_url(query: str, lang: str = "en", country: str = "US") -> str:
     ceid = f"{country}:{lang}"
     params = {"q": query, "hl": hl, "gl": country, "ceid": ceid}
     return f"{base}?{urlencode(params, quote_via=quote_plus)}"
+
 
 def _strip_html(s: str) -> str:
     """Remove all HTML (including <a> links) and unescape entities."""
@@ -30,6 +39,7 @@ def _strip_html(s: str) -> str:
     s = re.sub(r"\s+", " ", s).strip()                         # collapse whitespace
     return s
 
+
 def _clip_words(s: str, max_words: int) -> str:
     """Return the first max_words of s (by whitespace)."""
     if not s or max_words <= 0:
@@ -39,28 +49,52 @@ def _clip_words(s: str, max_words: int) -> str:
         return s.strip()
     return " ".join(parts[:max_words]).strip()
 
+
 async def _fetch_text_async(url: str, client: httpx.AsyncClient, max_chars: int = 3000) -> str:
     try:
+        # If somehow still a Google News link, resolve it here too
+        if "news.google.com" in urlparse(url).netloc:
+            try:
+                url = resolve_google_news_url(url)
+            except Exception:
+                pass
+
         r = await client.get(url, timeout=15)
         r.raise_for_status()
-        text = trafilatura.extract(r.text) or ""
+        # Provide URL context to trafilatura for better extraction heuristics
+        text = trafilatura.extract(r.text, url=str(r.url)) or ""
         return text[:max_chars]
     except Exception:
         return ""
+
 
 def _fetch_text_sync(url: str, client: httpx.Client, max_chars: int = 3000) -> str:
     try:
+        if "news.google.com" in urlparse(url).netloc:
+            try:
+                url = resolve_google_news_url(url)
+            except Exception:
+                pass
+
         r = client.get(url, timeout=15)
         r.raise_for_status()
-        text = trafilatura.extract(r.text) or ""
+        text = trafilatura.extract(r.text, url=str(r.url)) or ""
         return text[:max_chars]
     except Exception:
         return ""
 
+
 async def _expand_items_async(entries: List[Dict], max_articles: int, max_chars: int) -> List[Dict]:
-    urls = [e.get("link") for e in entries[:max_articles] if e.get("link")]
+    urls = [
+        (e.get("publisher_link") or e.get("link"))
+        for e in entries[:max_articles]
+        if (e.get("publisher_link") or e.get("link"))
+    ]
     async with httpx.AsyncClient(follow_redirects=True, headers={"User-Agent": UA}) as client:
-        texts = await asyncio.gather(*(_fetch_text_async(u, client, max_chars) for u in urls), return_exceptions=True)
+        texts = await asyncio.gather(
+            *(_fetch_text_async(u, client, max_chars) for u in urls),
+            return_exceptions=True
+        )
     out = []
     for e, t in zip(entries[:max_articles], texts):
         text = "" if isinstance(t, Exception) else (t or "")
@@ -70,8 +104,13 @@ async def _expand_items_async(entries: List[Dict], max_articles: int, max_chars:
         out.append(e2)
     return out + entries[max_articles:]
 
+
 def _expand_items_sync(entries: List[Dict], max_articles: int, max_chars: int) -> List[Dict]:
-    urls = [e.get("link") for e in entries[:max_articles] if e.get("link")]
+    urls = [
+        (e.get("publisher_link") or e.get("link"))
+        for e in entries[:max_articles]
+        if (e.get("publisher_link") or e.get("link"))
+    ]
     with httpx.Client(follow_redirects=True, headers={"User-Agent": UA}) as client:
         texts = [_fetch_text_sync(u, client, max_chars) for u in urls]
     out = []
@@ -81,6 +120,7 @@ def _expand_items_sync(entries: List[Dict], max_articles: int, max_chars: int) -
         e2["word_count"] = len((text or "").split())
         out.append(e2)
     return out + entries[max_articles:]
+
 
 def gnews_rss(
     query: str,
@@ -92,18 +132,19 @@ def gnews_rss(
     country: str = "US",
     build_summary: bool = True,
     summary_words: int = 240,
-    max_age_days: int | None = 30,   # NEW: limit by age (None = no filter)
+    max_age_days: int | None = 30,   # limit by age (None = no filter)
 ) -> List[Dict]:
     """
     Return Google News RSS items. If expand=True, also fetch and extract each article's main text.
 
     Each item contains:
-      - 'title':        str
-      - 'link':         str (publisher link)
-      - 'published':    ISO8601 str or None
-      - 'source':       str (publisher name if available)
-      - 'snippet':      str (PLAIN TEXT, links removed)
-      - 'snippet_html': str (original RSS summary with HTML)
+      - 'title':          str
+      - 'link':           str (original Google News link)
+      - 'publisher_link': str (resolved publisher URL)
+      - 'published':      ISO8601 str or None
+      - 'source':         str (publisher name if available)
+      - 'snippet':        str (PLAIN TEXT, links removed)
+      - 'snippet_html':   str (original RSS summary with HTML)
       - ['text','word_count'] present when expand=True and extraction succeeds
       - ['summary','summary_word_count'] present when build_summary=True
 
@@ -140,9 +181,16 @@ def gnews_rss(
         elif isinstance(src, str):
             source_title = src
 
+        raw_link = getattr(e, "link", "") or ""
+        try:
+            publisher_link = resolve_google_news_url(raw_link)
+        except Exception:
+            publisher_link = raw_link
+
         items.append({
             "title": getattr(e, "title", "") or "",
-            "link": getattr(e, "link", "") or "",
+            "link": raw_link,                     # keep original for reference
+            "publisher_link": publisher_link,     # use this for fetching content
             "published": published_dt.isoformat().replace("+00:00", "Z") if published_dt else None,
             "source": source_title,
             "snippet": plain_summary,
@@ -157,6 +205,7 @@ def gnews_rss(
     if expand and items:
         try:
             _ = asyncio.get_running_loop()  # raises RuntimeError if none
+            # If we're already in an event loop, use sync fallback to avoid nested loop issues
             items = _expand_items_sync(items, max_articles=len(items), max_chars=extract_chars)
         except RuntimeError:
             items = asyncio.run(_expand_items_async(items, max_articles=len(items), max_chars=extract_chars))
