@@ -240,7 +240,10 @@ export default function Map({ bounds, center = [0, 20], zoom = 2.5 }: Props) {
       map.setMaxBounds(bounds);
     }
 
-    map.addControl(new maplibregl.NavigationControl({ visualizePitch: false }), 'top-right');
+    // Removed NavigationControl (zoom +/- and compass)
+    // map.addControl(new maplibregl.NavigationControl({ visualizePitch: false }), 'top-right');
+
+    // Keep attribution if you need it. Remove the next line too if you want *zero* controls.
     map.addControl(new maplibregl.AttributionControl({ compact: true }));
 
     const showOnlyCountryLabels = () => {
