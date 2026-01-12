@@ -133,12 +133,12 @@ export async function fetchJoinedLatestRisksFromDB(): Promise<JoinedLatestRisk[]
 export type RefreshOutcome =
   | { status: "skipped"; lastRun: string; nextEligible: string }
   | {
-      status: "updated";
-      lastRun: string;
-      matchedCount: number;
-      changedCount: number;
-      missingInJson: string[];
-    }
+    status: "updated";
+    lastRun: string;
+    matchedCount: number;
+    changedCount: number;
+    missingInJson: string[];
+  }
   | { status: "error"; error: string };
 
 const ONE_WEEK_MS = 7 * 24 * 60 * 60 * 1000;
@@ -508,7 +508,7 @@ export async function refreshRiskJsonWeekly(): Promise<RefreshOutcome> {
     const normalize = (s: string) => s.trim().toLowerCase();
     const dbMap = new Map<
       string,
-      { iso2: string; score: number; prevScore: number | null; prevScores: number[] }
+      { iso2: string; score: number; as_of: string; prevScore: number | null; prevScores: number[] }
     >();
     for (const row of joined) {
       const list = Array.isArray(row.prev_scores)
@@ -522,6 +522,7 @@ export async function refreshRiskJsonWeekly(): Promise<RefreshOutcome> {
       dbMap.set(normalize(row.name), {
         iso2: row.iso2,
         score: Number(row.score),
+        as_of: row.as_of,
         prevScore: row.prev_score == null ? null : Number(row.prev_score),
         prevScores: list,
       });
@@ -543,7 +544,7 @@ export async function refreshRiskJsonWeekly(): Promise<RefreshOutcome> {
         const iso2Changed = (d as any).iso2 !== rec.iso2;
         if (riskChanged || iso2Changed) changedCount++;
 
-        const out: any = { ...d, risk: rec.score, iso2: rec.iso2 };
+        const out: any = { ...d, risk: rec.score, iso2: rec.iso2, as_of: rec.as_of };
 
         if (rec.prevScores.length > 0) {
           out.prevRiskSeries = rec.prevScores;         // newest→oldest, excluding current

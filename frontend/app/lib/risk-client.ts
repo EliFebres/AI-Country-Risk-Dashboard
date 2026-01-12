@@ -6,6 +6,7 @@ export type CountryRisk = {
   prevRisk?: number;        // previous single value (convenience)
   prevRiskSeries?: number[]; // NEW: all prior scores, newest→oldest (excludes current)
   iso2?: string;            // populated by weekly refresh
+  as_of?: string;           // ISO date when the risk data was generated
 };
 
 export const RISK_JSON_PUBLIC_PATH = "/api/risk.json";

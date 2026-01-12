@@ -309,9 +309,6 @@ export default function Map({ bounds, center = [0, 20], zoom = 2.5 }: Props) {
         const refresh = await r.json().catch(() => ({} as any));
         console.log('refresh-risk result:', r.status, refresh);
 
-        const stamp = refresh?.lastRun ?? Date.now();
-        setDataTimestamp(stamp);
-
         let riskUrl = '/api/risk.json';
         const buster = refresh?.lastRun ?? String(Date.now());
         riskUrl += `?v=${encodeURIComponent(buster)}`;
@@ -325,6 +322,15 @@ export default function Map({ bounds, center = [0, 20], zoom = 2.5 }: Props) {
 
         const dots: RiskDot[] = await res.json();
         console.log(`Loaded ${dots.length} risk markers`);
+
+        // Calculate the most recent as_of date from the data for the LIVE indicator
+        // This shows actual data age, not when the JSON file was refreshed
+        const mostRecentAsOf = dots.reduce<string | null>((latest, dot) => {
+          if (!dot.as_of) return latest;
+          if (!latest) return dot.as_of;
+          return dot.as_of > latest ? dot.as_of : latest;
+        }, null);
+        setDataTimestamp(mostRecentAsOf ?? Date.now());
 
         // Share the exact same fresh array with the TableSidebar
         setRiskRows(dots);
