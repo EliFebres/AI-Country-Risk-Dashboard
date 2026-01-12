@@ -18,8 +18,9 @@ type CountryIndicatorLatest = {
   values: Partial<Record<IndicatorName, IndicatorSnapshot>>;
 };
 
-/** Cache to avoid refetch storms */
-let INDICATOR_CACHE: CountryIndicatorLatest[] | null = null;
+// Cache with 1-hour expiration to ensure fresh data
+const CACHE_TTL_MS = 60 * 60 * 1000; // 1 hour
+let INDICATOR_CACHE: { data: CountryIndicatorLatest[]; timestamp: number } | null = null;
 
 /** ------------------------------------------------------------------------ */
 /** HOVER TEXT DICTIONARY — edit here to change tooltip copy for each gauge. */
@@ -226,22 +227,27 @@ export default function EconomicGaugeSection({
       try {
         setIndLoading(true);
 
-        if (!INDICATOR_CACHE) {
+        // Check if cache is expired (older than 1 hour) or doesn't exist
+        const cacheExpired = !INDICATOR_CACHE || Date.now() - INDICATOR_CACHE.timestamp >= CACHE_TTL_MS;
+
+        if (cacheExpired) {
           const res = await fetch('/api/indicator_latest.json', {
             cache: 'no-store',
             headers: { accept: 'application/json' },
           });
           if (!res.ok) throw new Error(`HTTP ${res.status}`);
           const payload = (await res.json()) as CountryIndicatorLatest[] | CountryIndicatorLatest;
-          INDICATOR_CACHE = Array.isArray(payload) ? payload : [payload];
+          const data = Array.isArray(payload) ? payload : [payload];
+          INDICATOR_CACHE = { data, timestamp: Date.now() };
         }
 
         const isoU = iso2?.toUpperCase() || '';
         const norm = (s: string) => s.trim().toLowerCase();
+        const cacheData = INDICATOR_CACHE!.data;
 
         let hit: CountryIndicatorLatest | undefined;
-        if (isoU) hit = INDICATOR_CACHE.find((c) => (c.iso2 || '').toUpperCase() === isoU);
-        if (!hit && countryName) hit = INDICATOR_CACHE.find((c) => norm(c.name) === norm(countryName));
+        if (isoU) hit = cacheData.find((c) => (c.iso2 || '').toUpperCase() === isoU);
+        if (!hit && countryName) hit = cacheData.find((c) => norm(c.name) === norm(countryName));
 
         if (!cancelled) {
           if (hit) setIndicators(hit);
@@ -262,27 +268,27 @@ export default function EconomicGaugeSection({
   const gaugeItems =
     indicators
       ? ORDER.map((name) => {
-          const snap = indicators.values[name];
-          const valText = formatValue(name, snap);
-          const progress =
-            typeof snap?.value === 'number' ? progressForIndicator(name, snap.value) : 0.0;
+        const snap = indicators.values[name];
+        const valText = formatValue(name, snap);
+        const progress =
+          typeof snap?.value === 'number' ? progressForIndicator(name, snap.value) : 0.0;
 
-          const ringColor =
-            name === 'GDP per-capita growth (% y/y)'
-              ? colorForGDP(snap?.value)
-              : undefined;
+        const ringColor =
+          name === 'GDP per-capita growth (% y/y)'
+            ? colorForGDP(snap?.value)
+            : undefined;
 
-          return {
-            key: name,
-            title: shortLabel(name),
-            caption: oneWordLabel(name),
-            valueText: valText,
-            progress,
-            ringColor,
-            aria: `${shortLabel(name)} ${valText}`,
-            tooltip: INDICATOR_TOOLTIPS[name], // ← use dictionary hover text
-          };
-        })
+        return {
+          key: name,
+          title: shortLabel(name),
+          caption: oneWordLabel(name),
+          valueText: valText,
+          progress,
+          ringColor,
+          aria: `${shortLabel(name)} ${valText}`,
+          tooltip: INDICATOR_TOOLTIPS[name], // ← use dictionary hover text
+        };
+      })
       : [];
 
   return (

@@ -12,7 +12,7 @@ export const RISK_JSON_PUBLIC_PATH = "/api/risk.json";
 
 /** Load risks in the browser (Client Components / useEffect). */
 export async function loadRisksClient(signal?: AbortSignal): Promise<CountryRisk[]> {
-  const res = await fetch(RISK_JSON_PUBLIC_PATH, { cache: "force-cache", signal });
+  const res = await fetch(RISK_JSON_PUBLIC_PATH, { cache: "no-store", signal });
   if (!res.ok) throw new Error(`Failed to load risks: ${res.status} ${res.statusText}`);
   return (await res.json()) as CountryRisk[];
 }
@@ -64,7 +64,7 @@ export const ARTICLES_JSON_PUBLIC_PATH = "/api/articles_latest.json";
 
 /** Load latest 0–3 articles for each country (based on latest snapshot date). */
 export async function loadLatestArticles(signal?: AbortSignal): Promise<CountryArticles[]> {
-  const res = await fetch(ARTICLES_JSON_PUBLIC_PATH, { cache: "force-cache", signal });
+  const res = await fetch(ARTICLES_JSON_PUBLIC_PATH, { cache: "no-store", signal });
   if (!res.ok) throw new Error(`Failed to load articles: ${res.status} ${res.statusText}`);
   return (await res.json()) as CountryArticles[];
 }

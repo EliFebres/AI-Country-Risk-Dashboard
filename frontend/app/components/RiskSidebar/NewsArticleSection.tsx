@@ -20,15 +20,19 @@ type CountryNews = {
 
 const NEWS_JSON_PUBLIC_PATH = '/api/articles_latest.json';
 
-// Simple session cache to avoid refetch storms
-let NEWS_CACHE: CountryNews[] | null = null;
+// Cache with 1-hour expiration to ensure fresh data
+const CACHE_TTL_MS = 60 * 60 * 1000; // 1 hour
+let NEWS_CACHE: { data: CountryNews[]; timestamp: number } | null = null;
 
 async function loadAllNews(signal?: AbortSignal): Promise<CountryNews[]> {
-  if (NEWS_CACHE) return NEWS_CACHE;
+  // Check if cache exists and is still valid (less than 1 hour old)
+  if (NEWS_CACHE && Date.now() - NEWS_CACHE.timestamp < CACHE_TTL_MS) {
+    return NEWS_CACHE.data;
+  }
   const res = await fetch(NEWS_JSON_PUBLIC_PATH, { cache: 'no-store', signal });
   if (!res.ok) throw new Error(`Failed to load news: ${res.status} ${res.statusText}`);
   const data = (await res.json()) as CountryNews[];
-  NEWS_CACHE = data;
+  NEWS_CACHE = { data, timestamp: Date.now() };
   return data;
 }
 
@@ -43,7 +47,7 @@ function daysAgoLabel(iso?: string | null): string {
 
   const now = new Date();
   const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
-  const startOfPub   = new Date(pub.getFullYear(), pub.getMonth(), pub.getDate()).getTime();
+  const startOfPub = new Date(pub.getFullYear(), pub.getMonth(), pub.getDate()).getTime();
 
   // Calendar-day difference (round guards against 23/25h DST days). Clamp future to 0.
   const days = Math.max(0, Math.round((startOfToday - startOfPub) / DAY_MS));
@@ -71,7 +75,7 @@ const PUBLISHER_ALIASES: Record<string, string> = {
   'le monde.fr': 'Le Monde',
 };
 
-const STOPWORDS = new Set(['the','a','an','of','for','and','to','in','on','at','by','with']);
+const STOPWORDS = new Set(['the', 'a', 'an', 'of', 'for', 'and', 'to', 'in', 'on', 'at', 'by', 'with']);
 
 function stripCompanySuffixes(s: string): string {
   return s
@@ -106,7 +110,7 @@ function normalizePublisher(s: string): string {
 function canonicalPublisherName(a: Article): string {
   let base = (a.source ?? '').trim();
   if (!base) {
-    try { base = hostToBrand(new URL(a.url).hostname); } catch {}
+    try { base = hostToBrand(new URL(a.url).hostname); } catch { }
   }
   base = stripCompanySuffixes(base);
   const key = base.toLowerCase();
@@ -135,14 +139,14 @@ function cleanTitle(a: Article): string {
   if (!raw) return '';
 
   const canonical = canonicalPublisherName(a);
-  const candidates = new Set<string>([ normalizePublisher(canonical) ]);
+  const candidates = new Set<string>([normalizePublisher(canonical)]);
 
   // Also consider raw host forms (helps when title uses domain)
   try {
     const host = new URL(a.url).hostname;
     candidates.add(normalizePublisher(host));
     candidates.add(normalizePublisher(hostToBrand(host)));
-  } catch {}
+  } catch { }
 
   let t = raw;
   for (let i = 0; i < 2; i++) {
@@ -152,7 +156,7 @@ function cleanTitle(a: Article): string {
     const normTail = normalizePublisher(tail);
     if (candidates.has(normTail)) {
       t = t.slice(0, m.index).trim();
-      t = t.replace(/[ \t]*[-–—|:·]+[ \t]*$/,'').trim();
+      t = t.replace(/[ \t]*[-–—|:·]+[ \t]*$/, '').trim();
     } else {
       break;
     }
