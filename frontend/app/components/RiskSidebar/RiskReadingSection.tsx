@@ -127,36 +127,35 @@ export default function RiskReadingSection({
         let currentRisk: number | null = null;
         let delta: number | null = null;
 
+        // ALWAYS use prop values as the source of truth for displayed risk
+        // This ensures consistency with Map markers and TableSidebar
+        const propCurrent = typeof currentRiskProp === 'number' ? currentRiskProp : null;
+        const propPrev = typeof prevRiskProp === 'number' ? prevRiskProp : null;
+
         if (entry) {
           const prior = (entry.prevRiskSeries ?? []).slice().reverse(); // oldest→newest
-          const latest = entry.risk;
+          // Use the prop-passed risk for display, but entry.risk for history if needed
+          const latest = propCurrent ?? entry.risk;
           history = [...prior, latest].filter((v) => typeof v === 'number' && Number.isFinite(v));
-          currentRisk = typeof latest === 'number' ? latest : null;
+          currentRisk = propCurrent ?? (typeof entry.risk === 'number' ? entry.risk : null);
 
           // delta = latest - previous (immediate predecessor)
+          // Use propPrev if available, otherwise fall back to entry data
           const prevImmediate =
-            prior.length > 0
+            propPrev ??
+            (prior.length > 0
               ? prior[prior.length - 1]
-              : (typeof entry.prevRisk === 'number' ? entry.prevRisk : null);
-          if (typeof latest === 'number' && typeof prevImmediate === 'number') {
-            delta = latest - prevImmediate;
+              : (typeof entry.prevRisk === 'number' ? entry.prevRisk : null));
+          if (typeof currentRisk === 'number' && typeof prevImmediate === 'number') {
+            delta = currentRisk - prevImmediate;
           }
         } else {
           // fallback to props if entry not found
-          const cr =
-            (currentRiskProp ?? undefined) !== undefined
-              ? (currentRiskProp as number | null)
-              : null;
-          const pr =
-            (prevRiskProp ?? undefined) !== undefined
-              ? (prevRiskProp as number | null)
-              : null;
-
-          currentRisk = typeof cr === 'number' ? cr : null;
-          if (typeof cr === 'number') history = [cr];
-          if (typeof pr === 'number') {
-            history = [pr, ...history];
-            if (typeof cr === 'number') delta = cr - pr;
+          currentRisk = propCurrent;
+          if (typeof propCurrent === 'number') history = [propCurrent];
+          if (typeof propPrev === 'number') {
+            history = [propPrev, ...history];
+            if (typeof propCurrent === 'number') delta = propCurrent - propPrev;
           }
         }
 
@@ -193,10 +192,10 @@ export default function RiskReadingSection({
     stats?.delta == null
       ? 'flat'
       : stats.delta > 0
-      ? 'up'
-      : stats.delta < 0
-      ? 'down'
-      : 'flat';
+        ? 'up'
+        : stats.delta < 0
+          ? 'down'
+          : 'flat';
 
   const deltaSign = stats?.delta != null && stats.delta < 0 ? '−' : '+'; // U+2212 minus for better kerning
   const deltaText =
