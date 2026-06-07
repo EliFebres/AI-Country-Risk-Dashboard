@@ -144,8 +144,8 @@
         "unit": "% y/y"
       },
       "Interest payments (% revenue)": {
-        "year": 2023,
-        "value": 30.84,
+        "year": 2024,
+        "value": 30.09,
         "unit": "% revenue"
       },
       "Rule of law (z-score)": {
@@ -248,8 +248,8 @@
         "unit": "% y/y"
       },
       "Interest payments (% revenue)": {
-        "year": 2023,
-        "value": 13.82,
+        "year": 2024,
+        "value": 13.9,
         "unit": "% revenue"
       },
       "Rule of law (z-score)": {
@@ -753,8 +753,8 @@
         "unit": "% y/y"
       },
       "Interest payments (% revenue)": {
-        "year": 2021,
-        "value": 6.17,
+        "year": 2024,
+        "value": 4.26,
         "unit": "% revenue"
       },
       "Rule of law (z-score)": {
@@ -831,8 +831,8 @@
         "unit": "% y/y"
       },
       "Interest payments (% revenue)": {
-        "year": 2022,
-        "value": 3.17,
+        "year": 2023,
+        "value": 4.99,
         "unit": "% revenue"
       },
       "Rule of law (z-score)": {
@@ -1071,8 +1071,8 @@
         "unit": "% y/y"
       },
       "Inflation (% y/y)": {
-        "year": 2021,
-        "value": 6.69,
+        "year": 2024,
+        "value": 8.43,
         "unit": "% y/y"
       },
       "Interest payments (% revenue)": {
@@ -1102,8 +1102,8 @@
         "unit": "% y/y"
       },
       "Interest payments (% revenue)": {
-        "year": 2023,
-        "value": 3.12,
+        "year": 2024,
+        "value": 3.54,
         "unit": "% revenue"
       },
       "Rule of law (z-score)": {
@@ -1128,8 +1128,8 @@
         "unit": "% y/y"
       },
       "Interest payments (% revenue)": {
-        "year": 2023,
-        "value": 0.42,
+        "year": 2024,
+        "value": 0.47,
         "unit": "% revenue"
       },
       "Rule of law (z-score)": {
@@ -1154,8 +1154,8 @@
         "unit": "% y/y"
       },
       "Interest payments (% revenue)": {
-        "year": 2022,
-        "value": 15.62,
+        "year": 2023,
+        "value": 17.29,
         "unit": "% revenue"
       },
       "Rule of law (z-score)": {
@@ -1170,8 +1170,8 @@
     "name": "South Korea",
     "values": {
       "GDP per-capita growth (% y/y)": {
-        "year": 2023,
-        "value": 1.28,
+        "year": 2024,
+        "value": 1.93,
         "unit": "% y/y"
       },
       "Inflation (% y/y)": {
@@ -1232,8 +1232,8 @@
         "unit": "% y/y"
       },
       "Interest payments (% revenue)": {
-        "year": 2022,
-        "value": 1.37,
+        "year": 2023,
+        "value": 1.36,
         "unit": "% revenue"
       },
       "Rule of law (z-score)": {
@@ -1284,8 +1284,8 @@
         "unit": "% y/y"
       },
       "Interest payments (% revenue)": {
-        "year": 2023,
-        "value": 5.72,
+        "year": 2024,
+        "value": 5.76,
         "unit": "% revenue"
       },
       "Rule of law (z-score)": {
@@ -1310,8 +1310,8 @@
         "unit": "% y/y"
       },
       "Interest payments (% revenue)": {
-        "year": 2023,
-        "value": 12.97,
+        "year": 2024,
+        "value": 11.66,
         "unit": "% revenue"
       },
       "Rule of law (z-score)": {
@@ -1336,8 +1336,8 @@
         "unit": "% y/y"
       },
       "Interest payments (% revenue)": {
-        "year": 2023,
-        "value": 8,
+        "year": 2024,
+        "value": 8.27,
         "unit": "% revenue"
       },
       "Rule of law (z-score)": {
@@ -1362,8 +1362,8 @@
         "unit": "% y/y"
       },
       "Interest payments (% revenue)": {
-        "year": 2023,
-        "value": 1.92,
+        "year": 2024,
+        "value": 3.04,
         "unit": "% revenue"
       },
       "Rule of law (z-score)": {
@@ -1388,8 +1388,8 @@
         "unit": "% y/y"
       },
       "Interest payments (% revenue)": {
-        "year": 2023,
-        "value": 9.03,
+        "year": 2024,
+        "value": 8.32,
         "unit": "% revenue"
       },
       "Rule of law (z-score)": {
@@ -1414,8 +1414,8 @@
         "unit": "% y/y"
       },
       "Interest payments (% revenue)": {
-        "year": 2023,
-        "value": 17.98,
+        "year": 2024,
+        "value": 20.19,
         "unit": "% revenue"
       },
       "Rule of law (z-score)": {
@@ -1429,6 +1429,11 @@
     "iso2": "VE",
     "name": "Venezuela",
     "values": {
+      "GDP per-capita growth (% y/y)": {
+        "year": 2024,
+        "value": 4.91,
+        "unit": "% y/y"
+      },
       "Inflation (% y/y)": {
         "year": 2016,
         "value": 254.95,

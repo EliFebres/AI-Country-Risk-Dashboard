@@ -10,6 +10,19 @@ export type CountryRisk = {
 
 export const RISK_JSON_PUBLIC_PATH = "/api/risk.json";
 
+/**
+ * Shared in-memory cache of the fresh risk dataset. The map fetches risk.json
+ * once (with a cache-buster) and primes this; other client components read it
+ * instead of re-fetching, avoiding a stale-CDN divergence.
+ */
+let RISK_CACHE: CountryRisk[] | null = null;
+export function primeRiskCache(rows: CountryRisk[]): void {
+  RISK_CACHE = rows;
+}
+export function getRiskCache(): CountryRisk[] | null {
+  return RISK_CACHE;
+}
+
 /** Load risks in the browser (Client Components / useEffect). */
 export async function loadRisksClient(signal?: AbortSignal): Promise<CountryRisk[]> {
   const res = await fetch(RISK_JSON_PUBLIC_PATH, { cache: "force-cache", signal });

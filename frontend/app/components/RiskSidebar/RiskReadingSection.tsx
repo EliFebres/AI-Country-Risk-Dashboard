@@ -10,19 +10,10 @@ import {
   Tooltip,
   CartesianGrid,
 } from 'recharts';
+import { getRiskCache, primeRiskCache, type CountryRisk } from '../../lib/risk-client';
 
 /** risk.json entry */
-type RiskEntry = {
-  name: string;
-  lngLat: [number, number];
-  risk: number;                 // latest
-  prevRisk?: number;            // convenience: most-recent prior value
-  prevRiskSeries?: number[];    // all prior values, newest→oldest (excludes current)
-  iso2?: string;
-};
-
-/** Cache to avoid refetch storms */
-let RISK_CACHE: RiskEntry[] | null = null;
+type RiskEntry = CountryRisk;
 
 /** utils */
 function colorForRisk(r: number) {
@@ -100,8 +91,10 @@ export default function RiskReadingSection({
       try {
         setStatsLoading(true);
 
-        if (!RISK_CACHE) {
-          RISK_CACHE = await fetchRiskJson(false);
+        let cache = getRiskCache();
+        if (!cache) {
+          cache = await fetchRiskJson(false);
+          primeRiskCache(cache);
         }
 
         const isoU = iso2?.toUpperCase() || '';
@@ -109,8 +102,8 @@ export default function RiskReadingSection({
 
         const findEntry = () => {
           let e: RiskEntry | undefined;
-          if (isoU) e = RISK_CACHE!.find((c) => (c.iso2 || '').toUpperCase() === isoU);
-          if (!e && countryName) e = RISK_CACHE!.find((c) => norm(c.name) === norm(countryName));
+          if (isoU) e = cache!.find((c) => (c.iso2 || '').toUpperCase() === isoU);
+          if (!e && countryName) e = cache!.find((c) => norm(c.name) === norm(countryName));
           return e;
         };
 
@@ -118,7 +111,8 @@ export default function RiskReadingSection({
 
         // If cached JSON is stale and missing prevRiskSeries, re-fetch fresh once
         if (entry && (!entry.prevRiskSeries || entry.prevRiskSeries.length === 0)) {
-          RISK_CACHE = await fetchRiskJson(true);
+          cache = await fetchRiskJson(true);
+          primeRiskCache(cache);
           entry = findEntry();
         }
 
@@ -161,7 +155,7 @@ export default function RiskReadingSection({
         }
 
         // Averages across all countries (current)
-        const values = (RISK_CACHE ?? [])
+        const values = (cache ?? [])
           .map((r) => r.risk)
           .filter((v) => Number.isFinite(v)) as number[];
         const avgCurrent = values.length ? values.reduce((a, b) => a + b, 0) / values.length : null;
@@ -292,7 +286,7 @@ export default function RiskReadingSection({
       </div>
 
       <style jsx>{`
-        .muted { opacity: 0.7; }
+        .muted { color: var(--amber-dim); }
 
         .statsRow {
           display: flex;
@@ -303,14 +297,13 @@ export default function RiskReadingSection({
         }
         .statsCol {
           flex: 1 1 0;
-          padding: 15px 20px;
-          padding-top: 0px;
+          padding: 0 12px 6px;
           display: flex;
           flex-direction: column;
           min-width: 0; /* allow flex children to shrink (fixes chart invisibility) */
         }
-        .leftCol { align-items: flex-start; text-align: left; }
-        .rightCol { align-items: stretch; text-align: right; }
+        .leftCol { align-items: flex-start; text-align: left; padding-left: 0; }
+        .rightCol { align-items: stretch; text-align: right; padding-right: 0; }
         .chartWrap { width: 100%; min-width: 0; }
 
         /* MOBILE: stack into two rows and center content */
@@ -332,41 +325,45 @@ export default function RiskReadingSection({
         }
 
         .bigTitle {
-          font-size: 1.95em;
+          font-size: 11px;
           line-height: 1;
-          letter-spacing: 0.4px;
-          color: rgba(255, 255, 255, 0.9);
-          margin-bottom: 0.25em;
+          letter-spacing: 0.14em;
+          text-transform: uppercase;
+          font-weight: 700;
+          color: var(--amber);
+          margin-bottom: 10px;
         }
         .bigValue {
           display: inline-flex;
           align-items: baseline;
           gap: 6px;
-          font-size: 3em;
+          font-size: 2.5em;
           font-weight: 800;
-          line-height: 1.1;
+          line-height: 1.05;
           margin: 2px 0 8px 0;
-          color: rgba(255,255,255,0.95);
-          text-shadow: 0 0 6px rgba(0,0,0,0.3);
+          color: #e7e3d6;
+          font-variant-numeric: tabular-nums;
         }
         .delta {
-          font-size: 0.35em;     /* superscript scale */
+          font-size: 0.32em;     /* superscript scale */
           font-weight: 800;
           vertical-align: super; /* ensure superscript position */
           line-height: 1;
-          opacity: 0.95;
-          transform: translateY(-1em);
+          transform: translateY(-1.1em);
         }
-        .delta.up   { color: #ff2d55; }  /* worse (up) */
-        .delta.down { color: #39ff14; }  /* better (down) */
-        .delta.flat { color: rgba(255,255,255,0.7); }
+        .delta.up   { color: var(--up); }   /* risk worse (up) = red */
+        .delta.down { color: var(--down); } /* risk better (down) = green */
+        .delta.flat { color: var(--amber-dim); }
         .pill {
           display: inline-block;
-          padding: 4px 5px;
-          font-size: 12px;
+          padding: 3px 0;
+          font-size: 10px;
           line-height: 1;
-          color: rgba(255,255,255,0.9);
+          letter-spacing: 0.08em;
+          text-transform: uppercase;
+          color: var(--amber-dim);
         }
+        .pill :global(strong) { color: #e7e3d6; }
       `}</style>
     </>
   );

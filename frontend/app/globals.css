@@ -3,8 +3,38 @@
 
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* The terminal dashboard is always-dark regardless of system theme. */
+  --background: #050505;
+  --foreground: #e7e3d6;
+
+  /* ===== Terminal design tokens (single source of truth) ===== */
+  --term-bg: #050505;
+  --amber: #ffb43b;
+  --amber-dim: #b07f2c;
+  --amber-soft: #e9a23a;
+  --rule: rgba(255, 180, 60, 0.16);
+  --row-rule: rgba(255, 255, 255, 0.045);
+
+  /* Risk color scale */
+  --risk-high: #ff2d55; /* > 0.70 */
+  --risk-elev: #ffd60a; /* 0.50–0.70 */
+  --risk-low: #39ff14;  /* < 0.50 */
+
+  /* Up/Down (markets & deltas) — risk UP is red/bad */
+  --up: #ff5a6a;
+  --down: #46d65f;
+  --crit: #ff3b30;
+
+  /* Layout vars */
+  --top-h: 46px;
+  --right-w: min(360px, 26vw);
+  --bottom-h-base: clamp(230px, 26vh, 340px);
+  --bottom-h: var(--bottom-h-base);
+  --strip-h: 30px;
+  --vid-head: 30px;
+  --w-risk: min(600px, 40vw);
+
+  --term-font: var(--font-geist-mono), ui-monospace, 'SFMono-Regular', Menlo, monospace;
 }
 
 @theme inline {
@@ -14,15 +44,762 @@
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+html,
+body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
+  overflow: hidden;
 }
+
+/* ===================================================================== */
+/* Bottom-bar shared primitives (Live TV pane + the three data columns). */
+/* Shared globally because AIAlerts / Prices / WorldMarkets reuse them.  */
+/* ===================================================================== */
+
+@keyframes dotPulse {
+  0%,
+  100% {
+    opacity: 0.55;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+@keyframes critPulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(255, 59, 48, 0);
+  }
+  50% {
+    box-shadow: 0 0 9px 1px rgba(255, 59, 48, 0.8);
+  }
+}
+
+.live-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--crit);
+  box-shadow: 0 0 6px rgba(255, 59, 48, 0.65);
+  animation: dotPulse 2200ms ease-in-out infinite;
+}
+
+/* Live TV pane: width derived from the bar height to keep the frame 16:9. */
+.stream-pane {
+  flex: 0 0 auto;
+  height: 100%;
+  width: calc((var(--bottom-h-base) - var(--vid-head)) * 16 / 9);
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  position: relative;
+  border-right: 1px solid var(--rule);
+}
+.stream-head {
+  flex: 0 0 auto;
+  height: var(--vid-head);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 0 12px;
+  border-bottom: 1px solid var(--rule);
+  background: linear-gradient(180deg, rgba(255, 180, 60, 0.1), rgba(255, 180, 60, 0));
+}
+.sh-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--amber);
+  white-space: nowrap;
+}
+.sh-tabs {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  flex: 0 0 auto;
+}
+.sh-tab {
+  font-family: inherit;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 3px 8px;
+  border-radius: 3px;
+  cursor: pointer;
+  line-height: 1;
+  border: 1px solid var(--rule);
+  background: transparent;
+  color: var(--amber-dim);
+  transition: background 120ms ease, color 120ms ease, border-color 120ms ease;
+}
+.sh-tab:hover {
+  color: var(--amber);
+  border-color: rgba(255, 180, 60, 0.45);
+}
+.sh-tab.active {
+  background: var(--amber);
+  color: #1a1205;
+  border-color: var(--amber);
+}
+.stream-frame {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  background: #000;
+}
+.stream-frame iframe {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border: 0;
+  display: block;
+}
+.stream-fallback {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--amber-dim);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-align: center;
+  padding: 16px;
+  text-transform: uppercase;
+}
+
+/* Data columns */
+.mini-table {
+  flex: 1 1 0;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  border-right: 1px solid var(--rule);
+}
+.mini-table:last-child {
+  border-right: 0;
+}
+/* World Markets is pinned to the right rail's width; Prices (tracker) holds a
+   fixed share and AI Alerts flexes to absorb the remaining space. */
+.mini-table.markets-col {
+  /* −1px so the pane matches the rail's content width: the rail's --right-w
+     box includes a 1px border-left, which this pane has no equivalent of. */
+  flex: 0 0 calc(var(--right-w) - 1px);
+}
+.mini-table.alerts-col {
+  flex: 1 1 0;
+}
+.mini-table.tracker-col {
+  flex: 0 0 22.5%;
+}
+.mini-head {
+  height: var(--vid-head);
+  padding: 0 12px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--amber);
+  border-bottom: 1px solid var(--rule);
+  background: linear-gradient(180deg, rgba(255, 180, 60, 0.09), rgba(255, 180, 60, 0));
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex: 0 0 auto;
+}
+.mini-head .mh-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.mini-head .mh-sub {
+  color: var(--amber-dim);
+  font-size: 9.5px;
+  letter-spacing: 0.18em;
+  flex: 0 0 auto;
+}
+.mini-head .swatch {
+  width: 8px;
+  height: 8px;
+  border-radius: 2px;
+  display: inline-block;
+  flex: 0 0 auto;
+}
+.mini-body {
+  overflow: auto;
+  flex: 1;
+  min-height: 0;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.mini-body::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+  display: none;
+}
+table.mini {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: 12px;
+  table-layout: fixed;
+}
+table.mini thead th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: var(--term-bg);
+  color: var(--amber-dim);
+  font-weight: 600;
+  text-transform: uppercase;
+  font-size: 9.5px;
+  letter-spacing: 0.12em;
+  text-align: left;
+  padding: 5px 12px;
+  border-bottom: 1px solid var(--rule);
+}
+table.mini td {
+  padding: 4px 12px;
+  vertical-align: middle;
+  overflow: hidden;
+  border-bottom: 1px solid var(--row-rule);
+}
+table.mini tbody tr {
+  cursor: pointer;
+  transition: background 120ms ease;
+}
+table.mini tbody tr:nth-child(even) {
+  background: rgba(255, 255, 255, 0.016);
+}
+table.mini tbody tr:hover {
+  background: rgba(255, 180, 60, 0.12);
+}
+table.mini .mname-inner {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+table.mini .mname .name {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: #e7e3d6;
+}
+
+/* World markets */
+table.mini.markets {
+  height: 100%;
+}
+table.mini.markets td {
+  padding: 4px 6px;
+}
+table.mini.markets td.mname {
+  padding-left: 8px;
+}
+table.mini thead th.mstat {
+  text-align: right;
+}
+table.mini .mstat {
+  width: 64px;
+  text-align: right;
+}
+/* Extra right-edge padding so the status clears the pane border. */
+table.mini.markets td.mstat,
+table.mini.markets thead th.mstat {
+  padding-right: 11px;
+}
+/* Trading session window (UTC), sits left of the status column. */
+table.mini.markets .mutc,
+table.mini.markets thead th.mutc {
+  width: 92px;
+  text-align: right;
+  white-space: nowrap;
+  color: var(--amber-dim);
+  font-variant-numeric: tabular-nums;
+}
+table.mini.markets .mname-inner {
+  gap: 6px;
+}
+table.mini .mname .mkt-flag {
+  width: 15px;
+  height: 11px;
+  border-radius: 1px;
+  object-fit: cover;
+  box-shadow: inset 0 0 0 1px var(--rule);
+  flex: 0 0 auto;
+}
+.mkt-status {
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+.mkt-status.open {
+  color: var(--down);
+}
+.mkt-status.open .mkt-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--down);
+  box-shadow: 0 0 5px rgba(70, 214, 95, 0.7);
+  animation: dotPulse 2200ms ease-in-out infinite;
+}
+.mkt-status.closed {
+  color: var(--up);
+}
+.mkt-status.closed .mkt-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--up);
+  box-shadow: 0 0 5px rgba(255, 90, 106, 0.5);
+}
+
+/* Price tracker */
+table.mini.tracker td {
+  padding: 5px 5px;
+}
+table.mini.tracker thead th {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: var(--term-bg);
+  color: var(--amber-dim);
+  font-size: 8.5px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 5px 5px;
+  border-bottom: 1px solid var(--rule);
+  text-align: right;
+  white-space: nowrap;
+}
+table.mini.tracker thead th.trk-sym {
+  text-align: left;
+}
+/* Keep the "Asset" / "Last" header titles the same dim amber as the change
+   (1D / 1Q / YTD) columns; the .trk-sym / .trk-px color rules below otherwise
+   win on the <th> via higher specificity. */
+table.mini.tracker thead th.trk-sym,
+table.mini.tracker thead th.trk-px {
+  color: var(--amber-dim);
+}
+table.mini.tracker tbody tr:not(.trk-group):hover {
+  background: rgba(255, 180, 60, 0.06);
+}
+table.mini.tracker tbody tr:not(.trk-group) td {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+}
+table.mini.tracker .trk-group td {
+  padding: 7px 7px 4px;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--amber);
+  border-bottom: 1px solid var(--rule);
+  background: linear-gradient(180deg, rgba(255, 180, 60, 0.13), rgba(255, 180, 60, 0.03)), var(--term-bg);
+  position: sticky;
+  top: 23px;
+  z-index: 1;
+}
+table.mini.tracker .trk-sym {
+  color: #e9e6dc;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+table.mini.tracker .trk-px {
+  width: 56px;
+  text-align: right;
+  color: #fff;
+  font-variant-numeric: tabular-nums;
+}
+table.mini.tracker .trk-c {
+  width: 50px;
+  text-align: right;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.trk-c.up {
+  color: var(--down);
+}
+.trk-c.down {
+  color: var(--up);
+}
+/* Extra right-edge padding so the last (YTD) value clears the pane border;
+   widen that column so the value still fits. */
+table.mini.tracker thead th:last-child {
+  width: 68px;
+}
+table.mini.tracker thead th:last-child,
+table.mini.tracker tbody td:last-child {
+  padding-right: 11px;
+}
+
+/* AI alerts */
+.alert-row {
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--row-rule);
+  cursor: pointer;
+  transition: background 120ms ease;
+}
+.alert-row:hover {
+  background: rgba(255, 180, 60, 0.08);
+}
+.alert-row:focus-visible {
+  outline: 1px solid var(--amber);
+  outline-offset: -1px;
+}
+.alert-top {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 5px;
+}
+.alert-sev {
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  padding: 2px 6px;
+  border-radius: 3px;
+  line-height: 1;
+  flex: 0 0 auto;
+}
+.alert-sev.critical {
+  background: var(--crit);
+  color: #fff;
+  animation: critPulse 1.4s ease-in-out infinite;
+}
+.alert-sev.caution {
+  background: var(--amber);
+  color: #1a1205;
+}
+.alert-sev.watch {
+  background: rgba(255, 255, 255, 0.07);
+  color: var(--amber-dim);
+  border: 1px solid var(--rule);
+}
+.alert-cat {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  padding: 2px 6px;
+  border-radius: 3px;
+  color: var(--amber-dim);
+  border: 1px solid var(--rule);
+  flex: 0 0 auto;
+}
+.alert-iso {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: var(--amber);
+  flex: 0 0 auto;
+}
+.alert-flag {
+  width: 13px;
+  height: 9px;
+  border-radius: 1px;
+  object-fit: cover;
+  box-shadow: inset 0 0 0 1px var(--rule);
+}
+.alert-impact {
+  margin-left: auto;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+  flex: 0 0 auto;
+}
+.alert-impact.up {
+  color: var(--up);
+}
+.alert-impact.down {
+  color: var(--down);
+}
+.alert-impact.flat {
+  color: var(--amber-dim);
+}
+.alert-text {
+  font-size: 11.5px;
+  line-height: 1.3;
+  color: #e7e3d6;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+@media (max-width: 768px) {
+  .stream-pane {
+    width: 100%;
+    max-width: none;
+    height: auto;
+    flex: 0 0 auto;
+    border-right: 0;
+    border-bottom: 1px solid var(--rule);
+  }
+  .stream-frame {
+    aspect-ratio: 16 / 9;
+    flex: 0 0 auto;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .live-dot,
+  .mkt-status.open .mkt-dot,
+  .alert-sev.critical {
+    animation: none;
+  }
+}
+
+/* ===================================================================== */
+/* Right rail — "World Risk Index". Global because the mover rows and    */
+/* trend chart render in child components (styled-jsx wouldn't reach).   */
+/* ===================================================================== */
+
+.sidebar-right {
+  position: absolute;
+  top: var(--top-h);
+  bottom: var(--bottom-h);
+  right: 0;
+  width: var(--right-w);
+  background: var(--term-bg);
+  border-left: 1px solid rgba(255, 180, 60, 0.45);
+  box-shadow: -10px 0 30px rgba(0, 0, 0, 0.5);
+  z-index: 12;
+  display: flex;
+  flex-direction: column;
+  font-family: var(--term-font);
+  transition: transform 260ms ease, opacity 300ms ease;
+}
+.app.bottom-min .sidebar-right {
+  transform: translateX(100%);
+  opacity: 0;
+  pointer-events: none;
+}
+
+.rs-strip {
+  flex: 0 0 auto;
+  height: var(--strip-h);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 0 14px;
+  white-space: nowrap;
+  overflow: hidden;
+  background: linear-gradient(180deg, rgba(255, 180, 60, 0.12), rgba(255, 180, 60, 0.02));
+  border-bottom: 1px solid var(--rule);
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+.rs-tag {
+  color: var(--amber);
+  font-weight: 700;
+}
+
+.rs-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.rs-scroll::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+  display: none;
+}
+.rs-sec {
+  padding: 11px 14px;
+  border-bottom: 1px solid var(--rule);
+}
+.rs-sec-title {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 11px;
+  font-size: 10px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--amber);
+}
+.rs-sec-title .sub {
+  color: var(--amber-dim);
+  letter-spacing: 0.12em;
+}
+
+.rs-hero {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+}
+.rs-hero .val {
+  font-size: 44px;
+  font-weight: 800;
+  line-height: 0.9;
+  font-variant-numeric: tabular-nums;
+}
+.rs-hero .delta {
+  font-size: 14px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+.rs-hero .delta.up {
+  color: var(--up);
+}
+.rs-hero .delta.down {
+  color: var(--down);
+}
+.rs-hero .delta.flat {
+  color: var(--amber-dim);
+}
+.rs-hero-sub {
+  color: var(--amber-dim);
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  margin-top: 9px;
+}
+.rs-hero-sub b {
+  color: #e7e3d6;
+  font-weight: 700;
+}
+
+.rs-trend {
+  width: 100%;
+}
+
+.bar-row {
+  display: grid;
+  grid-template-columns: 78px 1fr 30px;
+  gap: 9px;
+  align-items: center;
+  margin-bottom: 8px;
+  font-size: 11px;
+}
+.bar-row:last-child {
+  margin-bottom: 0;
+}
+.bar-label {
+  color: #cfcabb;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.bar-track {
+  height: 8px;
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 2px;
+  overflow: hidden;
+}
+.bar-fill {
+  height: 100%;
+  border-radius: 2px;
+}
+.bar-val {
+  text-align: right;
+  color: #e7e3d6;
+  font-variant-numeric: tabular-nums;
+}
+
+.rs-mover {
+  display: grid;
+  grid-template-columns: 1fr 42px 54px;
+  gap: 8px;
+  align-items: center;
+  padding: 4px 0;
+  border-bottom: 1px solid var(--row-rule);
+  font-size: 11.5px;
+  cursor: pointer;
+  transition: background 120ms ease;
+}
+.rs-mover:last-child {
+  border-bottom: 0;
+}
+.rs-mover:hover {
+  background: rgba(255, 180, 60, 0.1);
+}
+.rs-mover:focus-visible {
+  outline: 1px solid var(--amber);
+  outline-offset: -1px;
+}
+.rs-mover .nm {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
+}
+.rs-mover .nm .dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 2px;
+  flex: 0 0 auto;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.4);
+}
+.rs-mover .nm .name {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: #e7e3d6;
+}
+.rs-mover .rk {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+}
+.rs-mover .cg {
+  text-align: right;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.rs-mover .cg.up {
+  color: var(--up);
+}
+.rs-mover .cg.down {
+  color: var(--down);
+}
+
+@media (max-width: 768px) {
+  .sidebar-right {
+    display: none;
+  }
+}
+

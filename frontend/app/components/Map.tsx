@@ -1,29 +1,35 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import {
+  forwardRef,
+  useEffect,
+  useImperativeHandle,
+  useRef,
+} from 'react';
 import maplibregl, { LngLatBoundsLike, Map as MapLibreMap, Marker } from 'maplibre-gl';
-import RiskSidebar from './RiskSidebar';
-import TableSidebar from './TableSidebar';
-import type { CountryRisk } from '../lib/risk-client';
+import { primeRiskCache, type CountryRisk } from '../lib/risk-client';
+
+/** Imperative handle exposed to the parent (TerminalDashboard). */
+export type MapApi = {
+  panTo: (lngLat: [number, number]) => void;
+  resetZoom: () => void;
+  resize: () => void;
+};
 
 type Props = {
+  /** Called when a marker is clicked (dot) or the empty map is clicked (null). */
+  onSelectCountry: (dot: CountryRisk | null) => void;
+  /** Called once the fresh risk dataset + timestamp are loaded. */
+  onData?: (rows: CountryRisk[], timestamp: Date | string | number | null) => void;
   bounds?: LngLatBoundsLike;
   center?: [number, number];
   zoom?: number;
 };
 
-// Reuse the shared type used by TableSidebar
-type RiskDot = CountryRisk;
-
-type Selected = {
-  name: string;
-  risk: number;
-  prevRisk?: number;
-  lngLat: [number, number];
-  iso2?: string;
-} | null;
-
-export default function Map({ bounds, center = [0, 20], zoom = 2.5 }: Props) {
+const Map = forwardRef<MapApi, Props>(function Map(
+  { onSelectCountry, onData, bounds, center = [0, 20], zoom = 2.5 },
+  ref
+) {
   const containerRef = useRef<HTMLDivElement>(null);
 
   // Keep the map instance stable across re-renders
@@ -31,13 +37,13 @@ export default function Map({ bounds, center = [0, 20], zoom = 2.5 }: Props) {
   const markersRef = useRef<Marker[]>([]);
   const aborterRef = useRef<AbortController | null>(null);
 
-  const [selected, setSelected] = useState<Selected>(null);
-
-  // Share the *fresh* risk dataset with TableSidebar to avoid staleness
-  const [riskRows, setRiskRows] = useState<CountryRisk[] | null>(null);
-
-  // NEW: data freshness timestamp for RiskSidebar ("LIVE 3d")
-  const [dataTimestamp, setDataTimestamp] = useState<Date | string | number | null>(null);
+  // Latest callbacks (avoid stale closures inside one-time map handlers)
+  const onSelectRef = useRef(onSelectCountry);
+  const onDataRef = useRef(onData);
+  useEffect(() => {
+    onSelectRef.current = onSelectCountry;
+    onDataRef.current = onData;
+  }, [onSelectCountry, onData]);
 
   // Zooms
   const FOCUS_ZOOM = 3.5;
@@ -55,11 +61,11 @@ export default function Map({ bounds, center = [0, 20], zoom = 2.5 }: Props) {
     return '#39ff14';
   };
 
-  // Sidebar is min(600px, 40vw) on desktop; 100vw on phones
+  // Detail panel is min(600px, 40vw) on desktop; 100vw on phones
   const getSidebarWidthPx = () => {
     if (typeof window === 'undefined') return 0;
     if (isMobile()) return Math.round(window.innerWidth);
-    const vwWidth = window.innerWidth * 0.40;
+    const vwWidth = window.innerWidth * 0.4;
     return Math.min(600, Math.round(vwWidth || 0));
   };
 
@@ -67,12 +73,14 @@ export default function Map({ bounds, center = [0, 20], zoom = 2.5 }: Props) {
     const map = mapRef.current;
     if (!map) return;
 
-    // On phones, the sidebar overlays the entire screen, so don't offset the map.
+    // The map ends at the top of the bottom bar, so the whole container is
+    // visible — only offset horizontally to clear the detail sidebar.
+    // On phones, the sidebar overlays the entire screen, so don't offset.
     const offsetX = isMobile() ? 0 : Math.round(getSidebarWidthPx() / 2 + 8);
 
-    const options: any = {
+    const options: maplibregl.EaseToOptions = {
       center: lngLat,
-      duration: 650,
+      duration: 1300,
       offset: [offsetX, 0],
       essential: true,
     };
@@ -94,23 +102,35 @@ export default function Map({ bounds, center = [0, 20], zoom = 2.5 }: Props) {
     const current = map.getZoom();
 
     if (respect && current > LOCK_ZOOM_THRESHOLD) {
-      map.easeTo({ duration: 300, offset: [0, 0], essential: true });
+      map.easeTo({ duration: 600, offset: [0, 0], essential: true });
       return;
     }
 
     const z = Math.max(map.getMinZoom(), Math.min(map.getMaxZoom(), DEFAULT_ZOOM));
     map.easeTo({
       zoom: z,
-      duration: 500,
+      duration: 1000,
       offset: [0, 0],
       essential: true,
     });
   };
 
-  const handleCloseSidebar = () => {
-    setSelected(null);
-    resetZoom(); // respects the >3 lock
-  };
+  // Expose imperative API to the parent
+  useImperativeHandle(
+    ref,
+    (): MapApi => ({
+      panTo: (lngLat) => panToMarker(lngLat, FOCUS_ZOOM),
+      resetZoom: () => resetZoom(),
+      resize: () => {
+        try {
+          mapRef.current?.resize();
+        } catch {
+          /* ignore */
+        }
+      },
+    }),
+    []
+  );
 
   const makeDotEl = (title: string, risk: number, onOpen: () => void) => {
     const size = 26;
@@ -160,7 +180,7 @@ export default function Map({ bounds, center = [0, 20], zoom = 2.5 }: Props) {
     svg.setAttribute('width', String(size));
     svg.setAttribute('height', String(size));
     svg.setAttribute('viewBox', `0 0 ${size} ${size}`);
-    (svg.style as any).display = 'block';
+    (svg.style as CSSStyleDeclaration).display = 'block';
 
     const track = document.createElementNS(svgNS, 'circle');
     track.setAttribute('cx', String(cx));
@@ -196,7 +216,10 @@ export default function Map({ bounds, center = [0, 20], zoom = 2.5 }: Props) {
     label.setAttribute('text-anchor', 'middle');
     label.setAttribute('dominant-baseline', 'middle');
     label.setAttribute('font-size', String(fontSize));
-    label.setAttribute('font-family', 'system-ui, -apple-system, Segoe UI, Roboto, Arial, "Noto Sans", sans-serif');
+    label.setAttribute(
+      'font-family',
+      'system-ui, -apple-system, Segoe UI, Roboto, Arial, "Noto Sans", sans-serif'
+    );
     label.setAttribute('font-weight', '700');
     label.setAttribute('fill', '#ffffff');
     label.setAttribute('stroke', 'rgba(0,0,0,0.6)');
@@ -243,9 +266,9 @@ export default function Map({ bounds, center = [0, 20], zoom = 2.5 }: Props) {
     map.addControl(new maplibregl.AttributionControl({ compact: true }));
 
     const showOnlyCountryLabels = () => {
-      const layers = (map.getStyle()?.layers ?? []) as any[];
+      const layers = (map.getStyle()?.layers ?? []) as maplibregl.LayerSpecification[];
       for (const layer of layers) {
-        const srcLayer = (layer as any)['source-layer'] as string | undefined;
+        const srcLayer = (layer as { 'source-layer'?: string })['source-layer'];
         if (layer.type === 'symbol' && srcLayer && /place|place_label/i.test(srcLayer)) {
           map.setFilter(layer.id, ['==', ['get', 'class'], 'country']);
         }
@@ -256,9 +279,9 @@ export default function Map({ bounds, center = [0, 20], zoom = 2.5 }: Props) {
     };
 
     const forceEnglishCountryNames = () => {
-      const layers = (map.getStyle()?.layers ?? []) as any[];
+      const layers = (map.getStyle()?.layers ?? []) as maplibregl.LayerSpecification[];
       for (const layer of layers) {
-        const srcLayer = (layer as any)['source-layer'] as string | undefined;
+        const srcLayer = (layer as { 'source-layer'?: string })['source-layer'];
         if (layer.type === 'symbol' && srcLayer && /place|place_label/i.test(srcLayer)) {
           map.setLayoutProperty(layer.id, 'text-field', [
             'coalesce',
@@ -273,20 +296,24 @@ export default function Map({ bounds, center = [0, 20], zoom = 2.5 }: Props) {
     };
 
     const showOnlyCountryBorders = () => {
-      const layers = (map.getStyle()?.layers ?? []) as any[];
+      const layers = (map.getStyle()?.layers ?? []) as maplibregl.LayerSpecification[];
       for (const layer of layers) {
-        const srcLayer = (layer as any)['source-layer'] as string | undefined;
+        const srcLayer = (layer as { 'source-layer'?: string })['source-layer'];
         if (layer.type === 'line' && srcLayer && /boundary|admin/i.test(srcLayer)) {
-          map.setFilter(layer.id, ['all', ['==', ['to-number', ['get', 'admin_level']], 2], ['!=', ['get', 'maritime'], 1]]);
+          map.setFilter(layer.id, [
+            'all',
+            ['==', ['to-number', ['get', 'admin_level']], 2],
+            ['!=', ['get', 'maritime'], 1],
+          ]);
           map.setLayoutProperty(layer.id, 'visibility', 'visible');
         }
       }
     };
 
     const hideRoads = () => {
-      const layers = (map.getStyle()?.layers ?? []) as any[];
+      const layers = (map.getStyle()?.layers ?? []) as maplibregl.LayerSpecification[];
       for (const layer of layers) {
-        const srcLayer = (layer as any)['source-layer'] as string | undefined;
+        const srcLayer = (layer as { 'source-layer'?: string })['source-layer'];
         if (!srcLayer) continue;
         if (srcLayer === 'transportation') map.setLayoutProperty(layer.id, 'visibility', 'none');
         if (srcLayer === 'transportation_name') map.setLayoutProperty(layer.id, 'visibility', 'none');
@@ -306,34 +333,36 @@ export default function Map({ bounds, center = [0, 20], zoom = 2.5 }: Props) {
       try {
         // Force backend refresh, then fetch *fresh* risk data
         const r = await fetch('/api/refresh-risk', { method: 'POST' });
-        const refresh = await r.json().catch(() => ({} as any));
+        const refresh = await r.json().catch(() => ({} as Record<string, unknown>));
         console.log('refresh-risk result:', r.status, refresh);
 
-        const stamp = refresh?.lastRun ?? Date.now();
-        setDataTimestamp(stamp);
+        const stamp = (refresh?.lastRun as string | number) ?? Date.now();
 
         let riskUrl = '/api/risk.json';
-        const buster = refresh?.lastRun ?? String(Date.now());
+        const buster = (refresh?.lastRun as string) ?? String(Date.now());
         riskUrl += `?v=${encodeURIComponent(buster)}`;
 
         const res = await fetch(riskUrl, {
           signal: aborter?.signal,
           cache: 'no-store',
-          headers: { accept: 'application/json' }
+          headers: { accept: 'application/json' },
         });
         if (!res.ok) throw new Error(`Failed to load risk.json: ${res.status}`);
 
-        const dots: RiskDot[] = await res.json();
+        const dots: CountryRisk[] = await res.json();
         console.log(`Loaded ${dots.length} risk markers`);
 
-        // Share the exact same fresh array with the TableSidebar
-        setRiskRows(dots);
+        // Prime the shared cache so subcomponents don't re-fetch a stale copy.
+        primeRiskCache(dots);
+
+        // Share the exact same fresh array (+ timestamp) with the parent
+        onDataRef.current?.(dots, stamp);
 
         // Add markers
-        dots.forEach(({ name, lngLat, risk, iso2, prevRisk }) => {
+        dots.forEach((dot) => {
+          const { name, lngLat, risk } = dot;
           const el = makeDotEl(name, risk, () => {
-            panToMarker(lngLat, FOCUS_ZOOM);
-            setSelected({ name, risk, prevRisk, lngLat, iso2 });
+            onSelectRef.current?.(dot);
           });
 
           const marker = new maplibregl.Marker({
@@ -346,16 +375,16 @@ export default function Map({ bounds, center = [0, 20], zoom = 2.5 }: Props) {
 
           markersRef.current.push(marker);
         });
-      } catch (err: any) {
-        if (err?.name !== 'AbortError') {
+      } catch (err) {
+        if ((err as Error)?.name !== 'AbortError') {
           console.error('Error initializing markers:', err);
         }
       }
     });
 
     map.on('click', () => {
-      setSelected(null);
-      resetZoom();
+      // Parent owns selection state and will call resetZoom() via the ref.
+      onSelectRef.current?.(null);
     });
 
     map.on('styledata', () => {
@@ -373,6 +402,7 @@ export default function Map({ bounds, center = [0, 20], zoom = 2.5 }: Props) {
       map.remove();
       mapRef.current = null;
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // ← INIT ONCE
 
   // --- Respond to prop changes without re-creating the map ---
@@ -397,37 +427,18 @@ export default function Map({ bounds, center = [0, 20], zoom = 2.5 }: Props) {
   ]);
 
   return (
-    <div style={{ position: 'relative', width: '100vw', height: '100dvh' }}>
-      {/* Map canvas */}
-      <div ref={containerRef} style={{ position: 'absolute', inset: 0 }} />
-
-      {/* Persistent left sidebar — now fed the fresh data */}
-      <TableSidebar
-        open={!selected}
-        data={riskRows ?? undefined}
-        onSelectCountry={(dot: any) => {
-          panToMarker(dot.lngLat, FOCUS_ZOOM);
-          setSelected({
-            name: dot.name,
-            risk: dot.risk,
-            prevRisk: dot.prevRisk,
-            lngLat: dot.lngLat,
-            iso2: dot.iso2
-          });
-        }}
-      />
-
-      {/* Country detail (left) */}
-      <RiskSidebar
-        open={!!selected}
-        country={
-          selected
-            ? { name: selected.name, risk: selected.risk, prevRisk: selected.prevRisk, iso2: selected.iso2 }
-            : null
-        }
-        dataTimestamp={dataTimestamp}
-        onClose={handleCloseSidebar}
-      />
-    </div>
+    <div
+      ref={containerRef}
+      className="map-canvas"
+      style={{
+        position: 'absolute',
+        top: 'var(--top-h)',
+        left: 0,
+        right: 0,
+        bottom: 'var(--bottom-h)',
+      }}
+    />
   );
-}
+});
+
+export default Map;

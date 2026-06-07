@@ -177,9 +177,9 @@ function MiniGauge(props: {
       <div
         className="gaugeCaption"
         style={{
-          width: '100%', textAlign: 'center', fontSize: 11, opacity: 0.7,
-          letterSpacing: '0.2px', whiteSpace: 'nowrap', lineHeight: 1.05, overflow: 'hidden', marginTop: 8,
-          textOverflow: 'ellipsis',
+          width: '100%', textAlign: 'center', fontSize: 9.5, color: 'var(--amber-dim)',
+          letterSpacing: '0.06em', textTransform: 'uppercase', whiteSpace: 'nowrap',
+          lineHeight: 1.05, overflow: 'hidden', marginTop: 8, textOverflow: 'ellipsis',
         }}
         aria-hidden="true"
       >
@@ -312,17 +312,17 @@ export default function EconomicGaugeSection({
       )}
 
       <style jsx>{`
-        .muted { opacity: 0.7; }
+        .muted { color: var(--amber-dim); }
 
         /* Desktop-first grid; use minmax(0,1fr) so children can shrink and not overflow */
         .gaugeGrid {
           width: 100%;
           display: grid;
           grid-template-columns: repeat(4, minmax(0, 1fr));
-          gap: 24px;
+          gap: 22px;
           align-items: center;
           justify-items: center; /* center items within cells */
-          margin-top: 14px;
+          margin-top: 12px;
         }
 
         /* Laptops/tablets: 3 columns */
