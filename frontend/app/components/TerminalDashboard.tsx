@@ -6,11 +6,15 @@ import Masthead from './Masthead';
 import WorldRiskIndexRail from './WorldRiskIndexRail';
 import BottomBar from './bottombar/BottomBar';
 import RiskSidebar from './RiskSidebar';
+import { useIdleTour } from '../lib/useIdleTour';
 import type { CountryRisk } from '../lib/risk-client';
 
 const LS_KEY = 'crd_bottom_min';
 
-export type SelectOpts = { pan?: boolean };
+export type SelectOpts = { pan?: boolean; panDuration?: number };
+
+// Idle auto-tour pans slower than a manual click for a calmer, ambient feel.
+const IDLE_PAN_DURATION = 3000;
 
 export default function TerminalDashboard() {
   const mapRef = useRef<MapApi>(null);
@@ -28,7 +32,7 @@ export default function TerminalDashboard() {
   const selectCountry = useCallback((dot: CountryRisk | null, opts?: SelectOpts) => {
     setSelected(dot);
     if (dot) {
-      if (opts?.pan !== false) mapRef.current?.panTo(dot.lngLat);
+      if (opts?.pan !== false) mapRef.current?.panTo(dot.lngLat, { duration: opts?.panDuration });
     } else {
       mapRef.current?.resetZoom();
     }
@@ -41,6 +45,16 @@ export default function TerminalDashboard() {
     },
     []
   );
+
+  // Idle auto-tour: after ~90s without interaction, start cycling through random
+  // countries every ~40s. Any real interaction cancels it and resets the clock.
+  useIdleTour({
+    rows: riskRows,
+    currentName: selected?.name,
+    onPick: (c) => selectCountry(c, { pan: true, panDuration: IDLE_PAN_DURATION }),
+    startDelayMs: 90000,
+    intervalMs: 40000,
+  });
 
   // Restore the persisted full-screen state on mount (client-only).
   useEffect(() => {

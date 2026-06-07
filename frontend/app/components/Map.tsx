@@ -11,7 +11,7 @@ import { primeRiskCache, type CountryRisk } from '../lib/risk-client';
 
 /** Imperative handle exposed to the parent (TerminalDashboard). */
 export type MapApi = {
-  panTo: (lngLat: [number, number]) => void;
+  panTo: (lngLat: [number, number], opts?: { duration?: number }) => void;
   resetZoom: () => void;
   resize: () => void;
 };
@@ -69,7 +69,11 @@ const Map = forwardRef<MapApi, Props>(function Map(
     return Math.min(600, Math.round(vwWidth || 0));
   };
 
-  const panToMarker = (lngLat: [number, number], targetZoom: number = FOCUS_ZOOM) => {
+  const panToMarker = (
+    lngLat: [number, number],
+    targetZoom: number = FOCUS_ZOOM,
+    duration: number = 1300
+  ) => {
     const map = mapRef.current;
     if (!map) return;
 
@@ -80,7 +84,7 @@ const Map = forwardRef<MapApi, Props>(function Map(
 
     const options: maplibregl.EaseToOptions = {
       center: lngLat,
-      duration: 1300,
+      duration,
       offset: [offsetX, 0],
       essential: true,
     };
@@ -119,7 +123,7 @@ const Map = forwardRef<MapApi, Props>(function Map(
   useImperativeHandle(
     ref,
     (): MapApi => ({
-      panTo: (lngLat) => panToMarker(lngLat, FOCUS_ZOOM),
+      panTo: (lngLat, opts) => panToMarker(lngLat, FOCUS_ZOOM, opts?.duration),
       resetZoom: () => resetZoom(),
       resize: () => {
         try {
