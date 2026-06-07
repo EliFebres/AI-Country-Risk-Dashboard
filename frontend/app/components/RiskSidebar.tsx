@@ -242,7 +242,7 @@ export default function RiskSidebar({
                 </div>
               </section>
 
-              <section className="card">
+              <section className="card aiCard">
                 <h3>AI Summary</h3>
                 <AiSummary iso2={country?.iso2} active={open} />
               </section>
@@ -424,6 +424,10 @@ export default function RiskSidebar({
 
         .content {
           padding: 0;
+          flex: 1 1 auto;
+          min-height: 0;
+          display: flex;
+          flex-direction: column;
           overflow-y: auto;
           scrollbar-width: none;
           -ms-overflow-style: none;
@@ -441,6 +445,15 @@ export default function RiskSidebar({
           margin: 0;
           padding: 13px 14px;
           border-bottom: 1px solid var(--rule);
+          flex: 0 0 auto;
+        }
+        /* AI Summary fills the leftover vertical space; its text auto-scales
+           to fit so the content reaches the panel's bottom edge. */
+        .aiCard {
+          flex: 1 1 auto;
+          min-height: 0;
+          display: flex;
+          flex-direction: column;
         }
         .card :global(h3) {
           margin: 0 0 10px;

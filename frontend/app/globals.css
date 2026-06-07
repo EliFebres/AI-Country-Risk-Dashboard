@@ -31,7 +31,7 @@
   --bottom-h-base: clamp(230px, 26vh, 340px);
   --bottom-h: var(--bottom-h-base);
   --strip-h: 30px;
-  --vid-head: 30px;
+  --vid-head: 36px;
   --w-risk: min(600px, 40vw);
 
   --term-font: var(--font-geist-mono), ui-monospace, 'SFMono-Regular', Menlo, monospace;
@@ -205,6 +205,9 @@ body {
 }
 .mini-table.tracker-col {
   flex: 0 0 22.5%;
+}
+.mini-table.calendar-col {
+  flex: 0 0 22%;
 }
 .mini-head {
   height: var(--vid-head);

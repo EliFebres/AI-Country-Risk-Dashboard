@@ -19,8 +19,8 @@ export default function BottomBar({ rows, onSelectCountry }: Props) {
       <div className="bottombar-main">
         <LiveTV />
         <div className="tables-pane">
-          <AIAlerts rows={rows} onSelectCountry={onSelectCountry} />
           <EconCalendar />
+          <AIAlerts rows={rows} onSelectCountry={onSelectCountry} />
           <Prices />
           <WorldMarkets />
         </div>
