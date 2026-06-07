@@ -4,6 +4,7 @@ import type { CountryRisk } from '../../lib/risk-client';
 import type { SelectOpts } from '../TerminalDashboard';
 import LiveTV from './LiveTV';
 import AIAlerts from './AIAlerts';
+import EconCalendar from './EconCalendar';
 import Prices from './Prices';
 import WorldMarkets from './WorldMarkets';
 
@@ -19,6 +20,7 @@ export default function BottomBar({ rows, onSelectCountry }: Props) {
         <LiveTV />
         <div className="tables-pane">
           <AIAlerts rows={rows} onSelectCountry={onSelectCountry} />
+          <EconCalendar />
           <Prices />
           <WorldMarkets />
         </div>

@@ -359,7 +359,7 @@ export default function NewsArticleSection({
           flex: 1 1 0;
           min-width: calc((100% - 2 * var(--gap)) / 3);
           max-width: calc((100% - 2 * var(--gap)) / 3);
-          height: 17em;
+          height: 16em;
           border-radius: 4px;
           background: rgba(255, 255, 255, 0.02);
           box-shadow: inset 0 0 0 1px var(--rule);

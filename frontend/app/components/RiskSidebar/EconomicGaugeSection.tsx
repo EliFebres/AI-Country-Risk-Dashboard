@@ -114,7 +114,7 @@ const ORDER: IndicatorName[] = [
   'GDP per-capita growth (% y/y)',
 ];
 
-const GAUGE_SIZE = 60;
+const GAUGE_SIZE = 52;
 
 function MiniGauge(props: {
   title: string;

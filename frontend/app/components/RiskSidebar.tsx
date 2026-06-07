@@ -37,25 +37,100 @@ export default function RiskSidebar({
   const fadeMs = Math.max(120, Math.round(durationMs * 0.6));
   const flagSrc = country?.iso2 ? `/flags/${country.iso2.toUpperCase()}.svg` : null;
 
+  // --- Newest underlying data date for the selected country ---
+  // Reflects how stale our data is: the freshest date across this country's
+  // news (article published_at / as_of) and economic indicators (year-end),
+  // whichever is most recent. Falls back to the global pipeline timestamp.
+  const [dataEndDate, setDataEndDate] = useState<Date | null>(null);
+  useEffect(() => {
+    if (!open || !country?.iso2) {
+      setDataEndDate(null);
+      return;
+    }
+    const iso = country.iso2.toUpperCase();
+    let cancelled = false;
+
+    (async () => {
+      const times: number[] = [];
+
+      // News: latest article date (+ snapshot as_of)
+      try {
+        const res = await fetch('/api/articles_latest.json', { cache: 'force-cache' });
+        if (res.ok) {
+          const data = (await res.json()) as Array<{
+            iso2?: string;
+            as_of?: string;
+            articles?: { published_at?: string }[];
+          }>;
+          const match = data.find((c) => (c.iso2 || '').toUpperCase() === iso);
+          if (match) {
+            for (const a of match.articles ?? []) {
+              const t = new Date(a.published_at ?? '').getTime();
+              if (!isNaN(t)) times.push(t);
+            }
+            const asOf = new Date(match.as_of ?? '').getTime();
+            if (!isNaN(asOf)) times.push(asOf);
+          }
+        }
+      } catch {
+        /* ignore */
+      }
+
+      // Indicators: newest year, treated as that calendar year's end
+      try {
+        const res = await fetch('/api/indicator_latest.json', { cache: 'force-cache' });
+        if (res.ok) {
+          const data = (await res.json()) as Array<{
+            iso2?: string;
+            values?: Record<string, { year?: number }>;
+          }>;
+          const match = data.find((c) => (c.iso2 || '').toUpperCase() === iso);
+          if (match?.values) {
+            for (const v of Object.values(match.values)) {
+              if (typeof v?.year === 'number') {
+                times.push(new Date(v.year, 11, 31).getTime());
+              }
+            }
+          }
+        }
+      } catch {
+        /* ignore */
+      }
+
+      if (!cancelled) {
+        setDataEndDate(times.length ? new Date(Math.max(...times)) : null);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [open, country?.iso2]);
+
   // --- Data age (calendar days) ---
   const DAY_MS = 24 * 60 * 60 * 1000;
   const { daysOld, lastUpdatedLocal } = useMemo(() => {
-    if (dataTimestamp == null) {
+    const dt =
+      dataEndDate ??
+      (dataTimestamp == null
+        ? null
+        : dataTimestamp instanceof Date
+        ? dataTimestamp
+        : new Date(dataTimestamp));
+    if (!dt || isNaN(dt.getTime())) {
       return { daysOld: null as number | null, lastUpdatedLocal: null as string | null };
     }
-    const dt = dataTimestamp instanceof Date ? dataTimestamp : new Date(dataTimestamp);
-    if (isNaN(dt.getTime())) return { daysOld: null, lastUpdatedLocal: null };
     const now = new Date();
     const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
     const startOfThatDay = new Date(dt.getFullYear(), dt.getMonth(), dt.getDate()).getTime();
     const d = Math.max(0, Math.round((startOfToday - startOfThatDay) / DAY_MS));
-    const local = dt.toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' });
+    const local = dt.toLocaleDateString(undefined, { dateStyle: 'medium' });
     return { daysOld: d, lastUpdatedLocal: local };
-  }, [dataTimestamp]);
+  }, [dataEndDate, dataTimestamp]);
 
   const ageTitle =
     typeof daysOld === 'number'
-      ? `Data Last Updated: ${lastUpdatedLocal ?? 'unknown'}`
+      ? `Most recent data: ${lastUpdatedLocal ?? 'unknown'}`
       : undefined;
 
   // --- Swipe-to-close for mobile (right → left) ---
@@ -120,11 +195,10 @@ export default function RiskSidebar({
           resetDrag();
         }}
       >
-        <button className="risk-close" aria-label="Close details" title="Close" onClick={onClose}>
-          ✕
-        </button>
-
         <header className="bar">
+          <button className="risk-close" aria-label="Close details" title="Close" onClick={onClose}>
+            ✕
+          </button>
           <div className="titleRow">
             {flagSrc && (
               <span className="flagBox" aria-hidden="true">
@@ -200,7 +274,7 @@ export default function RiskSidebar({
           z-index: 8;
         }
         .backdrop.open {
-          background: rgba(0, 0, 0, 0.35);
+          background: rgba(0, 0, 0, 0);
           opacity: 1;
           pointer-events: auto;
         }
@@ -246,7 +320,8 @@ export default function RiskSidebar({
 
         .risk-close {
           position: absolute;
-          top: 9px;
+          top: 50%;
+          transform: translateY(-50%);
           right: 12px;
           width: 28px;
           height: 28px;
@@ -268,6 +343,7 @@ export default function RiskSidebar({
         }
 
         .bar {
+          position: relative;
           display: flex;
           align-items: center;
           padding: 12px 44px 10px 16px;
@@ -319,7 +395,7 @@ export default function RiskSidebar({
           display: inline-flex;
           align-items: center;
           gap: 6px;
-          font-size: 0.5em;
+          font-size: 0.62em;
           flex: 0 0 auto;
           margin-inline-start: auto;
         }
@@ -386,7 +462,7 @@ export default function RiskSidebar({
         }
 
         .economicSection {
-          margin-top: 1.4em;
+          margin-top: 0.7em;
           padding: 0;
         }
         .econTitle {

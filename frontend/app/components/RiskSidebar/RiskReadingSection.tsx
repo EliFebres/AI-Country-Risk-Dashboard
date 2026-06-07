@@ -68,6 +68,20 @@ export default function RiskReadingSection({
     return () => ro.disconnect();
   }, []);
 
+  // --- Track the left column (title + value) height so the chart matches it
+  const leftColRef = useRef<HTMLDivElement>(null);
+  const [leftColHeight, setLeftColHeight] = useState(0);
+  useEffect(() => {
+    const el = leftColRef.current;
+    if (!el) return;
+    const ro = new ResizeObserver((entries) => {
+      const h = entries[0]?.contentRect?.height ?? 0;
+      setLeftColHeight(h);
+    });
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [stats, statsLoading, statsError]);
+
   useEffect(() => {
     let cancelled = false;
 
@@ -200,7 +214,7 @@ export default function RiskReadingSection({
     <>
       <div className="statsRow" aria-label="Risk stats" ref={rowRef}>
         {/* LEFT: Current + Avg with superscript delta */}
-        <div className="statsCol leftCol">
+        <div className="statsCol leftCol" ref={leftColRef}>
           <div className="bigTitle">Risk Rating</div>
           {statsLoading ? (
             <div className="bigValue muted">Loading…</div>
@@ -222,10 +236,6 @@ export default function RiskReadingSection({
                   </sup>
                 )}
               </div>
-              <div className="pill" aria-label="Average current risk">
-                World Average:&nbsp;
-                <strong>{typeof stats?.avgCurrent === 'number' ? stats.avgCurrent.toFixed(2) : '—'}</strong>
-              </div>
             </>
           )}
         </div>
@@ -239,7 +249,7 @@ export default function RiskReadingSection({
           ) : chartData.length > 0 ? (
             <div className="chartWrap">
               {/* Keyed by measured width so ResponsiveContainer recalculates */}
-              <ResponsiveContainer key={rowWidth} width="100%" height={120}>
+              <ResponsiveContainer key={`${rowWidth}-${Math.round(leftColHeight)}`} width="100%" height={leftColHeight || 120}>
                 <AreaChart data={chartData} margin={{ left: 4, right: 4, top: 8, bottom: 0 }}>
                   <defs>
                     <linearGradient id={gradId} x1="0" y1="0" x2="0" y2="1">
