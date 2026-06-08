@@ -10,6 +10,11 @@ Only literals—no runtime imports—to avoid circular dependencies.
 
 WB_ENDPOINT: str = ("https://api.worldbank.org/v2/country/{code}/indicator/{ind}")
 
+# Financial Modeling Prep (FMP) economic calendar. Queried with from/to date
+# params (span <= 3 months); timestamps are UTC. If the account's plan exposes
+# the legacy slug instead, swap to "https://financialmodelingprep.com/api/v3/economic_calendar".
+FMP_ECON_CALENDAR_ENDPOINT: str = "https://financialmodelingprep.com/stable/economic-calendar"
+
 # ---------------------------------------------------------------------------
 # Economic / governance indicators (World Bank series)
 # ---------------------------------------------------------------------------
@@ -39,6 +44,49 @@ EXTRA_INDICATORS = {
 # Full set used by the read/DB side (data_retrieval + data_push). The fetch side
 # uses INDICATORS (WB-only) so the WB loop never tries to fetch the sentinel.
 ALL_INDICATORS = {**INDICATORS, **EXTRA_INDICATORS}
+
+# ---------------------------------------------------------------------------
+# Economic calendar (FMP) — major global decisions/releases for the front-end
+# "Econ Calendar" pane.
+# ---------------------------------------------------------------------------
+
+# Rolling forward window (days) fetched on each run.
+FMP_CALENDAR_DAYS_AHEAD: int = 14
+
+# FMP "impact" -> front-end importance code ('h'/'m'/'l').
+FMP_IMPACT_TO_CODE: dict[str, str] = {"High": "h", "Medium": "m", "Low": "l"}
+
+# Only these impacts are kept (drop "Low"/"None" noise; the pane is small).
+FMP_CALENDAR_KEEP_IMPACTS: frozenset[str] = frozenset({"High", "Medium"})
+
+# Curated allowlist of major economies (G20 + Euro Area). Maps FMP's 2-letter
+# country code -> display name and DOUBLES AS THE COUNTRY FILTER: any event whose
+# code is not a key here is dropped. "EU" (Euro Area) is intentionally included
+# so ECB rate decisions survive — it has no entry in COUNTRY_ROSTER.
+FMP_CALENDAR_COUNTRIES: dict[str, str] = {
+    "US": "United States",
+    "EU": "Euro Area",
+    "GB": "United Kingdom",
+    "JP": "Japan",
+    "CN": "China",
+    "DE": "Germany",
+    "FR": "France",
+    "IT": "Italy",
+    "ES": "Spain",
+    "CH": "Switzerland",
+    "CA": "Canada",
+    "AU": "Australia",
+    "NZ": "New Zealand",
+    "IN": "India",
+    "BR": "Brazil",
+    "MX": "Mexico",
+    "KR": "South Korea",
+    "RU": "Russia",
+    "ID": "Indonesia",
+    "TR": "Turkey",
+    "SA": "Saudi Arabia",
+    "ZA": "South Africa",
+}
 
 # ---------------------------------------------------------------------------
 # Coverage universe (50 countries: 25 Developed + 25 Emerging)

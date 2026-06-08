@@ -25,6 +25,7 @@ from backend.utils.data_upsert import data_push
 from backend.utils.news_fetching import fetch_links
 from backend.utils.data_fetching import fetch_metrics
 from backend.utils.data_fetching import country_data_fetch
+from backend.utils.data_fetching import fmp_calendar_fetch
 from backend.utils.news_fetching.url_resolver import resolve_google_news_url
 from backend.utils.news_fetching.simple_scraper import get_article_assets
 from backend.utils.news_fetching.advanced_scraper import scrape_one as crawlbase_scrape_one
@@ -267,6 +268,18 @@ def main() -> None:
         start=None,
         end=None,
     )
+
+    # 0b) Economic calendar (FMP) for the front-end Econ Calendar pane. Guarded
+    #     so a calendar failure never aborts the country/risk loop below.
+    try:
+        events = fmp_calendar_fetch.fetch_economic_calendar()
+        if events:
+            data_push.upsert_economic_events(events)
+            print(f"[econ-calendar] upserted {len(events)} events")
+        else:
+            print("[econ-calendar] no events fetched (skipping upsert)")
+    except Exception as e:
+        print(f"[econ-calendar] ERROR: {e}")
 
     # Map "Country_Name" → "iso2" from the hardcoded roster
     country_map = {c["name"]: c["iso2"] for c in constants.COUNTRY_ROSTER}
