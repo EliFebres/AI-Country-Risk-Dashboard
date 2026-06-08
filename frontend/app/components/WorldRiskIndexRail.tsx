@@ -1,10 +1,10 @@
 'use client';
 
-import { useEffect, useMemo, useRef, useState } from 'react';
-import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, CartesianGrid } from 'recharts';
+import { useEffect, useMemo, useRef } from 'react';
 import type { CountryRisk } from '../lib/risk-client';
 import type { SelectOpts } from './TerminalDashboard';
 import { colorForRisk } from '../lib/risk';
+import RiskTrendChart from './RiskTrendChart';
 
 type Props = {
   rows: CountryRisk[] | null;
@@ -58,40 +58,6 @@ function globalAvgByOffset(rows: CountryRisk[]): (number | null)[] {
     out.push(n ? s / n : null);
   }
   return out;
-}
-
-/** Recharts trend, with the zero-width-on-first-paint fix (ResizeObserver + key). */
-function TrendChart({ series }: { series: number[] }) {
-  const wrapRef = useRef<HTMLDivElement>(null);
-  const [w, setW] = useState(0);
-  useEffect(() => {
-    const el = wrapRef.current;
-    if (!el) return;
-    const ro = new ResizeObserver((entries) => setW(entries[0]?.contentRect?.width ?? 0));
-    ro.observe(el);
-    return () => ro.disconnect();
-  }, []);
-
-  const data = useMemo(() => series.map((v, i) => ({ idx: i, v: Math.max(0, Math.min(1, v)) })), [series]);
-
-  return (
-    <div ref={wrapRef} className="rs-trend">
-      <ResponsiveContainer key={w} width="100%" height={92}>
-        <AreaChart data={data} margin={{ left: 4, right: 4, top: 8, bottom: 0 }}>
-          <defs>
-            <linearGradient id="railTrendGrad" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor={AMBER} stopOpacity={0.45} />
-              <stop offset="100%" stopColor={AMBER} stopOpacity={0} />
-            </linearGradient>
-          </defs>
-          <CartesianGrid stroke="rgba(255,255,255,0.12)" vertical={false} strokeDasharray="3 5" />
-          <XAxis dataKey="idx" hide />
-          <YAxis domain={[0, 1]} hide />
-          <Area type="monotone" dataKey="v" stroke={AMBER} strokeWidth={2.2} fill="url(#railTrendGrad)" dot={false} />
-        </AreaChart>
-      </ResponsiveContainer>
-    </div>
-  );
 }
 
 function MoverRow({
@@ -252,7 +218,12 @@ export default function WorldRiskIndexRail({ rows, onSelectCountry, onMeasure }:
               <div className="rs-sec-title">
                 Avg Risk · Trend<span className="sub">{model.byOffset.length} periods</span>
               </div>
-              <TrendChart series={model.series} />
+              <RiskTrendChart
+                series={model.series}
+                color={AMBER}
+                height={92}
+                gradientId="railTrendGrad"
+              />
             </div>
 
             <div className="rs-sec">

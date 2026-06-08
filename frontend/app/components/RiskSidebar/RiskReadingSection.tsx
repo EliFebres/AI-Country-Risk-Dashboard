@@ -1,18 +1,9 @@
 'use client';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
-import {
-  ResponsiveContainer,
-  AreaChart,
-  Area,
-  XAxis,
-  YAxis,
-  Tooltip,
-  CartesianGrid,
-} from 'recharts';
 import { getRiskCache, primeRiskCache, type CountryRisk } from '../../lib/risk-client';
 import { colorForRisk } from '../../lib/risk';
-import { clamp01 } from '../../lib/format';
+import RiskTrendChart from '../RiskTrendChart';
 
 /** risk.json entry */
 type RiskEntry = CountryRisk;
@@ -47,20 +38,6 @@ export default function RiskReadingSection({
     const base = (iso2 || countryName || 'risk').toString().replace(/\s+/g, '-').toUpperCase();
     return `riskGrad-${base}`;
   }, [iso2, countryName]);
-
-  // --- Robust width detection for ResponsiveContainer (prevents zero-width charts)
-  const rowRef = useRef<HTMLDivElement>(null);
-  const [rowWidth, setRowWidth] = useState(0);
-  useEffect(() => {
-    const el = rowRef.current;
-    if (!el) return;
-    const ro = new ResizeObserver((entries) => {
-      const w = entries[0]?.contentRect?.width ?? 0;
-      setRowWidth(w);
-    });
-    ro.observe(el);
-    return () => ro.disconnect();
-  }, []);
 
   // --- Track the left column (title + value) height so the chart matches it
   const leftColRef = useRef<HTMLDivElement>(null);
@@ -185,11 +162,7 @@ export default function RiskReadingSection({
   const currentColor =
     typeof stats?.currentRisk === 'number' ? colorForRisk(stats.currentRisk) : '#9cc2ff';
 
-  // transform for Recharts
-  const chartData = useMemo(
-    () => (stats?.history ?? []).map((v, i) => ({ idx: i, v: clamp01(v) })),
-    [stats?.history]
-  );
+  const history = stats?.history ?? [];
 
   const deltaClass =
     stats?.delta == null
@@ -206,7 +179,7 @@ export default function RiskReadingSection({
 
   return (
     <>
-      <div className="statsRow" aria-label="Risk stats" ref={rowRef}>
+      <div className="statsRow" aria-label="Risk stats">
         {/* LEFT: Current + Avg with superscript delta */}
         <div className="statsCol leftCol" ref={leftColRef}>
           <div className="bigTitle">Risk Rating</div>
@@ -240,46 +213,16 @@ export default function RiskReadingSection({
             <div className="bigValue muted">Loading…</div>
           ) : statsError ? (
             <div className="bigValue muted">—</div>
-          ) : chartData.length > 0 ? (
+          ) : history.length > 0 ? (
             <div className="chartWrap">
-              {/* Keyed by measured width so ResponsiveContainer recalculates */}
-              <ResponsiveContainer key={`${rowWidth}-${Math.round(leftColHeight)}`} width="100%" height={leftColHeight || 120}>
-                <AreaChart data={chartData} margin={{ left: 4, right: 4, top: 8, bottom: 0 }}>
-                  <defs>
-                    <linearGradient id={gradId} x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor={currentColor} stopOpacity={0.45} />
-                      <stop offset="100%" stopColor={currentColor} stopOpacity={0} />
-                    </linearGradient>
-                  </defs>
-
-                  <CartesianGrid stroke="rgba(255,255,255,0.12)" vertical={false} strokeDasharray="3 5" />
-                  <XAxis dataKey="idx" hide />
-                  <YAxis domain={[0, 1]} hide />
-
-                  <Tooltip
-                    cursor={{ stroke: 'rgba(255,255,255,0.25)', strokeWidth: 1 }}
-                    formatter={(val: any) => [(Number(val) as number).toFixed(2), 'Risk']}
-                    labelFormatter={() => ''}
-                    contentStyle={{
-                      background: 'rgba(14,14,14,0.92)',
-                      border: '1px solid rgba(255,255,255,0.08)',
-                      borderRadius: 8,
-                      padding: '6px 8px',
-                      color: '#fff',
-                    }}
-                  />
-
-                  <Area
-                    type="monotone"
-                    dataKey="v"
-                    stroke={currentColor}
-                    strokeWidth={2.2}
-                    fill={`url(#${gradId})`}
-                    dot={false}
-                    activeDot={{ r: 3 }}
-                  />
-                </AreaChart>
-              </ResponsiveContainer>
+              <RiskTrendChart
+                series={history}
+                color={currentColor}
+                height={leftColHeight || 120}
+                gradientId={gradId}
+                tooltip
+                activeDot
+              />
             </div>
           ) : (
             <div className="bigValue muted" style={{ fontSize: '1.2em' }}>
