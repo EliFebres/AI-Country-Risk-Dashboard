@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState, type CSSProperties } from 'react';
 import Map, { type MapApi } from './Map';
 import Masthead from './Masthead';
+import MapFullscreenButton from './MapFullscreenButton';
 import WorldRiskIndexRail from './WorldRiskIndexRail';
 import BottomBar from './bottombar/BottomBar';
 import RiskSidebar from './RiskSidebar';
@@ -10,11 +11,15 @@ import { useIdleTour } from '../lib/useIdleTour';
 import type { CountryRisk } from '../lib/risk-client';
 
 const LS_KEY = 'crd_bottom_min';
+const LS_IDLE_KEY = 'crd_idle_tour';
 
 export type SelectOpts = { pan?: boolean; panDuration?: number };
 
 // Idle auto-tour pans slower than a manual click for a calmer, ambient feel.
 const IDLE_PAN_DURATION = 3000;
+// With the explicit toggle replacing the old 90s timer, the tour only needs a
+// short settle after the last interaction before it (re)starts cycling.
+const IDLE_START_DELAY = 5000;
 
 export default function TerminalDashboard() {
   const mapRef = useRef<MapApi>(null);
@@ -23,6 +28,7 @@ export default function TerminalDashboard() {
   const [riskRows, setRiskRows] = useState<CountryRisk[] | null>(null);
   const [dataTimestamp, setDataTimestamp] = useState<Date | string | number | null>(null);
   const [bottomMinimized, setBottomMinimized] = useState(false);
+  const [idleEnabled, setIdleEnabled] = useState(true);
   // Bottom-bar height fit: the rail reports the height that makes the bar's top
   // meet the end of its content (the "Improving" table). Null → CSS fallback.
   const [barBaseH, setBarBaseH] = useState<number | null>(null);
@@ -46,24 +52,36 @@ export default function TerminalDashboard() {
     []
   );
 
-  // Idle auto-tour: after ~90s without interaction, start cycling through random
-  // countries every ~40s. Any real interaction cancels it and resets the clock.
+  // Idle auto-tour: when armed via the masthead toggle, cycle through random
+  // countries every ~40s once interaction has settled. Any real interaction
+  // pauses it and resets the short idle clock; flipping the toggle off stops it.
   useIdleTour({
     rows: riskRows,
     currentName: selected?.name,
     onPick: (c) => selectCountry(c, { pan: true, panDuration: IDLE_PAN_DURATION }),
-    startDelayMs: 90000,
+    startDelayMs: IDLE_START_DELAY,
     intervalMs: 40000,
+    enabled: idleEnabled,
   });
 
-  // Restore the persisted full-screen state on mount (client-only).
+  // Restore the persisted full-screen + idle-tour state on mount (client-only).
   useEffect(() => {
     try {
       if (localStorage.getItem(LS_KEY) === '1') setBottomMinimized(true);
+      if (localStorage.getItem(LS_IDLE_KEY) === '0') setIdleEnabled(false);
     } catch {
       /* ignore */
     }
   }, []);
+
+  // Persist the idle-tour toggle.
+  useEffect(() => {
+    try {
+      localStorage.setItem(LS_IDLE_KEY, idleEnabled ? '1' : '0');
+    } catch {
+      /* ignore */
+    }
+  }, [idleEnabled]);
 
   // Persist + resize the map after the chrome transition settles.
   const firstRun = useRef(true);
@@ -98,11 +116,16 @@ export default function TerminalDashboard() {
       <Masthead
         coverage={riskRows?.length ?? null}
         dataTimestamp={dataTimestamp}
-        bottomMinimized={bottomMinimized}
-        onToggleBottom={() => setBottomMinimized((v) => !v)}
+        idleEnabled={idleEnabled}
+        onToggleIdle={() => setIdleEnabled((v) => !v)}
       />
 
       <Map ref={mapRef} onSelectCountry={selectCountry} onData={handleData} />
+
+      <MapFullscreenButton
+        minimized={bottomMinimized}
+        onToggle={() => setBottomMinimized((v) => !v)}
+      />
 
       <WorldRiskIndexRail rows={riskRows} onSelectCountry={selectCountry} onMeasure={handleRailMeasure} />
 

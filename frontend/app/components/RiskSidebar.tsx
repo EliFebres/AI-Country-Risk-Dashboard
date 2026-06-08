@@ -55,7 +55,7 @@ export default function RiskSidebar({
 
       // News: latest article date (+ snapshot as_of)
       try {
-        const res = await fetch('/api/articles_latest.json', { cache: 'force-cache' });
+        const res = await fetch('/api/articles', { cache: 'force-cache' });
         if (res.ok) {
           const data = (await res.json()) as Array<{
             iso2?: string;
@@ -78,7 +78,7 @@ export default function RiskSidebar({
 
       // Indicators: newest year, treated as that calendar year's end
       try {
-        const res = await fetch('/api/indicator_latest.json', { cache: 'force-cache' });
+        const res = await fetch('/api/indicators', { cache: 'force-cache' });
         if (res.ok) {
           const data = (await res.json()) as Array<{
             iso2?: string;
@@ -132,6 +132,20 @@ export default function RiskSidebar({
     typeof daysOld === 'number'
       ? `Most recent data: ${lastUpdatedLocal ?? 'unknown'}`
       : undefined;
+
+  // --- Content-swap animation ---
+  // Replay an entrance animation whenever the country changes while the panel is
+  // already open (e.g. the idle auto-tour advancing to another country). Skipped
+  // on the initial open — the panel's clip-path reveal already covers that.
+  const iso = country?.iso2 ?? null;
+  const prevIsoRef = useRef<string | null>(null);
+  const wasOpenRef = useRef(false);
+  const isSwitch = open && wasOpenRef.current && iso != null && iso !== prevIsoRef.current;
+  useEffect(() => {
+    prevIsoRef.current = iso;
+    wasOpenRef.current = open;
+  });
+  const swapKey = iso ?? 'none';
 
   // --- Swipe-to-close for mobile (right → left) ---
   const [dragX, setDragX] = useState(0);
@@ -199,7 +213,7 @@ export default function RiskSidebar({
           <button className="risk-close" aria-label="Close details" title="Close" onClick={onClose}>
             ✕
           </button>
-          <div className="titleRow">
+          <div className={`titleRow ${isSwitch ? 'swap-anim' : ''}`} key={`title-${swapKey}`}>
             {flagSrc && (
               <span className="flagBox" aria-hidden="true">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -222,7 +236,7 @@ export default function RiskSidebar({
           {!country ? (
             <p className="muted">Click a country marker to see details.</p>
           ) : (
-            <>
+            <div className={`content-swap ${isSwitch ? 'swap-anim' : ''}`} key={swapKey}>
               <section className="card">
                 <RiskReadingSection
                   countryName={country?.name}
@@ -251,7 +265,7 @@ export default function RiskSidebar({
                 <h3>News</h3>
                 <NewsArticleSection iso2={country?.iso2} active={open} />
               </section>
-            </>
+            </div>
           )}
         </div>
       </aside>
@@ -439,6 +453,34 @@ export default function RiskSidebar({
         }
         .muted {
           color: var(--amber-dim);
+        }
+
+        /* Wraps the section stack so a country switch can replay an entrance
+           animation. Mirrors .content's column layout so the AI card still
+           fills the leftover vertical space. */
+        .content-swap {
+          flex: 1 1 auto;
+          min-height: 0;
+          display: flex;
+          flex-direction: column;
+        }
+        .swap-anim {
+          animation: swapIn var(--swapMs, 320ms) var(--easing, ease) both;
+        }
+        @keyframes swapIn {
+          from {
+            opacity: 0;
+            transform: translateY(8px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+        @media (prefers-reduced-motion: reduce) {
+          .swap-anim {
+            animation: none;
+          }
         }
 
         .card {

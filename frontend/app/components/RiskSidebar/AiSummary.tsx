@@ -74,7 +74,7 @@ export default function AiSummary({ iso2, active = true }: Props) {
 
       setLoading(true);
       try {
-        const res = await fetch(`/api/risk_summary.json`, {
+        const res = await fetch(`/api/risk-summary`, {
           cache: 'no-store',
           headers: { accept: 'application/json' },
         });

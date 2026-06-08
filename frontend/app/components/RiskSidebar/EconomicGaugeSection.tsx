@@ -227,7 +227,7 @@ export default function EconomicGaugeSection({
         setIndLoading(true);
 
         if (!INDICATOR_CACHE) {
-          const res = await fetch('/api/indicator_latest.json', {
+          const res = await fetch('/api/indicators', {
             cache: 'no-store',
             headers: { accept: 'application/json' },
           });

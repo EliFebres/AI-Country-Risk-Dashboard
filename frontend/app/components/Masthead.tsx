@@ -6,8 +6,9 @@ type Props = {
   /** Number of covered sovereigns (derived from the live dataset, never hardcoded). */
   coverage: number | null;
   dataTimestamp?: Date | string | number | null;
-  bottomMinimized: boolean;
-  onToggleBottom: () => void;
+  /** Whether the idle auto-tour is currently armed. */
+  idleEnabled: boolean;
+  onToggleIdle: () => void;
 };
 
 const pad = (n: number) => String(n).padStart(2, '0');
@@ -15,8 +16,8 @@ const pad = (n: number) => String(n).padStart(2, '0');
 export default function Masthead({
   coverage,
   dataTimestamp,
-  bottomMinimized,
-  onToggleBottom,
+  idleEnabled,
+  onToggleIdle,
 }: Props) {
   // Live UTC clock — initialized in an effect to avoid SSR/hydration mismatch.
   const [clock, setClock] = useState<string>('--:--:--');
@@ -63,21 +64,18 @@ export default function Masthead({
           <span className="tb-v">{dataAsOf}</span>
         </span>
         <button
-          className="fullscreen-toggle"
-          aria-label="Toggle full-screen map"
-          aria-pressed={bottomMinimized}
-          title={bottomMinimized ? 'Show bottom panel' : 'Full-screen map'}
-          onClick={onToggleBottom}
+          className={`idle-toggle ${idleEnabled ? 'on' : ''}`}
+          aria-label="Toggle World Tour auto-cycle"
+          aria-pressed={idleEnabled}
+          title={idleEnabled ? 'World Tour: On' : 'World Tour: Off'}
+          onClick={onToggleIdle}
         >
-          {bottomMinimized ? (
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M3 8h3a2 2 0 0 0 2-2V3M21 8h-3a2 2 0 0 1-2-2V3M3 16h3a2 2 0 0 1 2 2v3M21 16h-3a2 2 0 0 1-2 2v3" />
-            </svg>
-          ) : (
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M8 3H5a2 2 0 0 0-2 2v3M16 3h3a2 2 0 0 1 2 2v3M8 21H5a2 2 0 0 1-2-2v-3M16 21h3a2 2 0 0 0 2-2v-3" />
-            </svg>
-          )}
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <circle cx="12" cy="12" r="9" />
+            <path d="M10 9l5 3-5 3V9z" fill="currentColor" stroke="none" />
+          </svg>
+          <span className="idle-label">World Tour:</span>
+          <span className="idle-state">{idleEnabled ? 'On' : 'Off'}</span>
         </button>
       </div>
 
@@ -175,26 +173,58 @@ export default function Masthead({
           font-size: 11px;
           letter-spacing: 0.04em;
         }
-        .fullscreen-toggle {
+        .idle-toggle {
           flex: 0 0 auto;
-          width: 32px;
           height: 32px;
+          padding: 0 11px;
           border-radius: 8px;
           border: 1px solid rgba(255, 180, 60, 0.3);
-          background: rgba(255, 180, 60, 0.08);
-          color: var(--amber);
+          background: rgba(255, 180, 60, 0.06);
+          color: var(--amber-dim);
           cursor: pointer;
           display: inline-flex;
           align-items: center;
-          justify-content: center;
-          transition: background 120ms ease;
+          gap: 6px;
+          line-height: 1;
+          font-family: var(--term-font);
+          letter-spacing: 0.04em;
+          transition: background 120ms ease, color 120ms ease, border-color 120ms ease;
         }
-        .fullscreen-toggle:hover {
+        .idle-toggle:hover {
+          background: rgba(255, 180, 60, 0.14);
+        }
+        .idle-toggle.on {
+          color: var(--amber);
+          border-color: rgba(255, 180, 60, 0.55);
           background: rgba(255, 180, 60, 0.16);
         }
-        .fullscreen-toggle svg {
-          width: 18px;
-          height: 18px;
+        .idle-toggle svg {
+          width: 16px;
+          height: 16px;
+          flex: 0 0 auto;
+          display: block;
+        }
+        .idle-label {
+          display: inline-flex;
+          align-items: center;
+          line-height: 1;
+          font-size: 10px;
+          letter-spacing: 0.16em;
+          text-transform: uppercase;
+        }
+        .idle-state {
+          display: inline-flex;
+          align-items: center;
+          line-height: 1;
+          font-size: 11px;
+          font-weight: 700;
+          font-variant-numeric: tabular-nums;
+        }
+
+        @media (max-width: 768px) {
+          .idle-label {
+            display: none;
+          }
         }
 
         @keyframes dotPulse {

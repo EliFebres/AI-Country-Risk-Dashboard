@@ -18,7 +18,7 @@ type CountryNews = {
   articles: Article[];
 };
 
-const NEWS_JSON_PUBLIC_PATH = '/api/articles_latest.json';
+const NEWS_JSON_PUBLIC_PATH = '/api/articles';
 
 // Simple session cache to avoid refetch storms
 let NEWS_CACHE: CountryNews[] | null = null;
@@ -385,6 +385,20 @@ export default function NewsArticleSection({
           overflow: hidden;
           background: radial-gradient(100% 100% at 50% 0%, rgba(255, 180, 60, 0.06), rgba(255, 255, 255, 0.02));
           color: var(--amber-dim);
+        }
+        /* Golden frame drawn on top of the image (an inset shadow on the wrap
+           itself would be hidden by the opaque <img>). */
+        .thumbWrap::after {
+          content: '';
+          position: absolute;
+          inset: 0;
+          box-shadow: inset 0 0 0 1px var(--rule);
+          pointer-events: none;
+          z-index: 1;
+          transition: box-shadow 160ms var(--easing, ease);
+        }
+        .newsCard.clickable:hover .thumbWrap::after {
+          box-shadow: inset 0 0 0 1px rgba(255, 180, 60, 0.45);
         }
         .thumb {
           width: 100%;

@@ -86,7 +86,7 @@ export default function RiskReadingSection({
     let cancelled = false;
 
     async function fetchRiskJson(preferFresh: boolean) {
-      const res = await fetch('/api/risk.json', {
+      const res = await fetch('/api/risk', {
         cache: preferFresh ? 'no-store' : 'force-cache',
         headers: { accept: 'application/json' },
       });

@@ -1,20 +1,20 @@
-// app/api/risk-summary/route.ts
+// app/api/indicators/route.ts
 import { NextResponse } from "next/server";
 import { unstable_cache } from "next/cache";
-import { fetchLatestSummariesFromDB } from "@/app/lib/risk-server";
+import { fetchLatestIndicatorValuesFromDB } from "@/app/lib/risk-server";
 import { CACHE_TTL } from "@/app/lib/cache-ttl";
 
 export const runtime = "nodejs";
 
-const getSummaries = unstable_cache(
-  async () => fetchLatestSummariesFromDB(),
-  ["risk-summaries"],
-  { revalidate: CACHE_TTL.RISK_SUMMARY, tags: ["risk-summary"] }
+const getIndicators = unstable_cache(
+  async () => fetchLatestIndicatorValuesFromDB(),
+  ["indicators-latest"],
+  { revalidate: CACHE_TTL.INDICATORS, tags: ["indicators"] }
 );
 
 export async function GET() {
   try {
-    const data = await getSummaries();
+    const data = await getIndicators();
     return NextResponse.json(data, { status: 200 });
   } catch (err: any) {
     return NextResponse.json({ error: String(err?.message ?? err) }, { status: 500 });

@@ -8,7 +8,7 @@ export type CountryRisk = {
   iso2?: string;            // populated by weekly refresh
 };
 
-export const RISK_JSON_PUBLIC_PATH = "/api/risk.json";
+export const RISK_JSON_PUBLIC_PATH = "/api/risk";
 
 /**
  * Shared in-memory cache of the fresh risk dataset. The map fetches risk.json
@@ -31,31 +31,15 @@ export async function loadRisksClient(signal?: AbortSignal): Promise<CountryRisk
 }
 
 /**
- * Find a country in loaded data AND trigger a server-side write of
- * public/api/risk_summary.json with { country_iso2, bullet_summary }.
- * NOTE: now async — await it where used.
+ * Find a country in loaded data by name. Summaries now come straight from the
+ * DB-backed GET /api/risk-summary route, so there is no server-side write here.
  */
-export async function getRiskByCountry(
+export function getRiskByCountry(
   data: CountryRisk[],
   name: string
-): Promise<CountryRisk | undefined> {
+): CountryRisk | undefined {
   const key = name.trim().toLowerCase();
-  const found = data.find(d => d.name.trim().toLowerCase() === key);
-
-  if (found) {
-    // Fire-and-forget; ignore errors on the client
-    try {
-      await fetch("/api/risk-summary", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ iso2: found.iso2, name: found.name }),
-        cache: "no-store",
-      });
-    } catch {
-      /* no-op */
-    }
-  }
-  return found;
+  return data.find(d => d.name.trim().toLowerCase() === key);
 }
 
 // ----------------------------- Latest articles ----------------------------
@@ -73,7 +57,7 @@ export type CountryArticles = {
   }[];
 };
 
-export const ARTICLES_JSON_PUBLIC_PATH = "/api/articles_latest.json";
+export const ARTICLES_JSON_PUBLIC_PATH = "/api/articles";
 
 /** Load latest 0–3 articles for each country (based on latest snapshot date). */
 export async function loadLatestArticles(signal?: AbortSignal): Promise<CountryArticles[]> {

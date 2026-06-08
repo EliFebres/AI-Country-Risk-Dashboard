@@ -335,23 +335,14 @@ const Map = forwardRef<MapApi, Props>(function Map(
       applyAllTweaks();
 
       try {
-        // Force backend refresh, then fetch *fresh* risk data
-        const r = await fetch('/api/refresh-risk', { method: 'POST' });
-        const refresh = await r.json().catch(() => ({} as Record<string, unknown>));
-        console.log('refresh-risk result:', r.status, refresh);
+        // Fetch risk data straight from the DB-backed route (cached server-side).
+        const stamp = Date.now();
 
-        const stamp = (refresh?.lastRun as string | number) ?? Date.now();
-
-        let riskUrl = '/api/risk.json';
-        const buster = (refresh?.lastRun as string) ?? String(Date.now());
-        riskUrl += `?v=${encodeURIComponent(buster)}`;
-
-        const res = await fetch(riskUrl, {
+        const res = await fetch('/api/risk', {
           signal: aborter?.signal,
-          cache: 'no-store',
           headers: { accept: 'application/json' },
         });
-        if (!res.ok) throw new Error(`Failed to load risk.json: ${res.status}`);
+        if (!res.ok) throw new Error(`Failed to load risk data: ${res.status}`);
 
         const dots: CountryRisk[] = await res.json();
         console.log(`Loaded ${dots.length} risk markers`);
