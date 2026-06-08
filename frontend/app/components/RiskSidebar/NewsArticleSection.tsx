@@ -125,6 +125,7 @@ function hasHttpImage(url?: string): boolean {
 
 /* ---------- Component ---------- */
 
+/** Sidebar section: up to three recent news cards for the selected country. */
 export default function NewsArticleSection({
   iso2,
   active,

@@ -13,6 +13,7 @@ type Props = {
 
 const pad = (n: number) => String(n).padStart(2, '0');
 
+/** Top status bar: brand, coverage / data-age readout, live clock, and idle-tour toggle. */
 export default function Masthead({
   coverage,
   dataTimestamp,

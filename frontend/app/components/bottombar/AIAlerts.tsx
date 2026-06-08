@@ -16,6 +16,7 @@ function impactNode(a: Alert) {
   return <span className="alert-impact flat">MONITOR</span>;
 }
 
+/** Bottom-bar pane: AI-generated geopolitical alerts; clicking a row selects its country. */
 export default function AIAlerts({ rows, onSelectCountry }: Props) {
   const criticalCount = useMemo(() => ALERTS.filter((a) => a.sev === 'critical').length, []);
 

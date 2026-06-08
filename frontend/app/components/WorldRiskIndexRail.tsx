@@ -98,6 +98,7 @@ function MoverRow({
   );
 }
 
+/** Right-hand "World Risk Index" rail: global-average trend, top movers, and per-country rows. */
 export default function WorldRiskIndexRail({ rows, onSelectCountry, onMeasure }: Props) {
   const asideRef = useRef<HTMLElement>(null);
   const stripRef = useRef<HTMLDivElement>(null);

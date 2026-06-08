@@ -192,6 +192,7 @@ type Props = {
   active?: boolean;
 };
 
+/** Sidebar section: four economic-indicator gauges for the selected country. */
 export default function EconomicGaugeSection({
   countryName,
   iso2,

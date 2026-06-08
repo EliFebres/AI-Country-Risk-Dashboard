@@ -28,6 +28,11 @@ type Props = {
   zoom?: number;
 };
 
+/**
+ * MapLibre map of country risk markers. Loads `/api/risk`, renders a colored
+ * ring per country, and exposes an imperative {@link MapApi} (pan/zoom/resize)
+ * to the parent via ref.
+ */
 const Map = forwardRef<MapApi, Props>(function Map(
   { onSelectCountry, onData, bounds, center = [0, 20], zoom = 2.5 },
   ref

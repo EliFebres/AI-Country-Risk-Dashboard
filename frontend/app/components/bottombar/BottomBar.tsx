@@ -13,6 +13,7 @@ type Props = {
   onSelectCountry: (dot: CountryRisk | null, opts?: SelectOpts) => void;
 };
 
+/** Bottom ticker bar: live TV, AI alerts, econ calendar, price tracker, and world markets. */
 export default function BottomBar({ rows, onSelectCountry }: Props) {
   return (
     <section className="bottombar" aria-label="Live stream and rankings">

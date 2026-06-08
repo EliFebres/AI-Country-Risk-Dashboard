@@ -55,6 +55,7 @@ function useFitText(text: string | null) {
   return { boxRef, textRef, fontSize };
 }
 
+/** Sidebar card body: a country's AI bullet summary, auto-fit to fill its card. */
 export default function AiSummary({ iso2, active = true }: Props) {
   const code = iso2?.toUpperCase();
   const { data: summary, loading, error: err } = useDashboardEntry<string>(

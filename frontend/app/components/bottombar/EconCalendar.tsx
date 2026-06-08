@@ -2,6 +2,7 @@
 
 import { CAL_EVENTS } from '../../lib/terminal-seed';
 
+/** Bottom-bar pane: upcoming economic-calendar releases (seed data). */
 export default function EconCalendar() {
   return (
     <div className="mini-table calendar-col">

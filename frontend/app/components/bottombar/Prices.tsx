@@ -44,6 +44,8 @@ function fmtCv(v: number, isY?: 1) {
 }
 const cls = (v: number) => (v >= 0 ? 'up' : 'down');
 
+/** Bottom-bar pane: simulated live price tracker (seed data + periodic random walk). */
+
 export default function Prices() {
   const [cats, setCats] = useState<Cat[]>(seedCats);
 

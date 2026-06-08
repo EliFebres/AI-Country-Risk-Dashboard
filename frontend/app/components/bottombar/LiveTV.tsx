@@ -6,6 +6,7 @@ import { CHANNELS } from '../../lib/terminal-seed';
 const srcFor = (id: string) =>
   `https://www.youtube.com/embed/live_stream?channel=${id}&autoplay=1&mute=1`;
 
+/** Bottom-bar pane: switchable live news YouTube stream. */
 export default function LiveTV() {
   const [active, setActive] = useState(CHANNELS[0]);
 

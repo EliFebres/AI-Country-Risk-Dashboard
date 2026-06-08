@@ -19,6 +19,7 @@ type Props = {
   easing?: string;
 };
 
+/** Sliding left panel with a country's risk reading, economic gauges, AI summary, and news. */
 export default function RiskSidebar({
   open,
   onClose,

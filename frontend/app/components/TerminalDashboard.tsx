@@ -21,6 +21,11 @@ const IDLE_PAN_DURATION = 3000;
 // short settle after the last interaction before it (re)starts cycling.
 const IDLE_START_DELAY = 5000;
 
+/**
+ * Root client dashboard: owns country-selection state and wires together the
+ * map, risk sidebar, World Risk Index rail, and bottom bar, plus the idle
+ * auto-tour that cycles countries after inactivity.
+ */
 export default function TerminalDashboard() {
   const mapRef = useRef<MapApi>(null);
 

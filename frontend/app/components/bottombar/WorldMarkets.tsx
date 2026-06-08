@@ -21,6 +21,7 @@ function sessionUtc(ex: Exchange): string {
   return `${hhmm(ex.o)}–${hhmm(ex.c)}`;
 }
 
+/** Bottom-bar pane: live UTC clock and per-exchange open/closed status. */
 export default function WorldMarkets() {
   // Re-evaluate open/closed against the live UTC clock every 30s.
   const [, setNow] = useState(0);
