@@ -21,8 +21,8 @@ INDICATORS = {
     "INFLATION":          "FP.CPI.TOTL.ZG",         # Consumer-price inflation, % y/y
     "UNEMPLOYMENT":       "SL.UEM.TOTL.ZS",         # Unemployment rate, % labour force
     "FDI_PCT_GDP":        "BX.KLT.DINV.WD.GD.ZS",   # FDI net inflows, % GDP
-    "POL_STABILITY":      "PV.EST",                 # Political stability (z-score)
-    "RULE_OF_LAW":        "RL.EST",                 # Rule of law (z-score)
+    "POL_STABILITY":      "GOV_WGI_PV.EST",         # Political stability (z-score)
+    "RULE_OF_LAW":        "GOV_WGI_RL.EST",         # Rule of law (z-score)
     "GINI_INDEX":         "SI.POV.GINI",            # Income inequality (0 – 100)
     "GDP_PC_GROWTH":      "NY.GDP.PCAP.KD.ZG",      # GDP per-capita growth, % y/y
     "INT_PAYM_PCT_REV":   "GC.XPN.INTP.RV.ZS",      # Interest payments / revenue, %
