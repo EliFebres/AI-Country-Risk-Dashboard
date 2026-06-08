@@ -2,7 +2,6 @@ import os
 import sys
 import pathlib
 import requests
-import pandas as pd
 
 from typing import List, Dict, Tuple
 from collections import defaultdict
@@ -33,7 +32,6 @@ from backend.utils.news_fetching.advanced_scraper import scrape_one as crawlbase
 # --- Paths ------------------------------------------------------------------
 BACKEND_DIR    = project_root / "backend"
 PROCESSED_DATA = BACKEND_DIR / "data" / "wb_panel_wide"
-RAW_DATA_EXCEL = BACKEND_DIR / "data" / "country_data.xlsx"
 
 
 # --- Helpers ----------------------------------------------------------------
@@ -207,31 +205,29 @@ def _fetch_relevant_news(country_name: str, max_articles: int = 20) -> List[Dict
 
     return filtered[:max_articles]
 
-def ensure_missing_country_panels(excel_path: pathlib.Path,
-                                  root: pathlib.Path,
+def ensure_missing_country_panels(root: pathlib.Path,
                                   indicators: dict,
                                   start: int | None = None,
                                   end: int | None = None) -> None:
     """
-    Make sure every country in excel_path has a partition under root.
+    Make sure every country in constants.COUNTRY_ROSTER has a partition under root.
     Only (re)build and write partitions that are missing or empty.
     """
     root.mkdir(parents=True, exist_ok=True)
 
-    df = pd.read_excel(excel_path)
-    if not {"Country_Name", "iso2Code"}.issubset(df.columns):
-        raise ValueError(f"{excel_path} must include 'Country_Name' and 'iso2Code' columns.")
+    roster = constants.COUNTRY_ROSTER
+    iso3_by_iso2 = constants.ISO3_BY_ISO2
 
     missing = []
-    for _, row in df.iterrows():
-        iso2 = str(row["iso2Code"]).strip()
+    for country in roster:
+        iso2 = str(country["iso2"]).strip()
         if not iso2:
             continue
         if not _has_country_partition(root, iso2):
             missing.append(iso2)
 
     if not missing:
-        print(f"All {len(df)} countries already have parquet partitions in {root}.")
+        print(f"All {len(roster)} countries already have parquet partitions in {root}.")
         return
 
     print(f"Backfilling {len(missing)} missing panels → {missing}")
@@ -244,8 +240,12 @@ def ensure_missing_country_panels(excel_path: pathlib.Path,
                 end=end,
                 tidy_fetch=True,
             )
+
+            # Merge non-WB indicators (e.g. Political Corruption Index from OWID)
+            panel = country_data_fetch.merge_extra_indicators(panel, iso2, iso3_by_iso2)
+
             if panel is None or panel.empty:
-                print(f"[{iso2}] No World Bank rows for selected indicators — skipping write.")
+                print(f"[{iso2}] No rows for selected indicators — skipping write.")
                 continue
 
             country_data_fetch.ingest_panel_wide(panel, iso2, root)
@@ -258,30 +258,27 @@ def main() -> None:
     """Loop countries → payload → news → LLM score → enrich Top-3 images if missing → DB."""
     print(f"=== AI Country Risk run started at {_to_utc_iso(datetime.now(timezone.utc))} UTC ===")
 
-    # 0) Ensure/Backfill World Bank panels per country (incremental, idempotent)
+    # 0) Ensure/Backfill panels per country (incremental, idempotent)
+    #    World Bank indicators are fetched per-country; non-WB indicators
+    #    (Political Corruption Index) are merged in via merge_extra_indicators.
     ensure_missing_country_panels(
-        excel_path=RAW_DATA_EXCEL,
         root=PROCESSED_DATA,
         indicators=constants.INDICATORS,
         start=None,
         end=None,
     )
 
-    # Map "Country_Name" → "iso2Code" from your Excel
-    df_countries: pd.DataFrame = pd.read_excel(RAW_DATA_EXCEL)
-    country_map = (
-        df_countries[["Country_Name", "iso2Code"]]
-        .dropna()
-        .set_index("Country_Name")["iso2Code"]
-        .to_dict()
-    )
+    # Map "Country_Name" → "iso2" from the hardcoded roster
+    country_map = {c["name"]: c["iso2"] for c in constants.COUNTRY_ROSTER}
 
     for country_name, iso2 in country_map.items():
         try:
-            # 1) Macro payload (pretty, JSON-serializable)
+            # 1) Macro payload (pretty, JSON-serializable). ALL_INDICATORS adds
+            #    the merged non-WB indicators (Political Corruption Index) so they
+            #    reach both the LLM payload and the DB upsert.
             payload = data_retrieval.prepare_llm_payload_pretty(
                 country_iso=iso2,
-                indicators=constants.INDICATORS,
+                indicators=constants.ALL_INDICATORS,
                 since=2015,
                 lookback=10,
                 deltas=(1, 5),
