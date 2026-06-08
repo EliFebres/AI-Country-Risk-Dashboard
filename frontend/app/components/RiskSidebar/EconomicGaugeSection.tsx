@@ -1,12 +1,11 @@
 // /components/Sidebar/EconomicGaugeSection.tsx
 'use client';
 
-import { useEffect, useState } from 'react';
 import {
-  loadDashboard,
   getIndicatorsFor,
   type CountryIndicatorLatest,
 } from '../../lib/dashboard-client';
+import { useDashboardEntry } from '../../lib/hooks';
 import { colorForRisk } from '../../lib/risk';
 import { clamp01 } from '../../lib/format';
 
@@ -198,43 +197,18 @@ export default function EconomicGaugeSection({
   iso2,
   active = true,
 }: Props) {
-  const [indicators, setIndicators] = useState<CountryIndicatorLatest | null>(null);
-  const [indLoading, setIndLoading] = useState(false);
-  const [indError, setIndError] = useState<string | null>(null);
-
-  // Load indicator_latest.json (cache once), then select the country
-  useEffect(() => {
-    let cancelled = false;
-
-    async function ensureIndicatorsLoaded() {
-      setIndError(null);
-      setIndicators(null);
-
-      if (!active) return;
-      if (!countryName && !iso2) return;
-
-      try {
-        setIndLoading(true);
-
-        const data = await loadDashboard();
-        if (cancelled) return;
-
-        const hit = getIndicatorsFor(data, iso2, countryName);
-
-        if (!cancelled) {
-          if (hit) setIndicators(hit);
-          else setIndError('No indicator data found for this country.');
-        }
-      } catch {
-        if (!cancelled) setIndError('Failed to load indicator data');
-      } finally {
-        if (!cancelled) setIndLoading(false);
-      }
-    }
-
-    ensureIndicatorsLoaded();
-    return () => { cancelled = true; };
-  }, [active, countryName, iso2]);
+  // Load the shared dashboard payload (cached once), then select this country.
+  const {
+    data: indicators,
+    loading: indLoading,
+    error: indError,
+  } = useDashboardEntry<CountryIndicatorLatest>(
+    active,
+    !!(countryName || iso2),
+    [active, countryName, iso2],
+    (data) => getIndicatorsFor(data, iso2, countryName) ?? null,
+    { load: 'Failed to load indicator data', notFound: 'No indicator data found for this country.' }
+  );
 
   // --- Build gauge items ---
   const gaugeItems =

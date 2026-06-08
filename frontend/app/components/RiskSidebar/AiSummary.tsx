@@ -1,7 +1,8 @@
 'use client';
 
-import { useEffect, useLayoutEffect, useRef, useState } from 'react';
-import { loadDashboard, getSummaryFor } from '../../lib/dashboard-client';
+import { useLayoutEffect, useRef, useState } from 'react';
+import { getSummaryFor } from '../../lib/dashboard-client';
+import { useDashboardEntry } from '../../lib/hooks';
 
 type Props = {
   /** ISO2 code like 'US' (required to match the summary file) */
@@ -55,39 +56,16 @@ function useFitText(text: string | null) {
 }
 
 export default function AiSummary({ iso2, active = true }: Props) {
-  const [summary, setSummary] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [err, setErr] = useState<string | null>(null);
+  const code = iso2?.toUpperCase();
+  const { data: summary, loading, error: err } = useDashboardEntry<string>(
+    active,
+    !!code,
+    [active, iso2],
+    (data) => getSummaryFor(data, code)?.bullet_summary?.trim() || null,
+    { load: 'Failed to load summary' }
+  );
 
   const { boxRef, textRef, fontSize } = useFitText(summary);
-
-  useEffect(() => {
-    let cancelled = false;
-
-    async function load() {
-      setErr(null);
-      setSummary(null);
-
-      const code = iso2?.toUpperCase();
-      if (!active || !code) return;
-
-      setLoading(true);
-      try {
-        const data = await loadDashboard();
-        const hit = getSummaryFor(data, code);
-        if (!cancelled) setSummary(hit?.bullet_summary?.trim() || null);
-      } catch {
-        if (!cancelled) setErr('Failed to load summary');
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    }
-
-    load();
-    return () => {
-      cancelled = true;
-    };
-  }, [active, iso2]);
 
   if (loading) return <p className="muted">Loading summary…</p>;
   if (summary)
