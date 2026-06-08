@@ -58,3 +58,6 @@ backend/data/wb_panel_wide
 
 # Allow the example env file in backend
 !backend/.env.example
+
+# Playwright MCP scratch logs
+.playwright-mcp/

@@ -1,8 +1,9 @@
 'use client';
 
 import dynamic from 'next/dynamic';
-const Map = dynamic(() => import('./Map'), { ssr: false });
+const TerminalDashboard = dynamic(() => import('./TerminalDashboard'), { ssr: false });
 
+/** Client entry point that lazy-loads {@link TerminalDashboard} with SSR disabled. */
 export default function MapClient() {
-  return <Map />;
+  return <TerminalDashboard />;
 }

@@ -1,53 +1,38 @@
 // app/lib/risk-client.ts
+//
+// Client-side risk types + the shared in-memory risk cache. The map fetches the
+// risk dataset once and primes this cache; other client components read it
+// synchronously instead of re-fetching (avoiding a stale-CDN divergence).
+
+/** A single country's risk reading plus map position. */
 export type CountryRisk = {
   name: string;
   lngLat: [number, number]; // [lng, lat]
   risk: number;             // 0..1 (current risk)
   prevRisk?: number;        // previous single value (convenience)
-  prevRiskSeries?: number[]; // NEW: all prior scores, newest→oldest (excludes current)
+  prevRiskSeries?: number[]; // all prior scores, newest→oldest (excludes current)
   iso2?: string;            // populated by weekly refresh
-  as_of?: string;           // ISO date when the risk data was generated
 };
 
-export const RISK_JSON_PUBLIC_PATH = "/api/risk.json";
+let RISK_CACHE: CountryRisk[] | null = null;
 
-/** Load risks in the browser (Client Components / useEffect). */
-export async function loadRisksClient(signal?: AbortSignal): Promise<CountryRisk[]> {
-  const res = await fetch(RISK_JSON_PUBLIC_PATH, { cache: "no-store", signal });
-  if (!res.ok) throw new Error(`Failed to load risks: ${res.status} ${res.statusText}`);
-  return (await res.json()) as CountryRisk[];
+/**
+ * Store the freshly-loaded risk dataset for other components to read.
+ * @param rows - The risk rows fetched by the map.
+ */
+export function primeRiskCache(rows: CountryRisk[]): void {
+  RISK_CACHE = rows;
 }
 
 /**
- * Find a country in loaded data AND trigger a server-side write of
- * public/api/risk_summary.json with { country_iso2, bullet_summary }.
- * NOTE: now async — await it where used.
+ * Synchronous peek at the primed risk dataset.
+ * @returns The cached rows, or `null` before the map has loaded them.
  */
-export async function getRiskByCountry(
-  data: CountryRisk[],
-  name: string
-): Promise<CountryRisk | undefined> {
-  const key = name.trim().toLowerCase();
-  const found = data.find(d => d.name.trim().toLowerCase() === key);
-
-  if (found) {
-    // Fire-and-forget; ignore errors on the client
-    try {
-      await fetch("/api/risk-summary", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ iso2: found.iso2, name: found.name }),
-        cache: "no-store",
-      });
-    } catch {
-      /* no-op */
-    }
-  }
-  return found;
+export function getRiskCache(): CountryRisk[] | null {
+  return RISK_CACHE;
 }
 
-// ----------------------------- Latest articles ----------------------------
-
+/** A country's latest article bundle (top 0–3 for its latest snapshot). */
 export type CountryArticles = {
   iso2: string;
   name: string;
@@ -60,12 +45,3 @@ export type CountryArticles = {
     img_url?: string | null;
   }[];
 };
-
-export const ARTICLES_JSON_PUBLIC_PATH = "/api/articles_latest.json";
-
-/** Load latest 0–3 articles for each country (based on latest snapshot date). */
-export async function loadLatestArticles(signal?: AbortSignal): Promise<CountryArticles[]> {
-  const res = await fetch(ARTICLES_JSON_PUBLIC_PATH, { cache: "no-store", signal });
-  if (!res.ok) throw new Error(`Failed to load articles: ${res.status} ${res.statusText}`);
-  return (await res.json()) as CountryArticles[];
-}

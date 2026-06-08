@@ -1,7 +1,13 @@
 // /components/Sidebar/EconomicGaugeSection.tsx
 'use client';
 
-import { useEffect, useState } from 'react';
+import {
+  getIndicatorsFor,
+  type CountryIndicatorLatest,
+} from '../../lib/dashboard-client';
+import { useDashboardEntry } from '../../lib/hooks';
+import { colorForRisk } from '../../lib/risk';
+import { clamp01 } from '../../lib/format';
 
 /** Indicator names as written in indicator_latest.json */
 type IndicatorName =
@@ -11,16 +17,6 @@ type IndicatorName =
   | 'GDP per-capita growth (% y/y)';
 
 type IndicatorSnapshot = { year: number; value: number; unit?: string };
-
-type CountryIndicatorLatest = {
-  iso2: string;
-  name: string;
-  values: Partial<Record<IndicatorName, IndicatorSnapshot>>;
-};
-
-// Cache with 1-hour expiration to ensure fresh data
-const CACHE_TTL_MS = 60 * 60 * 1000; // 1 hour
-let INDICATOR_CACHE: { data: CountryIndicatorLatest[]; timestamp: number } | null = null;
 
 /** ------------------------------------------------------------------------ */
 /** HOVER TEXT DICTIONARY — edit here to change tooltip copy for each gauge. */
@@ -39,14 +35,6 @@ const INDICATOR_TOOLTIPS: IndicatorHoverText = {
 };
 /** ------------------------------------------------------------------------ */
 
-/** utils */
-const clamp01 = (x: number) => Math.max(0, Math.min(1, x));
-
-function colorForRisk(r: number) {
-  if (r > 0.7) return '#ff2d55';
-  if (r >= 0.5) return '#ffd60a';
-  return '#39ff14';
-}
 
 function colorForGDP(val?: number): string | undefined {
   if (typeof val !== 'number') return undefined;
@@ -115,7 +103,7 @@ const ORDER: IndicatorName[] = [
   'GDP per-capita growth (% y/y)',
 ];
 
-const GAUGE_SIZE = 60;
+const GAUGE_SIZE = 52;
 
 function MiniGauge(props: {
   title: string;
@@ -178,9 +166,9 @@ function MiniGauge(props: {
       <div
         className="gaugeCaption"
         style={{
-          width: '100%', textAlign: 'center', fontSize: 11, opacity: 0.7,
-          letterSpacing: '0.2px', whiteSpace: 'nowrap', lineHeight: 1.05, overflow: 'hidden', marginTop: 8,
-          textOverflow: 'ellipsis',
+          width: '100%', textAlign: 'center', fontSize: 9.5, color: 'var(--amber-dim)',
+          letterSpacing: '0.06em', textTransform: 'uppercase', whiteSpace: 'nowrap',
+          lineHeight: 1.05, overflow: 'hidden', marginTop: 8, textOverflow: 'ellipsis',
         }}
         aria-hidden="true"
       >
@@ -204,91 +192,50 @@ type Props = {
   active?: boolean;
 };
 
+/** Sidebar section: four economic-indicator gauges for the selected country. */
 export default function EconomicGaugeSection({
   countryName,
   iso2,
   active = true,
 }: Props) {
-  const [indicators, setIndicators] = useState<CountryIndicatorLatest | null>(null);
-  const [indLoading, setIndLoading] = useState(false);
-  const [indError, setIndError] = useState<string | null>(null);
-
-  // Load indicator_latest.json (cache once), then select the country
-  useEffect(() => {
-    let cancelled = false;
-
-    async function ensureIndicatorsLoaded() {
-      setIndError(null);
-      setIndicators(null);
-
-      if (!active) return;
-      if (!countryName && !iso2) return;
-
-      try {
-        setIndLoading(true);
-
-        // Check if cache is expired (older than 1 hour) or doesn't exist
-        const cacheExpired = !INDICATOR_CACHE || Date.now() - INDICATOR_CACHE.timestamp >= CACHE_TTL_MS;
-
-        if (cacheExpired) {
-          const res = await fetch('/api/indicator_latest.json', {
-            cache: 'no-store',
-            headers: { accept: 'application/json' },
-          });
-          if (!res.ok) throw new Error(`HTTP ${res.status}`);
-          const payload = (await res.json()) as CountryIndicatorLatest[] | CountryIndicatorLatest;
-          const data = Array.isArray(payload) ? payload : [payload];
-          INDICATOR_CACHE = { data, timestamp: Date.now() };
-        }
-
-        const isoU = iso2?.toUpperCase() || '';
-        const norm = (s: string) => s.trim().toLowerCase();
-        const cacheData = INDICATOR_CACHE!.data;
-
-        let hit: CountryIndicatorLatest | undefined;
-        if (isoU) hit = cacheData.find((c) => (c.iso2 || '').toUpperCase() === isoU);
-        if (!hit && countryName) hit = cacheData.find((c) => norm(c.name) === norm(countryName));
-
-        if (!cancelled) {
-          if (hit) setIndicators(hit);
-          else setIndError('No indicator data found for this country.');
-        }
-      } catch {
-        if (!cancelled) setIndError('Failed to load indicator data');
-      } finally {
-        if (!cancelled) setIndLoading(false);
-      }
-    }
-
-    ensureIndicatorsLoaded();
-    return () => { cancelled = true; };
-  }, [active, countryName, iso2]);
+  // Load the shared dashboard payload (cached once), then select this country.
+  const {
+    data: indicators,
+    loading: indLoading,
+    error: indError,
+  } = useDashboardEntry<CountryIndicatorLatest>(
+    active,
+    !!(countryName || iso2),
+    [active, countryName, iso2],
+    (data) => getIndicatorsFor(data, iso2, countryName) ?? null,
+    { load: 'Failed to load indicator data', notFound: 'No indicator data found for this country.' }
+  );
 
   // --- Build gauge items ---
   const gaugeItems =
     indicators
       ? ORDER.map((name) => {
-        const snap = indicators.values[name];
-        const valText = formatValue(name, snap);
-        const progress =
-          typeof snap?.value === 'number' ? progressForIndicator(name, snap.value) : 0.0;
+          const snap = indicators.values[name];
+          const valText = formatValue(name, snap);
+          const progress =
+            typeof snap?.value === 'number' ? progressForIndicator(name, snap.value) : 0.0;
 
-        const ringColor =
-          name === 'GDP per-capita growth (% y/y)'
-            ? colorForGDP(snap?.value)
-            : undefined;
+          const ringColor =
+            name === 'GDP per-capita growth (% y/y)'
+              ? colorForGDP(snap?.value)
+              : undefined;
 
-        return {
-          key: name,
-          title: shortLabel(name),
-          caption: oneWordLabel(name),
-          valueText: valText,
-          progress,
-          ringColor,
-          aria: `${shortLabel(name)} ${valText}`,
-          tooltip: INDICATOR_TOOLTIPS[name], // ← use dictionary hover text
-        };
-      })
+          return {
+            key: name,
+            title: shortLabel(name),
+            caption: oneWordLabel(name),
+            valueText: valText,
+            progress,
+            ringColor,
+            aria: `${shortLabel(name)} ${valText}`,
+            tooltip: INDICATOR_TOOLTIPS[name], // ← use dictionary hover text
+          };
+        })
       : [];
 
   return (
@@ -318,17 +265,17 @@ export default function EconomicGaugeSection({
       )}
 
       <style jsx>{`
-        .muted { opacity: 0.7; }
+        .muted { color: var(--amber-dim); }
 
         /* Desktop-first grid; use minmax(0,1fr) so children can shrink and not overflow */
         .gaugeGrid {
           width: 100%;
           display: grid;
           grid-template-columns: repeat(4, minmax(0, 1fr));
-          gap: 24px;
+          gap: 22px;
           align-items: center;
           justify-items: center; /* center items within cells */
-          margin-top: 14px;
+          margin-top: 12px;
         }
 
         /* Laptops/tablets: 3 columns */

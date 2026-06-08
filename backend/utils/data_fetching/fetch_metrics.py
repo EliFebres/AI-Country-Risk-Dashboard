@@ -1,18 +1,81 @@
+# backend/utils/data_fetching/fetch_metrics.py
 import logging
 import requests
 import pandas as pd
 
 from typing import List, Dict, Tuple, Mapping, Optional, Union, Any
-from tenacity import retry, wait_fixed, stop_after_attempt, retry_if_exception_type
+from requests.exceptions import HTTPError, Timeout, ConnectionError, RequestException
+from tenacity import (
+    retry,
+    wait_exponential_jitter,
+    stop_after_attempt,
+    retry_if_exception,
+)
 
 import backend.utils.constants as constants
 
 
+# ---------------------------- Helpers --------------------------------- #
+_RETRYABLE_STATUS = {429, 500, 502, 503, 504}
+_DEFAULT_HEADERS = {
+    "User-Agent": "AI-Country-Risk/1.0 (+https://github.com/EliFebres/AI-Country-Risk-Dashboard)"
+}
+
+
+def _is_retryable_exc(exc: BaseException) -> bool:
+    """Retry on network/transient HTTP conditions only."""
+    if isinstance(exc, (Timeout, ConnectionError)):
+        return True
+    if isinstance(exc, HTTPError):
+        try:
+            status = exc.response.status_code if exc.response is not None else None
+        except Exception:
+            status = None
+        return status in _RETRYABLE_STATUS
+    # Some libraries wrap HTTPError inside RequestException
+    if isinstance(exc, RequestException):
+        resp = getattr(exc, "response", None)
+        status = getattr(resp, "status_code", None)
+        return status in _RETRYABLE_STATUS or isinstance(exc, (Timeout, ConnectionError))
+    return False
+
+
+def _empty_return(indicator: str, tidy: bool) -> Union[List[Tuple[int, Optional[float]]], pd.Series]:
+    """Return the correct 'empty' shape for wb_series depending on tidy flag."""
+    if tidy:
+        return pd.Series(dtype="float64", name=indicator)
+    return []  # for descending list-of-pairs mode
+
+
+# ----------------------------- Fetch one series ----------------------------- #
 @retry(
-    wait=wait_fixed(2),
-    stop=stop_after_attempt(3),
-    retry=retry_if_exception_type(requests.RequestException),  # retry network issues only
+    wait=wait_exponential_jitter(initial=1, max=30),
+    stop=stop_after_attempt(5),
+    retry=retry_if_exception(_is_retryable_exc),
+    reraise=True,
 )
+def _wb_request(
+    url: str,
+    params: Dict[str, str],
+    session: Optional[requests.Session],
+) -> requests.Response:
+    req = session or requests
+    # Merge a UA header in a non-destructive way
+    try:
+        resp = req.get(url, params=params, headers=_DEFAULT_HEADERS, timeout=20)
+    except RequestException as e:
+        # Let tenacity decide if we retry
+        raise e
+    # If transient: raise so tenacity retries; if non-transient: we handle in caller.
+    if resp.status_code in _RETRYABLE_STATUS:
+        try:
+            resp.raise_for_status()
+        except HTTPError as e:
+            e.response = resp  # ensure status is visible in retry predicate
+            raise e
+    return resp
+
+
 def wb_series(
     code: str,
     indicator: str,
@@ -25,23 +88,15 @@ def wb_series(
     """
     Fetch a World Bank indicator time series for a single country.
 
-    Args:
-        code: ISO-2 or ISO-3 country code (e.g., "US", "IND"). Trimmed and uppercased
-            inline; no special remapping is performed.
-        indicator: World Bank indicator code (e.g., "NY.GDP.MKTP.KD.ZG").
-        start: Inclusive start year. If only one of `start`/`end` is provided, the
-            filter is applied locally after download.
-        end: Inclusive end year. See `start` for single-bound behavior.
-        tidy: If True, return a pandas Series indexed by ascending years; otherwise,
-            return a list of (year, value) pairs in the World Bank's default
-            descending-year order.
-        session: Optional `requests.Session` to reuse connections across calls.
-
     Returns:
-        list[tuple[int, float | None]]: When `tidy=False` (descending years).
-        pandas.Series: When `tidy=True` (ascending years).
+        list[(year, value | None)] in descending WB order when tidy=False,
+        or pandas.Series (ascending years) when tidy=True.
+
+    Robustness changes:
+      - Retries only on transient statuses (429/5xx) and network errors.
+      - Treats 200 with empty rows, 400/404 as 'no data' (empty), not as an error.
     """
-    # Input Validation
+    # Input validation
     assert isinstance(code, str) and code.strip(),  "`code` must be non-empty str"
     assert isinstance(indicator, str) and indicator.strip(), "`indicator` must be non-empty str"
     assert isinstance(tidy, bool), "`tidy` must be bool"
@@ -54,10 +109,8 @@ def wb_series(
     if session is not None:
         assert isinstance(session, requests.Session), "`session` must be requests.Session"
 
-    # Inline normalization: trim + uppercase
     norm_code = (code or "").strip().upper()
 
-    # Build Request
     if "?" in constants.WB_ENDPOINT:
         raise ValueError("WB_ENDPOINT should not include query parameters")
 
@@ -66,18 +119,40 @@ def wb_series(
     if start is not None and end is not None:
         params["date"] = f"{start}:{end}"
 
-    req = session or requests
-    resp = req.get(url, params=params, timeout=15)
-    resp.raise_for_status()
+    # Perform request with retry-on-transient
+    try:
+        resp = _wb_request(url, params, session)
+    except RequestException as e:
+        # If the exception was already filtered as non-retryable, we land here.
+        logging.warning("WB network error for %s/%s: %s (skipping)", norm_code, indicator, e)
+        return _empty_return(indicator, tidy)
 
-    # Parse Response (WB returns [meta, rows] where rows can be [] or None)
-    payload = resp.json()
+    # Handle non-transient statuses gracefully (e.g., 400/404 → no data)
+    if resp.status_code >= 400:
+        if resp.status_code in (400, 404):
+            logging.warning("WB %s for %s/%s (treating as empty)", resp.status_code, norm_code, indicator)
+            return _empty_return(indicator, tidy)
+        # Anything else 4xx that slipped through
+        try:
+            resp.raise_for_status()
+        except HTTPError as e:
+            logging.warning("WB HTTP %s for %s/%s: %s (skipping)", resp.status_code, norm_code, indicator, e)
+            return _empty_return(indicator, tidy)
+
+    # Parse payload
+    try:
+        payload = resp.json()
+    except ValueError:
+        logging.warning("WB invalid JSON for %s/%s (treating as empty)", norm_code, indicator)
+        return _empty_return(indicator, tidy)
+
     if not isinstance(payload, list) or len(payload) < 2:
-        raise RuntimeError(f"World Bank API error for {norm_code}/{indicator}: {payload}")
+        logging.warning("WB unexpected payload for %s/%s: %s (treating as empty)", norm_code, indicator, payload)
+        return _empty_return(indicator, tidy)
 
-    rows = payload[1] or []  # treat None as empty list
+    rows = payload[1] or []  # WB returns [meta, rows]; rows can be None
 
-    # Convert to list[(year, value)] in WB default order (desc by year)
+    # Build list of (year, value) in WB default order (desc by year)
     series_pairs: List[Tuple[int, Optional[float]]] = []
     for item in rows:
         try:
@@ -87,14 +162,13 @@ def wb_series(
         val = item.get("value")
         series_pairs.append((year, float(val) if val is not None else None))
 
-    # Local Year Filtering When Only One Bound Supplied
+    # Local year filtering when only one bound supplied
     if start is not None and end is None:
         series_pairs = [(y, v) for y, v in series_pairs if y >= start]
     elif end is not None and start is None:
         series_pairs = [(y, v) for y, v in series_pairs if y <= end]
 
     if tidy:
-        # Ascending years for tidy Series
         if not series_pairs:
             return pd.Series(dtype="float64", name=indicator)
         years = [y for (y, _) in series_pairs]
@@ -106,6 +180,7 @@ def wb_series(
     return series_pairs
 
 
+# --------------------------- Multi-indicator panel --------------------------- #
 def build_country_panel(
     code: str,
     indicators: Mapping[str, str],
@@ -116,21 +191,7 @@ def build_country_panel(
 ) -> pd.DataFrame:
     """
     Assemble multiple World Bank indicators for one country into a year-indexed table.
-
-    Args:
-        code: ISO-2 or ISO-3 country code (e.g., "IN", "USA"). Trimmed/uppercased
-            behavior is handled inside `wb_series`.
-        indicators: Mapping of `{column_name: indicator_code}`; mapping keys become
-            DataFrame columns.
-        start: Inclusive start year forwarded to `wb_series`.
-        end: Inclusive end year forwarded to `wb_series`.
-        tidy_fetch: If True, fetch each series with `tidy=True` (ascending years).
-            If False, fetch raw descending lists and tidy locally.
-
-    Returns:
-        pandas.DataFrame: Index = year (int); columns = indicator names; dtype
-        coerced to float64 where possible. The DataFrame may be empty if no
-        indicators return rows.
+    More resilient: reuses a single Session and tolerates missing indicators without failing the panel.
     """
     assert isinstance(code, str) and code.strip(), "`code` must be non-empty str"
     assert indicators, "`indicators` mapping must not be empty"
@@ -143,36 +204,37 @@ def build_country_panel(
     assert isinstance(tidy_fetch, bool), "`tidy_fetch` must be bool"
 
     frames: List[pd.Series] = []
-    for col, ind_code in indicators.items():
-        try:
-            if tidy_fetch:
-                s: Any = wb_series(code, ind_code, start=start, end=end, tidy=True)
-                # Ensure proper naming
-                if isinstance(s, pd.Series):
-                    s.name = col
+    # Reuse one session per country to avoid excess handshakes
+    with requests.Session() as sess:
+        sess.headers.update(_DEFAULT_HEADERS)
+        for col, ind_code in indicators.items():
+            try:
+                if tidy_fetch:
+                    s: Any = wb_series(code, ind_code, start=start, end=end, tidy=True, session=sess)
+                    if isinstance(s, pd.Series):
+                        s.name = col
+                    else:
+                        s = pd.Series(dtype="float64", name=col)
                 else:
-                    s = pd.Series(dtype="float64", name=col)
-            else:
-                lst = wb_series(code, ind_code, start=start, end=end, tidy=False)
-                if not lst:
-                    s = pd.Series(dtype="float64", name=col)
-                else:
-                    years, vals = zip(*lst)  # WB order is descending
-                    s = pd.Series(list(vals)[::-1], index=list(years)[::-1], name=col)
-        except requests.RequestException as e:
-            logging.warning("WB network error for %s/%s: %s (skipping)", code, ind_code, e)
-            continue
-        except Exception as e:
-            logging.warning("WB error for %s/%s: %s (skipping)", code, ind_code, e)
-            continue
+                    lst = wb_series(code, ind_code, start=start, end=end, tidy=False, session=sess)
+                    if not lst:
+                        s = pd.Series(dtype="float64", name=col)
+                    else:
+                        years, vals = zip(*lst)  # WB order is descending
+                        s = pd.Series(list(vals)[::-1], index=list(years)[::-1], name=col)
+            except RequestException as e:
+                logging.warning("WB network error for %s/%s: %s (skipping)", code, ind_code, e)
+                s = pd.Series(dtype="float64", name=col)
+            except Exception as e:
+                logging.warning("WB error for %s/%s: %s (skipping)", code, ind_code, e)
+                s = pd.Series(dtype="float64", name=col)
 
-        frames.append(s)
+            frames.append(s)
 
     if not frames:
         return pd.DataFrame()
 
     panel = pd.concat(frames, axis=1, sort=True)  # outer-join on year
-    # Cast numerics where possible
     try:
         panel = panel.astype("float64")
     except Exception:
