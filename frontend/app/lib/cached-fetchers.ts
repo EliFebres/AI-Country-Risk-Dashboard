@@ -7,12 +7,7 @@
 // revalidate tags used elsewhere.
 import "server-only";
 import { unstable_cache } from "next/cache";
-import {
-  fetchJoinedLatestRisksFromDB,
-  fetchLatestIndicatorValuesFromDB,
-  fetchLatestArticlesForLatestSnapshotsFromDB,
-  fetchLatestSummariesFromDB,
-} from "@/app/lib/risk-server";
+import { riskRepository } from "@/app/lib/risk-server";
 import { resolveCoords } from "@/app/lib/country-coords";
 import { CACHE_TTL } from "@/app/lib/cache-ttl";
 import type { CountryRisk } from "@/app/lib/risk-client";
@@ -20,7 +15,7 @@ import type { CountryRisk } from "@/app/lib/risk-client";
 /** Latest risk score + history per country, with map coordinates resolved. */
 export const getRisks = unstable_cache(
   async (): Promise<CountryRisk[]> => {
-    const joined = await fetchJoinedLatestRisksFromDB();
+    const joined = await riskRepository.fetchJoinedLatestRisks();
     const out: CountryRisk[] = [];
 
     for (const row of joined) {
@@ -57,21 +52,21 @@ export const getRisks = unstable_cache(
 
 /** Latest year/value for the four target indicators, per country. */
 export const getIndicators = unstable_cache(
-  async () => fetchLatestIndicatorValuesFromDB(),
+  async () => riskRepository.fetchLatestIndicatorValues(),
   ["indicators-latest"],
   { revalidate: CACHE_TTL.INDICATORS, tags: ["indicators"] }
 );
 
 /** Top-3 articles per country's latest snapshot. */
 export const getArticles = unstable_cache(
-  async () => fetchLatestArticlesForLatestSnapshotsFromDB(),
+  async () => riskRepository.fetchLatestArticlesForLatestSnapshots(),
   ["articles-latest"],
   { revalidate: CACHE_TTL.ARTICLES, tags: ["articles"] }
 );
 
 /** Latest non-empty AI bullet summary per country. */
 export const getSummaries = unstable_cache(
-  async () => fetchLatestSummariesFromDB(),
+  async () => riskRepository.fetchLatestSummaries(),
   ["risk-summaries"],
   { revalidate: CACHE_TTL.RISK_SUMMARY, tags: ["risk-summary"] }
 );

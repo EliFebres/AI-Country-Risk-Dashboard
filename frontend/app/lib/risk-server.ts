@@ -1,14 +1,8 @@
 // app/lib/risk-server.ts
 import "server-only";
+import type { Pool } from "pg";
 
-// ----------------------------- DB (Neon / pg) -----------------------------
-type DBCountry = { iso2: string; name: string };
-type DBRiskSnapshot = {
-  country_iso2: string;
-  as_of: string;
-  score: number;
-  bullet_summary: string;
-};
+// ----------------------------- Types --------------------------------------
 
 export type JoinedLatestRisk = {
   iso2: string;
@@ -25,61 +19,88 @@ export type JoinedLatestRisk = {
 
 export type SummaryEntry = { country_iso2: string; bullet_summary: string };
 
+export const INDICATOR_TARGET_NAMES = [
+  "Rule of law (z-score)",
+  "Inflation (% y/y)",
+  "Interest payments (% revenue)",
+  "GDP per-capita growth (% y/y)",
+] as const;
+
+export type IndicatorTargetName = (typeof INDICATOR_TARGET_NAMES)[number];
+
+export type CountryIndicatorLatest = {
+  iso2: string;
+  name: string;
+  values: Partial<
+    Record<
+      IndicatorTargetName,
+      { year: number; value: number; unit?: string }
+    >
+  >;
+};
+
+export type CountryArticles = {
+  iso2: string;
+  name: string;
+  as_of: string; // latest snapshot date for this country
+  articles: {
+    url: string;
+    title?: string | null;
+    source?: string | null;
+    published_at?: string | null; // ISO string
+    img_url?: string | null;      // image URL per article
+  }[];
+};
+
+// ----------------------------- DB (Neon / pg) -----------------------------
+
 declare global {
+  // Reused across hot reloads / serverless invocations in the same process.
   // eslint-disable-next-line no-var
-  var __NEON_POOL__: any | undefined;
-}
-
-function assertServer() {
-  if (typeof window !== "undefined") {
-    throw new Error("DB functions must run on the server.");
-  }
-}
-
-async function getPool() {
-  assertServer();
-  const { Pool } = await import("pg");
-  if (!process.env.DATABASE_URL) {
-    throw new Error("Missing DATABASE_URL env var for Neon.");
-  }
-  if (!global.__NEON_POOL__) {
-    global.__NEON_POOL__ = new Pool({
-      connectionString: process.env.DATABASE_URL,
-      ssl: { rejectUnauthorized: false },
-      // max: 3,
-    });
-  }
-  return global.__NEON_POOL__ as import("pg").Pool;
-}
-
-export async function fetchCountriesFromDB(): Promise<DBCountry[]> {
-  const pool = await getPool();
-  const { rows } = await pool.query<DBCountry>(
-    `SELECT iso2, name FROM country ORDER BY name ASC;`
-  );
-  return rows;
-}
-
-export async function fetchLatestRiskSnapshotsFromDB(): Promise<DBRiskSnapshot[]> {
-  const pool = await getPool();
-  const { rows } = await pool.query<DBRiskSnapshot>(
-    `SELECT DISTINCT ON (country_iso2)
-            country_iso2, as_of, score, bullet_summary
-       FROM risk_snapshot
-   ORDER BY country_iso2, as_of DESC;`
-  );
-  return rows;
+  var __NEON_POOL__: Pool | undefined;
 }
 
 /**
- * Returns latest and previous risk snapshot per country.
- * Also returns arrays of all prior scores/dates (excluding the latest),
- * ordered newest→oldest.
+ * Data-access layer for the Neon (Postgres) risk database.
+ *
+ * Wraps a process-wide `pg` connection pool — created lazily and cached on a
+ * global so hot reloads and concurrent requests share a single pool — and
+ * exposes one method per query. SQL strings are identical to the prior
+ * function-based module; only the organization changed.
  */
-export async function fetchJoinedLatestRisksFromDB(): Promise<JoinedLatestRisk[]> {
-  const pool = await getPool();
-  const { rows } = await pool.query<JoinedLatestRisk>(
-    `
+export class RiskRepository {
+  /**
+   * Resolve the shared Neon pool, creating it on first use.
+   *
+   * @returns The singleton `pg` {@link Pool}.
+   * @throws If called in a browser context or `DATABASE_URL` is unset.
+   */
+  private async pool(): Promise<Pool> {
+    if (typeof window !== "undefined") {
+      throw new Error("DB functions must run on the server.");
+    }
+    const { Pool } = await import("pg");
+    if (!process.env.DATABASE_URL) {
+      throw new Error("Missing DATABASE_URL env var for Neon.");
+    }
+    if (!global.__NEON_POOL__) {
+      global.__NEON_POOL__ = new Pool({
+        connectionString: process.env.DATABASE_URL,
+        ssl: { rejectUnauthorized: false },
+        // max: 3,
+      });
+    }
+    return global.__NEON_POOL__;
+  }
+
+  /**
+   * Latest and previous risk snapshot per country, plus arrays of all prior
+   * scores/dates (excluding the latest), ordered newest→oldest.
+   */
+  async fetchJoinedLatestRisks(): Promise<JoinedLatestRisk[]> {
+    const pool = await this.pool();
+    const { rows } = await pool.query<JoinedLatestRisk>(
+      `
     WITH ranked AS (
       SELECT
         rs.country_iso2,
@@ -126,68 +147,44 @@ export async function fetchJoinedLatestRisksFromDB(): Promise<JoinedLatestRisk[]
     JOIN country c           ON c.iso2 = l.country_iso2
     ORDER BY c.name ASC;
     `
-  );
-  return rows;
-}
+    );
+    return rows;
+  }
 
-/**
- * Latest non-empty bullet summary per country (one row each).
- */
-export async function fetchLatestSummariesFromDB(): Promise<SummaryEntry[]> {
-  const pool = await getPool();
-  const { rows } = await pool.query<SummaryEntry>(
-    `SELECT DISTINCT ON (country_iso2)
+  /** Latest non-empty bullet summary per country (one row each). */
+  async fetchLatestSummaries(): Promise<SummaryEntry[]> {
+    const pool = await this.pool();
+    const { rows } = await pool.query<SummaryEntry>(
+      `SELECT DISTINCT ON (country_iso2)
             country_iso2, bullet_summary
        FROM risk_snapshot
       WHERE bullet_summary IS NOT NULL
         AND TRIM(bullet_summary) <> ''
    ORDER BY country_iso2, as_of DESC;`
-  );
-  return rows.map((r) => ({
-    country_iso2: (r.country_iso2 || "").toUpperCase(),
-    bullet_summary: r.bullet_summary,
-  }));
-}
+    );
+    return rows.map((r) => ({
+      country_iso2: (r.country_iso2 || "").toUpperCase(),
+      bullet_summary: r.bullet_summary,
+    }));
+  }
 
-// ----------------------------- Indicator latest ---------------------------
+  /**
+   * Each country's most recent year/value for the four target indicators.
+   * Returns one entry per country with a values map keyed by indicator name.
+   */
+  async fetchLatestIndicatorValues(): Promise<CountryIndicatorLatest[]> {
+    const pool = await this.pool();
 
-export const INDICATOR_TARGET_NAMES = [
-  "Rule of law (z-score)",
-  "Inflation (% y/y)",
-  "Interest payments (% revenue)",
-  "GDP per-capita growth (% y/y)",
-] as const;
-
-export type IndicatorTargetName = (typeof INDICATOR_TARGET_NAMES)[number];
-
-export type CountryIndicatorLatest = {
-  iso2: string;
-  name: string;
-  values: Partial<
-    Record<
-      IndicatorTargetName,
-      { year: number; value: number; unit?: string }
-    >
-  >;
-};
-
-/**
- * Fetch each country's most recent year/value for the four target indicators.
- * Returns one entry per country with a values map keyed by indicator name.
- */
-export async function fetchLatestIndicatorValuesFromDB(): Promise<CountryIndicatorLatest[]> {
-  const pool = await getPool();
-
-  // DISTINCT ON picks the latest yr per (country, indicator)
-  const { rows } = await pool.query<{
-    iso2: string;
-    name: string;
-    indicator_name: IndicatorTargetName;
-    unit: string | null;
-    yr: number;
-    value: number;
-  }>(
-    `
+    // DISTINCT ON picks the latest yr per (country, indicator)
+    const { rows } = await pool.query<{
+      iso2: string;
+      name: string;
+      indicator_name: IndicatorTargetName;
+      unit: string | null;
+      yr: number;
+      value: number;
+    }>(
+      `
     WITH targets AS (
       SELECT id, name, unit
         FROM indicator
@@ -211,59 +208,45 @@ export async function fetchLatestIndicatorValuesFromDB(): Promise<CountryIndicat
       JOIN country c ON c.iso2 = l.country_iso2
     ORDER BY c.name, t.name;
     `,
-    [INDICATOR_TARGET_NAMES]
-  );
+      [INDICATOR_TARGET_NAMES]
+    );
 
-  const byIso2 = new Map<string, CountryIndicatorLatest>();
-  for (const r of rows) {
-    const key = (r.iso2 || "").toUpperCase();
-    let entry = byIso2.get(key);
-    if (!entry) {
-      entry = { iso2: key, name: r.name, values: {} };
-      byIso2.set(key, entry);
+    const byIso2 = new Map<string, CountryIndicatorLatest>();
+    for (const r of rows) {
+      const key = (r.iso2 || "").toUpperCase();
+      let entry = byIso2.get(key);
+      if (!entry) {
+        entry = { iso2: key, name: r.name, values: {} };
+        byIso2.set(key, entry);
+      }
+      entry.values[r.indicator_name] = {
+        year: Number(r.yr),
+        value: Number(r.value),
+        unit: r.unit ?? undefined,
+      };
     }
-    entry.values[r.indicator_name] = {
-      year: Number(r.yr),
-      value: Number(r.value),
-      unit: r.unit ?? undefined,
-    };
+    return Array.from(byIso2.values());
   }
-  return Array.from(byIso2.values());
-}
 
-// ----------------------------- Latest articles ----------------------------
-export type CountryArticles = {
-  iso2: string;
-  name: string;
-  as_of: string; // latest snapshot date for this country
-  articles: {
-    url: string;
-    title?: string | null;
-    source?: string | null;
-    published_at?: string | null; // ISO string
-    img_url?: string | null;      // image URL per article
-  }[];
-};
+  /**
+   * For each country, find its latest `risk_snapshot.as_of` and take up to 3
+   * most recent (by `published_at DESC`, then `rank ASC`) articles for that
+   * same `as_of`. Countries with 0 articles are still included (empty array).
+   */
+  async fetchLatestArticlesForLatestSnapshots(): Promise<CountryArticles[]> {
+    const pool = await this.pool();
 
-/**
- * For each country, find its latest risk_snapshot.as_of and then take up to 3
- * most recent (by published_at DESC, then rank ASC) articles for that same as_of.
- * Countries with 0 articles will still be included with an empty array.
- */
-export async function fetchLatestArticlesForLatestSnapshotsFromDB(): Promise<CountryArticles[]> {
-  const pool = await getPool();
-
-  const { rows } = await pool.query<{
-    iso2: string;
-    name: string;
-    as_of: string;
-    url: string | null;
-    title: string | null;
-    source: string | null;
-    published_at: string | null;
-    image_url: string | null;
-    rn: number | null;
-  }>(`
+    const { rows } = await pool.query<{
+      iso2: string;
+      name: string;
+      as_of: string;
+      url: string | null;
+      title: string | null;
+      source: string | null;
+      published_at: string | null;
+      image_url: string | null;
+      rn: number | null;
+    }>(`
     WITH latest AS (
       SELECT DISTINCT ON (rs.country_iso2)
              rs.country_iso2, rs.as_of
@@ -309,25 +292,29 @@ export async function fetchLatestArticlesForLatestSnapshotsFromDB(): Promise<Cou
     ORDER BY c.name ASC, t.rn ASC NULLS LAST;
   `);
 
-  // Group rows into one object per country.
-  const byIso2 = new Map<string, CountryArticles>();
-  for (const r of rows) {
-    const key = (r.iso2 || "").toUpperCase();
-    let entry = byIso2.get(key);
-    if (!entry) {
-      entry = { iso2: key, name: r.name, as_of: r.as_of, articles: [] };
-      byIso2.set(key, entry);
+    // Group rows into one object per country.
+    const byIso2 = new Map<string, CountryArticles>();
+    for (const r of rows) {
+      const key = (r.iso2 || "").toUpperCase();
+      let entry = byIso2.get(key);
+      if (!entry) {
+        entry = { iso2: key, name: r.name, as_of: r.as_of, articles: [] };
+        byIso2.set(key, entry);
+      }
+      if (r.url) {
+        entry.articles.push({
+          url: r.url,
+          title: r.title ?? null,
+          source: r.source ?? null,
+          published_at: r.published_at ?? null,
+          img_url: r.image_url ?? null, // map DB image_url -> JSON img_url
+        });
+      }
     }
-    if (r.url) {
-      entry.articles.push({
-        url: r.url,
-        title: r.title ?? null,
-        source: r.source ?? null,
-        published_at: r.published_at ?? null,
-        img_url: r.image_url ?? null, // map DB image_url -> JSON img_url
-      });
-    }
+    // Ensure every country from latest is present (even if 0 articles)
+    return Array.from(byIso2.values());
   }
-  // Ensure every country from latest is present (even if 0 articles)
-  return Array.from(byIso2.values());
 }
+
+/** Shared singleton repository — mirrors the pooled-connection lifetime. */
+export const riskRepository = new RiskRepository();
