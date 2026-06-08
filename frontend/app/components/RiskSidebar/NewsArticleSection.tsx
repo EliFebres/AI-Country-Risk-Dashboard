@@ -4,31 +4,11 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { loadDashboard, getArticlesFor } from '../../lib/dashboard-client';
 import type { CountryArticles } from '../../lib/risk-client';
+import { daysAgoLabel } from '../../lib/format';
 
 // News articles share the combined /api/dashboard payload (loaded once per
 // session) instead of fetching /api/articles per country selection.
 type Article = CountryArticles['articles'][number];
-
-/* ---------- Formatting helpers ---------- */
-
-function daysAgoLabel(iso?: string | null): string {
-  if (!iso) return '';
-  const pub = new Date(iso);
-  if (isNaN(pub.getTime())) return '';
-
-  const DAY_MS = 24 * 60 * 60 * 1000;
-
-  const now = new Date();
-  const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
-  const startOfPub   = new Date(pub.getFullYear(), pub.getMonth(), pub.getDate()).getTime();
-
-  // Calendar-day difference (round guards against 23/25h DST days). Clamp future to 0.
-  const days = Math.max(0, Math.round((startOfToday - startOfPub) / DAY_MS));
-
-  if (days === 0) return 'today';
-  if (days === 1) return '1 day ago';
-  return `${days} days ago`;
-}
 
 const PUBLISHER_ALIASES: Record<string, string> = {
   'peterson institute for international economics': 'PIIE',

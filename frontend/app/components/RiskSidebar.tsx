@@ -7,6 +7,7 @@ import EconomicGaugeSection from './RiskSidebar/EconomicGaugeSection';
 import AiSummary from './RiskSidebar/AiSummary';
 import NewsArticleSection from './RiskSidebar/NewsArticleSection';
 import { loadDashboard, getArticlesFor, getIndicatorsFor } from '../lib/dashboard-client';
+import { calendarDaysAgo } from '../lib/format';
 
 type Props = {
   open: boolean;
@@ -95,7 +96,6 @@ export default function RiskSidebar({
   }, [open, country?.iso2]);
 
   // --- Data age (calendar days) ---
-  const DAY_MS = 24 * 60 * 60 * 1000;
   const { daysOld, lastUpdatedLocal } = useMemo(() => {
     const dt =
       dataEndDate ??
@@ -107,12 +107,8 @@ export default function RiskSidebar({
     if (!dt || isNaN(dt.getTime())) {
       return { daysOld: null as number | null, lastUpdatedLocal: null as string | null };
     }
-    const now = new Date();
-    const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
-    const startOfThatDay = new Date(dt.getFullYear(), dt.getMonth(), dt.getDate()).getTime();
-    const d = Math.max(0, Math.round((startOfToday - startOfThatDay) / DAY_MS));
     const local = dt.toLocaleDateString(undefined, { dateStyle: 'medium' });
-    return { daysOld: d, lastUpdatedLocal: local };
+    return { daysOld: calendarDaysAgo(dt), lastUpdatedLocal: local };
   }, [dataEndDate, dataTimestamp]);
 
   const ageTitle =

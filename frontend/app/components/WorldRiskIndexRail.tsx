@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, CartesianGrid } from 'recharts';
 import type { CountryRisk } from '../lib/risk-client';
 import type { SelectOpts } from './TerminalDashboard';
+import { colorForRisk } from '../lib/risk';
 
 type Props = {
   rows: CountryRisk[] | null;
@@ -14,12 +15,6 @@ type Props = {
 };
 
 const AMBER = '#ffb43b';
-
-function colorForRisk(r: number) {
-  if (r > 0.7) return '#ff2d55';
-  if (r >= 0.5) return '#ffd60a';
-  return '#39ff14';
-}
 
 /** Immediate-predecessor delta for a country (current − previous reading). */
 function computeDelta(c: CountryRisk): number {

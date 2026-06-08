@@ -7,6 +7,8 @@ import {
   getIndicatorsFor,
   type CountryIndicatorLatest,
 } from '../../lib/dashboard-client';
+import { colorForRisk } from '../../lib/risk';
+import { clamp01 } from '../../lib/format';
 
 /** Indicator names as written in indicator_latest.json */
 type IndicatorName =
@@ -34,14 +36,6 @@ const INDICATOR_TOOLTIPS: IndicatorHoverText = {
 };
 /** ------------------------------------------------------------------------ */
 
-/** utils */
-const clamp01 = (x: number) => Math.max(0, Math.min(1, x));
-
-function colorForRisk(r: number) {
-  if (r > 0.7) return '#ff2d55';
-  if (r >= 0.5) return '#ffd60a';
-  return '#39ff14';
-}
 
 function colorForGDP(val?: number): string | undefined {
   if (typeof val !== 'number') return undefined;

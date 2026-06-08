@@ -11,17 +11,11 @@ import {
   CartesianGrid,
 } from 'recharts';
 import { getRiskCache, primeRiskCache, type CountryRisk } from '../../lib/risk-client';
+import { colorForRisk } from '../../lib/risk';
+import { clamp01 } from '../../lib/format';
 
 /** risk.json entry */
 type RiskEntry = CountryRisk;
-
-/** utils */
-function colorForRisk(r: number) {
-  if (r > 0.7) return '#ff2d55';
-  if (r >= 0.5) return '#ffd60a';
-  return '#39ff14';
-}
-const clamp01 = (x: number) => Math.max(0, Math.min(1, x));
 
 type Props = {
   countryName?: string | null;

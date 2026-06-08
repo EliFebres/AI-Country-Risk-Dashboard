@@ -9,6 +9,7 @@ import {
 import maplibregl, { LngLatBoundsLike, Map as MapLibreMap, Marker } from 'maplibre-gl';
 import { primeRiskCache, type CountryRisk } from '../lib/risk-client';
 import { loadDashboard } from '../lib/dashboard-client';
+import { colorForRisk } from '../lib/risk';
 
 /** Imperative handle exposed to the parent (TerminalDashboard). */
 export type MapApi = {
@@ -55,12 +56,6 @@ const Map = forwardRef<MapApi, Props>(function Map(
   const isMobile = () =>
     typeof window !== 'undefined' && window.innerWidth <= MOBILE_BREAKPOINT;
 
-  // --- Helpers (pure) ---
-  const colorForRisk = (r: number) => {
-    if (r > 0.7) return '#ff2d55';
-    if (r >= 0.5) return '#ffd60a';
-    return '#39ff14';
-  };
 
   // Detail panel is min(600px, 40vw) on desktop; 100vw on phones
   const getSidebarWidthPx = () => {
