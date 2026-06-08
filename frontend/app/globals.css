@@ -13,6 +13,7 @@
   --amber-dim: #b07f2c;
   --amber-soft: #e9a23a;
   --rule: rgba(255, 180, 60, 0.16);
+  --amber-border: rgba(255, 180, 60, 0.45);
   --row-rule: rgba(255, 255, 255, 0.045);
 
   /* Risk color scale */
@@ -147,7 +148,7 @@ body {
 }
 .sh-tab:hover {
   color: var(--amber);
-  border-color: rgba(255, 180, 60, 0.45);
+  border-color: var(--amber-border);
 }
 .sh-tab.active {
   background: var(--amber);
@@ -599,7 +600,7 @@ table.mini.tracker tbody td:last-child {
   right: 0;
   width: var(--right-w);
   background: var(--term-bg);
-  border-left: 1px solid rgba(255, 180, 60, 0.45);
+  border-left: 1px solid var(--amber-border);
   box-shadow: -10px 0 30px rgba(0, 0, 0, 0.5);
   z-index: 12;
   display: flex;

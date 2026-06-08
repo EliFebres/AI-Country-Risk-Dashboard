@@ -284,7 +284,7 @@ export default function RiskSidebar({
           width: var(--w-risk);
           background: var(--term-bg);
           color: #e7e3d6;
-          border-right: 1px solid rgba(255, 180, 60, 0.45);
+          border-right: 1px solid var(--amber-border);
           box-shadow: 12px 0 30px rgba(0, 0, 0, 0.5);
           z-index: 10;
           display: flex;

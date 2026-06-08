@@ -93,7 +93,7 @@ export default function Masthead({
           gap: 16px;
           padding: 0 16px;
           background: var(--term-bg);
-          border-bottom: 1px solid rgba(255, 180, 60, 0.45);
+          border-bottom: 1px solid var(--amber-border);
           box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
           font-family: var(--term-font);
         }

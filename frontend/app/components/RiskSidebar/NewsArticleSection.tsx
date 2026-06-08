@@ -330,7 +330,7 @@ export default function NewsArticleSection({
 
         .newsCard.clickable:hover {
           transform: translateY(-2px);
-          box-shadow: inset 0 0 0 1px rgba(255, 180, 60, 0.45), 0 6px 18px rgba(0, 0, 0, 0.4);
+          box-shadow: inset 0 0 0 1px var(--amber-border), 0 6px 18px rgba(0, 0, 0, 0.4);
         }
         .newsCard.clickable:focus-visible {
           outline: 1px solid var(--amber);
@@ -358,7 +358,7 @@ export default function NewsArticleSection({
           transition: box-shadow 160ms var(--easing, ease);
         }
         .newsCard.clickable:hover .thumbWrap::after {
-          box-shadow: inset 0 0 0 1px rgba(255, 180, 60, 0.45);
+          box-shadow: inset 0 0 0 1px var(--amber-border);
         }
         .thumb {
           width: 100%;

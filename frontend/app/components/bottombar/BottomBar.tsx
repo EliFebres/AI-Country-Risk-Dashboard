@@ -34,7 +34,7 @@ export default function BottomBar({ rows, onSelectCountry }: Props) {
           bottom: 0;
           height: var(--bottom-h-base);
           background: var(--term-bg);
-          border-top: 1px solid rgba(255, 180, 60, 0.45);
+          border-top: 1px solid var(--amber-border);
           box-shadow: 0 -10px 30px rgba(0, 0, 0, 0.6);
           z-index: 13;
           display: flex;
