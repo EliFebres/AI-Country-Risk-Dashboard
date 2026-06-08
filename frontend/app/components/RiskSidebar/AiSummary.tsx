@@ -1,8 +1,7 @@
 'use client';
 
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
-
-type SummaryEntry = { country_iso2: string; bullet_summary: string };
+import { loadDashboard, getSummaryFor } from '../../lib/dashboard-client';
 
 type Props = {
   /** ISO2 code like 'US' (required to match the summary file) */
@@ -74,19 +73,8 @@ export default function AiSummary({ iso2, active = true }: Props) {
 
       setLoading(true);
       try {
-        const res = await fetch(`/api/risk-summary`, {
-          cache: 'no-store',
-          headers: { accept: 'application/json' },
-        });
-        if (!res.ok) {
-          if (!cancelled) setErr(`Summary not available (${res.status})`);
-          return;
-        }
-        const data = (await res.json()) as SummaryEntry[] | SummaryEntry;
-        const list = Array.isArray(data) ? data : [data];
-        const hit = list.find(
-          (e) => e.country_iso2?.toUpperCase() === code && typeof e.bullet_summary === 'string'
-        );
+        const data = await loadDashboard();
+        const hit = getSummaryFor(data, code);
         if (!cancelled) setSummary(hit?.bullet_summary?.trim() || null);
       } catch {
         if (!cancelled) setErr('Failed to load summary');

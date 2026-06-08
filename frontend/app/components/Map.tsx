@@ -8,6 +8,7 @@ import {
 } from 'react';
 import maplibregl, { LngLatBoundsLike, Map as MapLibreMap, Marker } from 'maplibre-gl';
 import { primeRiskCache, type CountryRisk } from '../lib/risk-client';
+import { loadDashboard } from '../lib/dashboard-client';
 
 /** Imperative handle exposed to the parent (TerminalDashboard). */
 export type MapApi = {
@@ -352,6 +353,12 @@ const Map = forwardRef<MapApi, Props>(function Map(
 
         // Share the exact same fresh array (+ timestamp) with the parent
         onDataRef.current?.(dots, stamp);
+
+        // Warm the combined sidebar payload (indicators + articles + summaries)
+        // in the background so the first country selection opens instantly with
+        // no further network. Fire-and-forget; failures surface when a section
+        // actually reads the data.
+        void loadDashboard().catch(() => {});
 
         // Add markers
         dots.forEach((dot) => {

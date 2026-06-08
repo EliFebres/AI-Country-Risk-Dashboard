@@ -2,6 +2,11 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import {
+  loadDashboard,
+  getIndicatorsFor,
+  type CountryIndicatorLatest,
+} from '../../lib/dashboard-client';
 
 /** Indicator names as written in indicator_latest.json */
 type IndicatorName =
@@ -11,15 +16,6 @@ type IndicatorName =
   | 'GDP per-capita growth (% y/y)';
 
 type IndicatorSnapshot = { year: number; value: number; unit?: string };
-
-type CountryIndicatorLatest = {
-  iso2: string;
-  name: string;
-  values: Partial<Record<IndicatorName, IndicatorSnapshot>>;
-};
-
-/** Cache to avoid refetch storms */
-let INDICATOR_CACHE: CountryIndicatorLatest[] | null = null;
 
 /** ------------------------------------------------------------------------ */
 /** HOVER TEXT DICTIONARY — edit here to change tooltip copy for each gauge. */
@@ -226,22 +222,10 @@ export default function EconomicGaugeSection({
       try {
         setIndLoading(true);
 
-        if (!INDICATOR_CACHE) {
-          const res = await fetch('/api/indicators', {
-            cache: 'no-store',
-            headers: { accept: 'application/json' },
-          });
-          if (!res.ok) throw new Error(`HTTP ${res.status}`);
-          const payload = (await res.json()) as CountryIndicatorLatest[] | CountryIndicatorLatest;
-          INDICATOR_CACHE = Array.isArray(payload) ? payload : [payload];
-        }
+        const data = await loadDashboard();
+        if (cancelled) return;
 
-        const isoU = iso2?.toUpperCase() || '';
-        const norm = (s: string) => s.trim().toLowerCase();
-
-        let hit: CountryIndicatorLatest | undefined;
-        if (isoU) hit = INDICATOR_CACHE.find((c) => (c.iso2 || '').toUpperCase() === isoU);
-        if (!hit && countryName) hit = INDICATOR_CACHE.find((c) => norm(c.name) === norm(countryName));
+        const hit = getIndicatorsFor(data, iso2, countryName);
 
         if (!cancelled) {
           if (hit) setIndicators(hit);

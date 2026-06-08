@@ -1,16 +1,8 @@
 // app/api/articles/route.ts
 import { NextResponse } from "next/server";
-import { unstable_cache } from "next/cache";
-import { fetchLatestArticlesForLatestSnapshotsFromDB } from "@/app/lib/risk-server";
-import { CACHE_TTL } from "@/app/lib/cache-ttl";
+import { getArticles } from "@/app/lib/cached-fetchers";
 
 export const runtime = "nodejs";
-
-const getArticles = unstable_cache(
-  async () => fetchLatestArticlesForLatestSnapshotsFromDB(),
-  ["articles-latest"],
-  { revalidate: CACHE_TTL.ARTICLES, tags: ["articles"] }
-);
 
 export async function GET() {
   try {

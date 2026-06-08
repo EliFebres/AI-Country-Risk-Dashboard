@@ -6,6 +6,7 @@ import RiskReadingSection from './RiskSidebar/RiskReadingSection';
 import EconomicGaugeSection from './RiskSidebar/EconomicGaugeSection';
 import AiSummary from './RiskSidebar/AiSummary';
 import NewsArticleSection from './RiskSidebar/NewsArticleSection';
+import { loadDashboard, getArticlesFor, getIndicatorsFor } from '../lib/dashboard-client';
 
 type Props = {
   open: boolean;
@@ -53,43 +54,29 @@ export default function RiskSidebar({
     (async () => {
       const times: number[] = [];
 
-      // News: latest article date (+ snapshot as_of)
+      // Both news + indicators come from the one combined dashboard payload,
+      // loaded once per session (no per-open fetches).
       try {
-        const res = await fetch('/api/articles', { cache: 'force-cache' });
-        if (res.ok) {
-          const data = (await res.json()) as Array<{
-            iso2?: string;
-            as_of?: string;
-            articles?: { published_at?: string }[];
-          }>;
-          const match = data.find((c) => (c.iso2 || '').toUpperCase() === iso);
-          if (match) {
-            for (const a of match.articles ?? []) {
-              const t = new Date(a.published_at ?? '').getTime();
-              if (!isNaN(t)) times.push(t);
-            }
-            const asOf = new Date(match.as_of ?? '').getTime();
-            if (!isNaN(asOf)) times.push(asOf);
-          }
-        }
-      } catch {
-        /* ignore */
-      }
+        const data = await loadDashboard();
+        if (cancelled) return;
 
-      // Indicators: newest year, treated as that calendar year's end
-      try {
-        const res = await fetch('/api/indicators', { cache: 'force-cache' });
-        if (res.ok) {
-          const data = (await res.json()) as Array<{
-            iso2?: string;
-            values?: Record<string, { year?: number }>;
-          }>;
-          const match = data.find((c) => (c.iso2 || '').toUpperCase() === iso);
-          if (match?.values) {
-            for (const v of Object.values(match.values)) {
-              if (typeof v?.year === 'number') {
-                times.push(new Date(v.year, 11, 31).getTime());
-              }
+        // News: latest article date (+ snapshot as_of)
+        const news = getArticlesFor(data, iso);
+        if (news) {
+          for (const a of news.articles ?? []) {
+            const t = new Date(a.published_at ?? '').getTime();
+            if (!isNaN(t)) times.push(t);
+          }
+          const asOf = new Date(news.as_of ?? '').getTime();
+          if (!isNaN(asOf)) times.push(asOf);
+        }
+
+        // Indicators: newest year, treated as that calendar year's end
+        const ind = getIndicatorsFor(data, iso);
+        if (ind?.values) {
+          for (const v of Object.values(ind.values)) {
+            if (typeof v?.year === 'number') {
+              times.push(new Date(v.year, 11, 31).getTime());
             }
           }
         }

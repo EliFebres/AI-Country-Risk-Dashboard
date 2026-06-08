@@ -1,16 +1,8 @@
 // app/api/risk-summary/route.ts
 import { NextResponse } from "next/server";
-import { unstable_cache } from "next/cache";
-import { fetchLatestSummariesFromDB } from "@/app/lib/risk-server";
-import { CACHE_TTL } from "@/app/lib/cache-ttl";
+import { getSummaries } from "@/app/lib/cached-fetchers";
 
 export const runtime = "nodejs";
-
-const getSummaries = unstable_cache(
-  async () => fetchLatestSummariesFromDB(),
-  ["risk-summaries"],
-  { revalidate: CACHE_TTL.RISK_SUMMARY, tags: ["risk-summary"] }
-);
 
 export async function GET() {
   try {

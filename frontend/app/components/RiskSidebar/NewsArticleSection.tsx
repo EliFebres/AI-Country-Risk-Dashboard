@@ -2,35 +2,12 @@
 'use client';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { loadDashboard, getArticlesFor } from '../../lib/dashboard-client';
+import type { CountryArticles } from '../../lib/risk-client';
 
-type Article = {
-  url: string;
-  title: string;
-  source?: string;
-  published_at: string; // ISO
-  img_url?: string;     // hero image from JSON (note: img_url)
-};
-
-type CountryNews = {
-  iso2: string;
-  name: string;
-  as_of: string; // YYYY-MM-DD
-  articles: Article[];
-};
-
-const NEWS_JSON_PUBLIC_PATH = '/api/articles';
-
-// Simple session cache to avoid refetch storms
-let NEWS_CACHE: CountryNews[] | null = null;
-
-async function loadAllNews(signal?: AbortSignal): Promise<CountryNews[]> {
-  if (NEWS_CACHE) return NEWS_CACHE;
-  const res = await fetch(NEWS_JSON_PUBLIC_PATH, { cache: 'no-store', signal });
-  if (!res.ok) throw new Error(`Failed to load news: ${res.status} ${res.statusText}`);
-  const data = (await res.json()) as CountryNews[];
-  NEWS_CACHE = data;
-  return data;
-}
+// News articles share the combined /api/dashboard payload (loaded once per
+// session) instead of fetching /api/articles per country selection.
+type Article = CountryArticles['articles'][number];
 
 /* ---------- Formatting helpers ---------- */
 
@@ -195,13 +172,14 @@ export default function NewsArticleSection({
       setArticles(null);
       return;
     }
-    const controller = new AbortController();
+    let cancelled = false;
     (async () => {
       try {
         setLoading(true);
         setError(null);
-        const all = await loadAllNews(controller.signal);
-        const match = all.find((c) => (c.iso2 || '').toUpperCase() === normIso);
+        const data = await loadDashboard();
+        if (cancelled) return;
+        const match = getArticlesFor(data, normIso);
         if (!match) {
           setCountryName(null);
           setAsOf(null);
@@ -214,14 +192,16 @@ export default function NewsArticleSection({
         setArticles(Array.isArray(match.articles) ? match.articles : []);
         lastIsoRef.current = normIso;
       } catch (err: any) {
-        if (err?.name === 'AbortError') return;
+        if (cancelled) return;
         setError(err?.message || 'Failed to fetch news.');
         setArticles(null);
       } finally {
-        setLoading(false);
+        if (!cancelled) setLoading(false);
       }
     })();
-    return () => controller.abort();
+    return () => {
+      cancelled = true;
+    };
   }, [active, normIso]);
 
   // Up to 3 cards; fill with skeletons
@@ -247,7 +227,7 @@ export default function NewsArticleSection({
           (() => {
             const src = sourceLabels(a);
             const title = cleanTitle(a);
-            const hasImg = hasHttpImage(a.img_url);
+            const hasImg = hasHttpImage(a.img_url ?? undefined);
 
             return (
               <a
