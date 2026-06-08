@@ -6,24 +6,16 @@
 // (24h / 6h / 12h), so SQL is still hit at most once per topic per TTL.
 // Risk is intentionally excluded — the map loads it via the lean /api/risk
 // route for a fast first paint.
-import { NextResponse } from "next/server";
-import {
-  getIndicators,
-  getArticles,
-  getSummaries,
-} from "@/app/lib/cached-fetchers";
+import { getIndicators, getArticles, getSummaries } from "@/app/lib/cached-fetchers";
+import { jsonRoute } from "@/app/lib/api";
 
 export const runtime = "nodejs";
 
-export async function GET() {
-  try {
-    const [indicators, articles, summaries] = await Promise.all([
-      getIndicators(),
-      getArticles(),
-      getSummaries(),
-    ]);
-    return NextResponse.json({ indicators, articles, summaries }, { status: 200 });
-  } catch (err: any) {
-    return NextResponse.json({ error: String(err?.message ?? err) }, { status: 500 });
-  }
-}
+export const GET = jsonRoute(async () => {
+  const [indicators, articles, summaries] = await Promise.all([
+    getIndicators(),
+    getArticles(),
+    getSummaries(),
+  ]);
+  return { indicators, articles, summaries };
+});
