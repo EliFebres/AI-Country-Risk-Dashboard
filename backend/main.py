@@ -5,7 +5,7 @@ import requests
 
 from typing import List, Dict, Tuple
 from collections import defaultdict
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 
 # --- Resolve project root so "backend/" is importable ------------------------
 project_root = pathlib.Path.cwd().resolve()
@@ -21,6 +21,7 @@ if str(project_root) not in sys.path:
 from backend.utils import constants
 from backend.utils import data_retrieval
 from backend.utils.ai import langchain_llm
+from backend.utils.ai import calendar_ranker
 from backend.utils.data_upsert import data_push
 from backend.utils.news_fetching import fetch_links
 from backend.utils.data_fetching import fetch_metrics
@@ -274,6 +275,25 @@ def main() -> None:
     try:
         events = fmp_calendar_fetch.fetch_economic_calendar()
         if events:
+            # AI-rank the next-14-day subset by importance to investors (US-tilted).
+            # Failure here must not block the upsert, so it is guarded separately.
+            cutoff = datetime.now(timezone.utc) + timedelta(days=constants.CAL_RANK_HORIZON_DAYS)
+            subset = [ev for ev in events if ev["event_time"] <= cutoff]
+            for i, ev in enumerate(subset, start=1):
+                ev["_rank_id"] = f"e{i}"
+            try:
+                scores = calendar_ranker.rank_calendar_events(subset)
+                scored_at = datetime.now(timezone.utc)
+                for ev in subset:
+                    s = scores.get(ev.get("_rank_id"))
+                    if s:
+                        ev["ai_importance"] = s.get("importance")
+                        ev["ai_rationale"]  = s.get("rationale")
+                        ev["ai_scored_at"]  = scored_at
+                print(f"[econ-calendar] AI-ranked {len(scores)}/{len(subset)} next-14d events")
+            except Exception as rank_err:
+                print(f"[econ-calendar] ranking ERROR: {rank_err}")
+
             data_push.upsert_economic_events(events)
             print(f"[econ-calendar] upserted {len(events)} events")
         else:

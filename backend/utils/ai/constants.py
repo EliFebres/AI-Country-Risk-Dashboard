@@ -131,3 +131,76 @@ RISK_SCHEMA: Dict = {
     "required": ["subscores", "news_article_scores", "score", "bullet_summary"],
     "additionalProperties": False
 }
+
+
+# ---------------------------------------------------------------------------
+# Economic-calendar importance ranking (US-tilted)
+# Used by ai/calendar_ranker.py to rank upcoming events for the Econ Calendar.
+# NOTE: literal braces inside JSON examples are escaped as {{ }} for .format().
+# ---------------------------------------------------------------------------
+
+CAL_RANK_PROMPT = """
+You are a senior markets strategist. Your audience is **primarily US-based investors**.
+
+You are given a set of economic-calendar events that ALL fall within a SINGLE week
+({period}; today is {today}). Rank them **relative to each other within this week**.
+
+EVENTS_JSON
+# exactly these items only; each has an id you MUST reuse
+# [{{"id":"e1","date":"YYYY-MM-DD","country":"...","event":"...","fmp_importance":"h|m|l"}}]
+{events_json}
+
+importance ∈ [0,1] = this event's importance to investors' positioning **relative to the other
+events in this week**. Spread your scores across the FULL 0-1 range: the week's most market-moving
+event(s) should approach 1.0 and the least important approach ~0.10, with the rest distributed in
+between. Even a quiet week MUST have its own clear top and bottom — do NOT compress everything into a
+narrow band, and do NOT hold back high scores just because some other week might be busier.
+
+When deciding which events OUTRANK others, weigh relevance to **US markets slightly higher** than the
+rest of the world (the audience is primarily US-based), judging by event type, the issuing country's
+weight in global markets, and spillover into US rates, equities, credit, and the US dollar.
+
+Ordering guidance (most → least important, all else equal):
+  • US monetary policy & top US data — FOMC/Fed decisions & minutes, US CPI/PCE, US jobs (NFP/payrolls).
+  • Major global central banks (ECB, BoJ, BoE, PBoC) & first-tier data (GDP, CPI, PMIs) from large
+    economies with clear spillover to US assets.
+  • Mid-tier data and releases from smaller economies.
+  • Minor / low-relevance releases.
+
+Rules:
+  • Score EVERY id provided. Do NOT invent ids or add events.
+  • rationale ≤ 140 characters, concise, explains the ranking (e.g. "Top US rates driver this week").
+
+Return ONLY valid JSON (no prose) exactly:
+
+{{
+  "rankings": [
+    {{"id": "<id from EVENTS_JSON>", "importance": <float 0..1>, "rationale": "<=140 chars"}}
+  ]
+}}
+""".strip()
+
+
+CAL_RANK_SCHEMA: Dict = {
+    "title": "CalendarImportanceRanking",
+    "description": "Per-event investor-importance score (US-tilted) with a short rationale.",
+    "type": "object",
+    "properties": {
+        "rankings": {
+            "title": "Rankings",
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "id":         {"type": "string"},
+                    "importance": {"type": "number", "minimum": 0, "maximum": 1},
+                    "rationale":  {"type": "string", "maxLength": 160},
+                },
+                "required": ["id", "importance", "rationale"],
+                "additionalProperties": False,
+            },
+        }
+    },
+    "required": ["rankings"],
+    "additionalProperties": False,
+}

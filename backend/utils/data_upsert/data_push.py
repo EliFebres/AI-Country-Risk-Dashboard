@@ -246,6 +246,11 @@ CREATE TABLE IF NOT EXISTS economic_calendar_event (
     updated_at   TIMESTAMPTZ NOT NULL DEFAULT now(),
     UNIQUE (event_time, country_code, event)
 );
+-- AI importance ranking (US-tilted). Added idempotently so an already-created
+-- table picks up the columns without a migration tool.
+ALTER TABLE economic_calendar_event ADD COLUMN IF NOT EXISTS ai_importance DOUBLE PRECISION;
+ALTER TABLE economic_calendar_event ADD COLUMN IF NOT EXISTS ai_rationale  TEXT;
+ALTER TABLE economic_calendar_event ADD COLUMN IF NOT EXISTS ai_scored_at  TIMESTAMPTZ;
 """
 
 
@@ -264,6 +269,9 @@ def upsert_economic_events(events: List[Dict[str, Any]]) -> None:
       - event        (str)                 — release/decision name
       - importance   (str: 'h'|'m'|'l')    — criticality
       - currency, previous, estimate, actual (optional)
+      - ai_importance (float 0..1), ai_rationale (str), ai_scored_at (datetime)
+        — optional AI ranking (only the next-14-day subset; null otherwise).
+        Nulls never overwrite an existing score (preserved via COALESCE).
 
     No-op if ``events`` is empty.
     """
@@ -282,6 +290,12 @@ def upsert_economic_events(events: List[Dict[str, Any]]) -> None:
         importance = (e.get("importance") or "").strip()
         if not event_time or not code or not event or importance not in ("h", "m", "l"):
             continue
+        ai_importance = e.get("ai_importance")
+        try:
+            ai_importance = float(ai_importance) if ai_importance is not None else None
+        except (TypeError, ValueError):
+            ai_importance = None
+
         rows.append(
             (
                 event_time,
@@ -293,6 +307,9 @@ def upsert_economic_events(events: List[Dict[str, Any]]) -> None:
                 e.get("previous"),
                 e.get("estimate"),
                 e.get("actual"),
+                ai_importance,
+                e.get("ai_rationale"),
+                e.get("ai_scored_at"),
             )
         )
 
@@ -310,17 +327,21 @@ def upsert_economic_events(events: List[Dict[str, Any]]) -> None:
                 """
                 INSERT INTO economic_calendar_event
                   (event_time, country_code, country_name, event, importance,
-                   currency, previous, estimate, actual)
+                   currency, previous, estimate, actual,
+                   ai_importance, ai_rationale, ai_scored_at)
                 VALUES %s
                 ON CONFLICT (event_time, country_code, event)
                 DO UPDATE SET
-                  country_name = EXCLUDED.country_name,
-                  importance   = EXCLUDED.importance,
-                  currency     = EXCLUDED.currency,
-                  previous     = EXCLUDED.previous,
-                  estimate     = EXCLUDED.estimate,
-                  actual       = EXCLUDED.actual,
-                  updated_at   = now()
+                  country_name  = EXCLUDED.country_name,
+                  importance    = EXCLUDED.importance,
+                  currency      = EXCLUDED.currency,
+                  previous      = EXCLUDED.previous,
+                  estimate      = EXCLUDED.estimate,
+                  actual        = EXCLUDED.actual,
+                  ai_importance = COALESCE(EXCLUDED.ai_importance, economic_calendar_event.ai_importance),
+                  ai_rationale  = COALESCE(EXCLUDED.ai_rationale,  economic_calendar_event.ai_rationale),
+                  ai_scored_at  = COALESCE(EXCLUDED.ai_scored_at,  economic_calendar_event.ai_scored_at),
+                  updated_at    = now()
                 """,
                 rows,
                 page_size=500,

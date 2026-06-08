@@ -53,6 +53,15 @@ ALL_INDICATORS = {**INDICATORS, **EXTRA_INDICATORS}
 # Rolling forward window (days) fetched on each run.
 FMP_CALENDAR_DAYS_AHEAD: int = 14
 
+# AI importance-ranking horizon (days). Events within this window — up to the
+# full FMP_CALENDAR_DAYS_AHEAD fetch — are scored by the LLM ranker each run.
+CAL_RANK_HORIZON_DAYS: int = 14
+
+# The ranker buckets events into weeks of this many days and scores each week
+# RELATIVE TO ITSELF, so a quiet week still gets its own full high→low spread
+# instead of being flattened by a busier adjacent week.
+CAL_RANK_WEEK_DAYS: int = 7
+
 # FMP "impact" -> front-end importance code ('h'/'m'/'l').
 FMP_IMPACT_TO_CODE: dict[str, str] = {"High": "h", "Medium": "m", "Low": "l"}
 
