@@ -20,12 +20,18 @@ export default function Masthead({
   idleEnabled,
   onToggleIdle,
 }: Props) {
-  // Live UTC clock — initialized in an effect to avoid SSR/hydration mismatch.
+  // Live local clock — initialized in an effect to avoid SSR/hydration mismatch.
   const [clock, setClock] = useState<string>('--:--:--');
+  const [tz, setTz] = useState<string>('');
   useEffect(() => {
+    // Short timezone abbreviation for the viewer's locale (e.g. "EST", "GMT+2").
+    const tzName = new Intl.DateTimeFormat(undefined, { timeZoneName: 'short' })
+      .formatToParts(new Date())
+      .find((p) => p.type === 'timeZoneName')?.value;
+    setTz(tzName ?? '');
     const tick = () => {
       const d = new Date();
-      setClock(`${pad(d.getUTCHours())}:${pad(d.getUTCMinutes())}:${pad(d.getUTCSeconds())}`);
+      setClock(`${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`);
     };
     tick();
     const id = setInterval(tick, 1000);
@@ -54,7 +60,7 @@ export default function Masthead({
           LIVE
         </span>
         <span className="tb-clock">
-          <span className="clk">{clock}</span>&nbsp;UTC
+          <span className="clk">{clock}</span>&nbsp;{tz}
         </span>
         <span className="tb-stat">
           <span className="tb-k">Coverage</span>
