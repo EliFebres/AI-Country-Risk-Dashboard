@@ -360,6 +360,219 @@ def upsert_economic_events(events: List[Dict[str, Any]]) -> None:
         conn.close()
 
 
+_MARKET_PRICE_DDL = """
+CREATE TABLE IF NOT EXISTS market_price (
+    symbol        TEXT PRIMARY KEY,
+    label         TEXT NOT NULL,
+    asset_class   TEXT NOT NULL CHECK (asset_class IN ('stocks','bonds','crypto','commodities')),
+    source_symbol TEXT,
+    is_yield      BOOLEAN NOT NULL DEFAULT FALSE,
+    px            DOUBLE PRECISION,
+    chg           DOUBLE PRECISION,   -- 1D  (% for prices, points for yields)
+    q             DOUBLE PRECISION,   -- 1Q
+    ytd           DOUBLE PRECISION,   -- YTD
+    sort_order    INTEGER NOT NULL DEFAULT 0,
+    updated_at    TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+"""
+
+_PRICE_REFERENCE_DDL = """
+CREATE TABLE IF NOT EXISTS price_reference (
+    symbol                 TEXT PRIMARY KEY,
+    ref_q                  DOUBLE PRECISION,
+    ref_q_date             DATE,
+    ref_ytd                DOUBLE PRECISION,
+    ref_ytd_date           DATE,
+    reference_refreshed_on DATE,
+    updated_at             TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+"""
+
+
+def upsert_market_prices(rows: List[Dict[str, Any]]) -> None:
+    """Upsert the latest snapshot of the Prices pane (one row per symbol).
+
+    Self-contained: ensures the ``market_price`` table exists, then upserts each
+    asset by its stable ``symbol`` primary key. The metric columns
+    (``px``/``chg``/``q``/``ytd``) are written with COALESCE so a transient null
+    (e.g. a missing 1Q/YTD reference, or a symbol absent from one quote batch)
+    never blanks a previously-populated cell — the daemon simply omits whole
+    rows for markets it didn't poll this tick, leaving their last values intact.
+
+    Each row dict (as built by ``prices_daemon``):
+      - symbol, label, asset_class, source_symbol, is_yield, sort_order  (metadata)
+      - px, chg, q, ytd                                                  (metrics; may be None)
+
+    No-op if ``rows`` is empty.
+    """
+    if not DB_URL:
+        raise RuntimeError("DATABASE_URL is not set in the environment")
+    if not rows:
+        return
+
+    tuples: List[Tuple] = []
+    for r in rows:
+        if not isinstance(r, dict):
+            continue
+        symbol = (r.get("symbol") or "").strip()
+        label = (r.get("label") or "").strip()
+        asset_class = (r.get("asset_class") or "").strip()
+        if not symbol or not label or asset_class not in ("stocks", "bonds", "crypto", "commodities"):
+            continue
+        tuples.append(
+            (
+                symbol,
+                label,
+                asset_class,
+                r.get("source_symbol"),
+                bool(r.get("is_yield")),
+                r.get("px"),
+                r.get("chg"),
+                r.get("q"),
+                r.get("ytd"),
+                int(r.get("sort_order") or 0),
+            )
+        )
+
+    if not tuples:
+        return
+
+    conn = psycopg2.connect(DB_URL)
+    try:
+        conn.autocommit = False
+        with conn.cursor() as cur:
+            cur.execute(_MARKET_PRICE_DDL)
+
+            extras.execute_values(
+                cur,
+                """
+                INSERT INTO market_price
+                  (symbol, label, asset_class, source_symbol, is_yield,
+                   px, chg, q, ytd, sort_order)
+                VALUES %s
+                ON CONFLICT (symbol)
+                DO UPDATE SET
+                  label         = EXCLUDED.label,
+                  asset_class   = EXCLUDED.asset_class,
+                  source_symbol = EXCLUDED.source_symbol,
+                  is_yield      = EXCLUDED.is_yield,
+                  px            = COALESCE(EXCLUDED.px,  market_price.px),
+                  chg           = COALESCE(EXCLUDED.chg, market_price.chg),
+                  q             = COALESCE(EXCLUDED.q,   market_price.q),
+                  ytd           = COALESCE(EXCLUDED.ytd, market_price.ytd),
+                  sort_order    = EXCLUDED.sort_order,
+                  updated_at    = now()
+                """,
+                tuples,
+                page_size=100,
+            )
+
+        conn.commit()
+    except Exception:
+        conn.rollback()
+        raise
+    finally:
+        conn.close()
+
+
+def read_price_references() -> Dict[str, Dict[str, Any]]:
+    """Return stored 1Q/YTD reference closes, keyed by symbol.
+
+    Ensures the ``price_reference`` table exists first so the daemon can call this
+    on startup before any write. Each value is
+    ``{ref_q, ref_q_date, ref_ytd, ref_ytd_date, reference_refreshed_on}``.
+    """
+    if not DB_URL:
+        raise RuntimeError("DATABASE_URL is not set in the environment")
+
+    conn = psycopg2.connect(DB_URL)
+    try:
+        conn.autocommit = False
+        with conn.cursor() as cur:
+            cur.execute(_PRICE_REFERENCE_DDL)
+            cur.execute(
+                """
+                SELECT symbol, ref_q, ref_q_date, ref_ytd, ref_ytd_date, reference_refreshed_on
+                  FROM price_reference
+                """
+            )
+            out: Dict[str, Dict[str, Any]] = {}
+            for sym, ref_q, ref_q_date, ref_ytd, ref_ytd_date, refreshed_on in cur.fetchall():
+                out[sym] = {
+                    "ref_q": ref_q,
+                    "ref_q_date": ref_q_date,
+                    "ref_ytd": ref_ytd,
+                    "ref_ytd_date": ref_ytd_date,
+                    "reference_refreshed_on": refreshed_on,
+                }
+        conn.commit()
+        return out
+    except Exception:
+        conn.rollback()
+        raise
+    finally:
+        conn.close()
+
+
+def upsert_price_references(refs: Dict[str, Dict[str, Any]], refreshed_on: datetime.date) -> None:
+    """Persist the day's 1Q/YTD reference closes, stamping ``refreshed_on``.
+
+    ``refs`` maps ``symbol -> {ref_q, ref_q_date, ref_ytd, ref_ytd_date}`` (as
+    produced by ``fmp_prices_fetch.fetch_reference_closes`` keyed back to the
+    internal symbol). Lets a restarted daemon skip the historical fetch when it
+    already ran today. No-op if ``refs`` is empty.
+    """
+    if not DB_URL:
+        raise RuntimeError("DATABASE_URL is not set in the environment")
+    if not refs:
+        return
+
+    rows: List[Tuple] = [
+        (
+            symbol,
+            r.get("ref_q"),
+            r.get("ref_q_date"),
+            r.get("ref_ytd"),
+            r.get("ref_ytd_date"),
+            refreshed_on,
+        )
+        for symbol, r in refs.items()
+        if isinstance(r, dict)
+    ]
+    if not rows:
+        return
+
+    conn = psycopg2.connect(DB_URL)
+    try:
+        conn.autocommit = False
+        with conn.cursor() as cur:
+            cur.execute(_PRICE_REFERENCE_DDL)
+            extras.execute_values(
+                cur,
+                """
+                INSERT INTO price_reference
+                  (symbol, ref_q, ref_q_date, ref_ytd, ref_ytd_date, reference_refreshed_on)
+                VALUES %s
+                ON CONFLICT (symbol)
+                DO UPDATE SET
+                  ref_q                  = EXCLUDED.ref_q,
+                  ref_q_date             = EXCLUDED.ref_q_date,
+                  ref_ytd                = EXCLUDED.ref_ytd,
+                  ref_ytd_date           = EXCLUDED.ref_ytd_date,
+                  reference_refreshed_on = EXCLUDED.reference_refreshed_on,
+                  updated_at             = now()
+                """,
+                rows,
+                page_size=100,
+            )
+        conn.commit()
+    except Exception:
+        conn.rollback()
+        raise
+    finally:
+        conn.close()
+
+
 _NEWS_ALERT_DDL = """
 CREATE TABLE IF NOT EXISTS news_alert (
     id           BIGSERIAL PRIMARY KEY,
