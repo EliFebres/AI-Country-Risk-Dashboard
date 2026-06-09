@@ -25,10 +25,19 @@ export type CountryIndicatorLatest = {
 
 export type SummaryEntry = { country_iso2: string; bullet_summary: string };
 
+/** One upcoming economic-calendar release (global, not per-country). */
+export type EconCalendarEvent = {
+  event_time: string;          // ISO 8601 UTC string
+  country: string;             // display country name
+  event: string;               // release / decision name
+  importance: "h" | "m" | "l"; // FMP impact tier
+};
+
 export type DashboardData = {
   indicators: CountryIndicatorLatest[];
   articles: CountryArticles[];
   summaries: SummaryEntry[];
+  econCalendar: EconCalendarEvent[];
 };
 
 export const DASHBOARD_JSON_PUBLIC_PATH = "/api/dashboard";

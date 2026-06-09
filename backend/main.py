@@ -5,7 +5,7 @@ import requests
 
 from typing import List, Dict, Tuple
 from collections import defaultdict
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 
 # --- Resolve project root so "backend/" is importable ------------------------
 project_root = pathlib.Path.cwd().resolve()
@@ -21,12 +21,15 @@ if str(project_root) not in sys.path:
 from backend.utils import constants
 from backend.utils import data_retrieval
 from backend.utils.ai import langchain_llm
+from backend.utils.ai import calendar_ranker
 from backend.utils.data_upsert import data_push
 from backend.utils.news_fetching import fetch_links
 from backend.utils.data_fetching import fetch_metrics
 from backend.utils.data_fetching import country_data_fetch
+from backend.utils.data_fetching import fmp_calendar_fetch
 from backend.utils.news_fetching.url_resolver import resolve_google_news_url
 from backend.utils.news_fetching.simple_scraper import get_article_assets
+from backend.utils.news_fetching.source_filter import is_blocked_url
 from backend.utils.news_fetching.advanced_scraper import scrape_one as crawlbase_scrape_one
 
 # --- Paths ------------------------------------------------------------------
@@ -268,6 +271,37 @@ def main() -> None:
         end=None,
     )
 
+    # 0b) Economic calendar (FMP) for the front-end Econ Calendar pane. Guarded
+    #     so a calendar failure never aborts the country/risk loop below.
+    try:
+        events = fmp_calendar_fetch.fetch_economic_calendar()
+        if events:
+            # AI-rank the next-14-day subset by importance to investors (US-tilted).
+            # Failure here must not block the upsert, so it is guarded separately.
+            cutoff = datetime.now(timezone.utc) + timedelta(days=constants.CAL_RANK_HORIZON_DAYS)
+            subset = [ev for ev in events if ev["event_time"] <= cutoff]
+            for i, ev in enumerate(subset, start=1):
+                ev["_rank_id"] = f"e{i}"
+            try:
+                scores = calendar_ranker.rank_calendar_events(subset)
+                scored_at = datetime.now(timezone.utc)
+                for ev in subset:
+                    s = scores.get(ev.get("_rank_id"))
+                    if s:
+                        ev["ai_importance"] = s.get("importance")
+                        ev["ai_rationale"]  = s.get("rationale")
+                        ev["ai_scored_at"]  = scored_at
+                print(f"[econ-calendar] AI-ranked {len(scores)}/{len(subset)} next-14d events")
+            except Exception as rank_err:
+                print(f"[econ-calendar] ranking ERROR: {rank_err}")
+
+            data_push.upsert_economic_events(events)
+            print(f"[econ-calendar] upserted {len(events)} events")
+        else:
+            print("[econ-calendar] no events fetched (skipping upsert)")
+    except Exception as e:
+        print(f"[econ-calendar] ERROR: {e}")
+
     # Map "Country_Name" → "iso2" from the hardcoded roster
     country_map = {c["name"]: c["iso2"] for c in constants.COUNTRY_ROSTER}
 
@@ -298,6 +332,14 @@ def main() -> None:
                     link = it.get("link")
                     if isinstance(link, str) and "news.google.com" in link:
                         it["link"] = resolve_google_news_url(link, session=_sess)
+
+                # a2) Defense-in-depth: drop denylisted sources now that links are
+                #     resolved, in case a wrapper couldn't be resolved earlier.
+                before = len(items)
+                items = [it for it in items if not is_blocked_url(it.get("link"))]
+                removed = before - len(items)
+                if removed:
+                    print(f"[{iso2}] Blocked {removed} article(s) from denylisted sources.")
 
                 # b) Ensure summary/content and thumbnail (simple scraper, single GET)
                 for it in items:

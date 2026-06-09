@@ -1,0 +1,16 @@
+# Blocked news sources (denylist).
+#
+# Put one domain or URL per line. Any article whose resolved publisher URL
+# matches an entry here is dropped BEFORE it reaches the AI or the website.
+#
+# Rules:
+#   • Bare domains or full URLs both work — "whalesbook.com",
+#     "https://www.whalesbook.com/", and "www.whalesbook.com" are equivalent.
+#   • A leading "www." is ignored, and subdomains are included automatically
+#     (blocking "whalesbook.com" also blocks "m.whalesbook.com", etc.).
+#   • Matching is case-insensitive.
+#   • Lines starting with "#" and blank lines are ignored.
+#
+# Changes take effect on the next backend run.
+
+whalesbook.com

@@ -56,8 +56,9 @@ venv.bak/
 # Other
 backend/data/wb_panel_wide
 
-# Allow the example env file in backend
+# Allow the example env files
 !backend/.env.example
+!frontend/.env.example
 
 # Playwright MCP scratch logs
 .playwright-mcp/

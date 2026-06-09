@@ -22,7 +22,7 @@ All data comes from a Neon Postgres database, served through cached API routes t
 
 1. From the repo root: `cd frontend`
 2. Install deps: `npm i`
-3. Create `.env.local` with:
+3. Create `.env` with:
    ```
    DATABASE_URL=postgres://USER:PASSWORD@HOST/DB?sslmode=require
    ```

@@ -52,6 +52,14 @@ export type CountryArticles = {
   }[];
 };
 
+/** One upcoming economic-calendar release for the global Econ Calendar pane. */
+export type EconCalendarEvent = {
+  event_time: string;          // ISO 8601 UTC string
+  country: string;             // display country name
+  event: string;               // release / decision name
+  importance: "h" | "m" | "l"; // FMP impact tier
+};
+
 // ----------------------------- DB (Neon / pg) -----------------------------
 
 declare global {
@@ -313,6 +321,55 @@ export class RiskRepository {
     }
     // Ensure every country from latest is present (even if 0 articles)
     return Array.from(byIso2.values());
+  }
+
+  /**
+   * Up to 12 upcoming economic-calendar events for the global Econ Calendar pane.
+   *
+   * Window is hour-precise (`now()` … `now() + 7 days`, both TIMESTAMPTZ) so an
+   * imminent release is never dropped by date rounding. Selection: take all
+   * high-impact events first; if fewer than 12, backfill with medium-impact
+   * events — in both tiers the most important by `ai_importance` win — then cap
+   * at 12. Rows are returned ordered by `event_time` ascending (closest first).
+   */
+  async fetchEconCalendarEvents(): Promise<EconCalendarEvent[]> {
+    const pool = await this.pool();
+
+    const { rows } = await pool.query<{
+      event_time: string | Date;
+      country_name: string;
+      event: string;
+      importance: "h" | "m" | "l";
+    }>(`
+    WITH windowed AS (
+      SELECT event_time, country_name, event, importance, ai_importance
+        FROM economic_calendar_event
+       WHERE event_time >= now()
+         AND event_time <= now() + interval '7 days'
+         AND importance IN ('h', 'm')
+    ),
+    prioritized AS (
+      SELECT *,
+             ROW_NUMBER() OVER (
+               ORDER BY
+                 CASE WHEN importance = 'h' THEN 0 ELSE 1 END ASC, -- all highs before mediums
+                 ai_importance DESC NULLS LAST,                    -- most important first within tier
+                 event_time ASC                                    -- stable tiebreak
+             ) AS sel_rank
+        FROM windowed
+    )
+    SELECT event_time, country_name, event, importance
+      FROM prioritized
+     WHERE sel_rank <= 12
+  ORDER BY event_time ASC;
+  `);
+
+    return rows.map((r) => ({
+      event_time: new Date(r.event_time).toISOString(),
+      country: r.country_name,
+      event: r.event,
+      importance: r.importance,
+    }));
   }
 }
 

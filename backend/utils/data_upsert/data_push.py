@@ -228,3 +228,133 @@ def upsert_snapshot(payload: Dict[str, Any], country_name: str) -> None:
         raise
     finally:
         conn.close()
+
+
+_ECON_EVENT_DDL = """
+CREATE TABLE IF NOT EXISTS economic_calendar_event (
+    id           BIGSERIAL PRIMARY KEY,
+    event_time   TIMESTAMPTZ NOT NULL,
+    country_code TEXT NOT NULL,
+    country_name TEXT NOT NULL,
+    event        TEXT NOT NULL,
+    importance   TEXT NOT NULL CHECK (importance IN ('h','m','l')),
+    currency     TEXT,
+    previous     DOUBLE PRECISION,
+    estimate     DOUBLE PRECISION,
+    actual       DOUBLE PRECISION,
+    created_at   TIMESTAMPTZ NOT NULL DEFAULT now(),
+    updated_at   TIMESTAMPTZ NOT NULL DEFAULT now(),
+    UNIQUE (event_time, country_code, event)
+);
+-- AI importance ranking (US-tilted). Added idempotently so an already-created
+-- table picks up the columns without a migration tool.
+ALTER TABLE economic_calendar_event ADD COLUMN IF NOT EXISTS ai_importance DOUBLE PRECISION;
+ALTER TABLE economic_calendar_event ADD COLUMN IF NOT EXISTS ai_rationale  TEXT;
+ALTER TABLE economic_calendar_event ADD COLUMN IF NOT EXISTS ai_scored_at  TIMESTAMPTZ;
+"""
+
+
+def upsert_economic_events(events: List[Dict[str, Any]]) -> None:
+    """Upsert upcoming economic-calendar events for the front-end Econ Calendar pane.
+
+    Self-contained: ensures the ``economic_calendar_event`` table exists (the
+    project has no migration tool; this adds one table without touching the
+    pre-created risk schema), bulk-upserts the rolling window, and prunes rows
+    older than a day so the table stays a forward-looking feed.
+
+    Each event dict (as produced by ``fmp_calendar_fetch.fetch_economic_calendar``):
+      - event_time   (aware UTC datetime)  — release date & time
+      - country_code (str, FMP 2-letter)   — e.g. 'US', 'EU'
+      - country_name (str)                 — display name
+      - event        (str)                 — release/decision name
+      - importance   (str: 'h'|'m'|'l')    — criticality
+      - currency, previous, estimate, actual (optional)
+      - ai_importance (float 0..1), ai_rationale (str), ai_scored_at (datetime)
+        — optional AI ranking (only the next-14-day subset; null otherwise).
+        Nulls never overwrite an existing score (preserved via COALESCE).
+
+    No-op if ``events`` is empty.
+    """
+    if not DB_URL:
+        raise RuntimeError("DATABASE_URL is not set in the environment")
+    if not events:
+        return
+
+    rows: List[Tuple] = []
+    for e in events:
+        if not isinstance(e, dict):
+            continue
+        event_time = e.get("event_time")
+        code = (e.get("country_code") or "").strip()
+        event = (e.get("event") or "").strip()
+        importance = (e.get("importance") or "").strip()
+        if not event_time or not code or not event or importance not in ("h", "m", "l"):
+            continue
+        ai_importance = e.get("ai_importance")
+        try:
+            ai_importance = float(ai_importance) if ai_importance is not None else None
+        except (TypeError, ValueError):
+            ai_importance = None
+
+        rows.append(
+            (
+                event_time,
+                code,
+                e.get("country_name") or code,
+                event,
+                importance,
+                e.get("currency"),
+                e.get("previous"),
+                e.get("estimate"),
+                e.get("actual"),
+                ai_importance,
+                e.get("ai_rationale"),
+                e.get("ai_scored_at"),
+            )
+        )
+
+    if not rows:
+        return
+
+    conn = psycopg2.connect(DB_URL)
+    try:
+        conn.autocommit = False
+        with conn.cursor() as cur:
+            cur.execute(_ECON_EVENT_DDL)
+
+            extras.execute_values(
+                cur,
+                """
+                INSERT INTO economic_calendar_event
+                  (event_time, country_code, country_name, event, importance,
+                   currency, previous, estimate, actual,
+                   ai_importance, ai_rationale, ai_scored_at)
+                VALUES %s
+                ON CONFLICT (event_time, country_code, event)
+                DO UPDATE SET
+                  country_name  = EXCLUDED.country_name,
+                  importance    = EXCLUDED.importance,
+                  currency      = EXCLUDED.currency,
+                  previous      = EXCLUDED.previous,
+                  estimate      = EXCLUDED.estimate,
+                  actual        = EXCLUDED.actual,
+                  ai_importance = COALESCE(EXCLUDED.ai_importance, economic_calendar_event.ai_importance),
+                  ai_rationale  = COALESCE(EXCLUDED.ai_rationale,  economic_calendar_event.ai_rationale),
+                  ai_scored_at  = COALESCE(EXCLUDED.ai_scored_at,  economic_calendar_event.ai_scored_at),
+                  updated_at    = now()
+                """,
+                rows,
+                page_size=500,
+            )
+
+            # Keep the table a rolling forward window.
+            cur.execute(
+                "DELETE FROM economic_calendar_event WHERE event_time < now() - interval '1 day'"
+            )
+
+        conn.commit()
+    except Exception:
+        conn.rollback()
+        raise
+    finally:
+        conn.close()

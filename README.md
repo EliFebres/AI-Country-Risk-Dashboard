@@ -97,9 +97,9 @@ Create the following `.env` files before running:
 | Location | File | Keys & purpose |
 |------------|--------------|---------------------------------------------------------------------|
 | `backend` | `.env` | `DATABASE_URL` – PostgreSQL connection string; `OPENAI_API_KEY` – OpenAI API key |
-| `frontend` | `.env.local` | `DATABASE_URL` – Postgres URL with `sslmode=require` |
+| `frontend` | `.env` | `DATABASE_URL` – Postgres URL with `sslmode=require` |
 
-The `backend/.env` file is read by the ETL pipeline and the database upsert routines. The `frontend/.env.local` is used by the Next.js server‑side function that refreshes `public/api/risk.json`.
+The `backend/.env` file is read by the ETL pipeline and the database upsert routines. The `frontend/.env` is read by the Next.js server‑side API routes that serve the dashboard data.
 
 ### Backend setup
 
