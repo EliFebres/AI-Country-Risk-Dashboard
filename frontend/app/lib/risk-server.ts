@@ -324,13 +324,13 @@ export class RiskRepository {
   }
 
   /**
-   * Up to 12 upcoming economic-calendar events for the global Econ Calendar pane.
+   * Up to 20 upcoming economic-calendar events for the global Econ Calendar pane.
    *
    * Window is hour-precise (`now()` … `now() + 7 days`, both TIMESTAMPTZ) so an
    * imminent release is never dropped by date rounding. Selection: take all
-   * high-impact events first; if fewer than 12, backfill with medium-impact
+   * high-impact events first; if fewer than 20, backfill with medium-impact
    * events — in both tiers the most important by `ai_importance` win — then cap
-   * at 12. Rows are returned ordered by `event_time` ascending (closest first).
+   * at 20. Rows are returned ordered by `event_time` ascending (closest first).
    */
   async fetchEconCalendarEvents(): Promise<EconCalendarEvent[]> {
     const pool = await this.pool();
@@ -360,7 +360,7 @@ export class RiskRepository {
     )
     SELECT event_time, country_name, event, importance
       FROM prioritized
-     WHERE sel_rank <= 12
+     WHERE sel_rank <= 20
   ORDER BY event_time ASC;
   `);
 
