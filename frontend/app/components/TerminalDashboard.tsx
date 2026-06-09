@@ -134,7 +134,7 @@ export default function TerminalDashboard() {
 
       <WorldRiskIndexRail rows={riskRows} onSelectCountry={selectCountry} onMeasure={handleRailMeasure} />
 
-      <BottomBar rows={riskRows} onSelectCountry={selectCountry} />
+      <BottomBar />
 
       <RiskSidebar
         open={!!selected}

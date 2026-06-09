@@ -2,44 +2,15 @@
 //
 // Seed data for the terminal bottom bar.
 //
-// • ALERTS  — PLACEHOLDER. There is no AI-alerts backend yet; replace this with a
-//             feed derived from the risk/summary/articles pipeline when available.
 // • ASSETS  — PLACEHOLDER. No live price feed yet; the 1D value is simulated with a
 //             random walk client-side. Swap for a real market-data source later.
 // • EXCHANGES — production data: open/closed status is computed live from the UTC
 //               clock against each exchange's real trading window.
 // • CHANNELS  — production data: YouTube channel IDs for the Live TV embeds.
 
-/* ------------------------------- AI Alerts (PLACEHOLDER) ------------------------------- */
-export type AlertSeverity = 'critical' | 'caution' | 'watch';
-export type AlertImpact = 'up' | 'down' | 'flat';
-
-export type Alert = {
-  sev: AlertSeverity;
-  cat: 'Sanctions' | 'Conflict' | 'Macro' | 'Politics';
-  iso2: string;
-  impact: AlertImpact;
-  text: string;
-};
-
-export const ALERTS: Alert[] = [
-  { sev: 'critical', cat: 'Sanctions', iso2: 'RU', impact: 'up', text: 'U.S. bars all new Russian debt & equity — legal investability gate forces risk to 1.00' },
-  { sev: 'critical', cat: 'Conflict', iso2: 'PK', impact: 'up', text: 'ISKP exploitation of the Af-Pak border war escalates; cross-border strikes intensify' },
-  { sev: 'caution', cat: 'Conflict', iso2: 'IN', impact: 'up', text: 'Analysts warn the next India–Pakistan clash is likely to escalate' },
-  { sev: 'caution', cat: 'Macro', iso2: 'AR', impact: 'up', text: 'Inflation at 219.9% keeps macro volatility pinned near the ceiling' },
-  { sev: 'caution', cat: 'Macro', iso2: 'TR', impact: 'up', text: 'Inflation 58.5%; central-bank credibility under renewed strain' },
-  { sev: 'caution', cat: 'Conflict', iso2: 'SA', impact: 'flat', text: 'Yemen / Strait of Hormuz tensions keep regional conflict risk elevated' },
-  { sev: 'watch', cat: 'Politics', iso2: 'VE', impact: 'flat', text: 'Caracas reaffirms Essequibo claim; Guyana border friction persists' },
-  { sev: 'watch', cat: 'Sanctions', iso2: 'CN', impact: 'flat', text: 'Beijing defies U.S. sanctions; banks caught in compliance crossfire' },
-  { sev: 'watch', cat: 'Politics', iso2: 'NG', impact: 'down', text: 'Coup-plot treason trial proceeds, but rising oil revenue offers fiscal relief' },
-  { sev: 'watch', cat: 'Macro', iso2: 'US', impact: 'flat', text: 'Fed split on policy as Iran oil shock clouds the inflation path' },
-];
-
-export const SEV_LABEL: Record<AlertSeverity, string> = {
-  critical: 'Critical',
-  caution: 'Caution',
-  watch: 'Watch',
-};
+/* ------------------------------- AI Alerts ------------------------------- */
+// Now backed by the live news-alert feed — see app/components/bottombar/
+// AIAlerts.tsx (reads the /api/dashboard `newsAlerts` slice). No seed here.
 
 /* ------------------------------- Econ Calendar ------------------------------- */
 // Now backed by the live economic-calendar feed — see app/components/bottombar/

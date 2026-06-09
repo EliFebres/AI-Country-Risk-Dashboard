@@ -60,6 +60,22 @@ export type EconCalendarEvent = {
   importance: "h" | "m" | "l"; // FMP impact tier
 };
 
+/** One globally-ranked AI news alert for the bottom-bar "AI Alerts" pane. */
+export type NewsAlert = {
+  global_rank: number;          // 1..N global importance rank
+  country_iso2: string;         // originating country (ISO-2)
+  country_name: string | null;  // display name
+  url: string;                  // article link
+  title: string | null;         // headline
+  source: string | null;        // publisher
+  published_at: string | null;  // ISO 8601 string
+  topic: string;                // one of ALERT_TOPICS
+  severity: "Critical" | "Caution" | "Watch";
+  importance: number | null;    // global-economy importance (0..1)
+  rationale: string | null;     // one-line ranking rationale
+  image_url: string | null;     // thumbnail URL
+};
+
 // ----------------------------- DB (Neon / pg) -----------------------------
 
 declare global {
@@ -370,6 +386,58 @@ export class RiskRepository {
       event: r.event,
       importance: r.importance,
     }));
+  }
+
+  /**
+   * The latest run's globally-ranked AI news alerts, ordered by `global_rank`.
+   *
+   * Self-contained and defensive: the `news_alert` table is newer than the rest
+   * of the risk schema and may not exist in every environment yet, so a query
+   * failure (missing table, etc.) is swallowed and returns `[]` rather than
+   * failing the combined /api/dashboard payload.
+   */
+  async fetchLatestNewsAlerts(): Promise<NewsAlert[]> {
+    try {
+      const pool = await this.pool();
+      const { rows } = await pool.query<{
+        global_rank: number;
+        country_iso2: string;
+        country_name: string | null;
+        url: string;
+        title: string | null;
+        source: string | null;
+        published_at: string | Date | null;
+        topic: string;
+        severity: "Critical" | "Caution" | "Watch";
+        importance: number | null;
+        rationale: string | null;
+        image_url: string | null;
+      }>(`
+        SELECT global_rank, country_iso2, country_name, url, title, source,
+               published_at, topic, severity, importance, rationale, image_url
+          FROM news_alert
+         WHERE as_of = (SELECT MAX(as_of) FROM news_alert)
+      ORDER BY global_rank ASC;
+      `);
+
+      return rows.map((r) => ({
+        global_rank: r.global_rank,
+        country_iso2: r.country_iso2,
+        country_name: r.country_name,
+        url: r.url,
+        title: r.title,
+        source: r.source,
+        published_at: r.published_at ? new Date(r.published_at).toISOString() : null,
+        topic: r.topic,
+        severity: r.severity,
+        importance: r.importance != null ? Number(r.importance) : null,
+        rationale: r.rationale,
+        image_url: r.image_url,
+      }));
+    } catch (err) {
+      console.warn("fetchLatestNewsAlerts failed; returning []:", err);
+      return [];
+    }
   }
 }
 

@@ -33,11 +33,28 @@ export type EconCalendarEvent = {
   importance: "h" | "m" | "l"; // FMP impact tier
 };
 
+/** One globally-ranked AI news alert (global, not per-country). */
+export type NewsAlert = {
+  global_rank: number;          // 1..N global importance rank
+  country_iso2: string;         // originating country (ISO-2)
+  country_name: string | null;  // display name
+  url: string;                  // article link
+  title: string | null;         // headline
+  source: string | null;        // publisher
+  published_at: string | null;  // ISO 8601 string
+  topic: string;                // alert topic label
+  severity: "Critical" | "Caution" | "Watch";
+  importance: number | null;    // global-economy importance (0..1)
+  rationale: string | null;     // one-line ranking rationale
+  image_url: string | null;     // thumbnail URL
+};
+
 export type DashboardData = {
   indicators: CountryIndicatorLatest[];
   articles: CountryArticles[];
   summaries: SummaryEntry[];
   econCalendar: EconCalendarEvent[];
+  newsAlerts: NewsAlert[];
 };
 
 export const DASHBOARD_JSON_PUBLIC_PATH = "/api/dashboard";
