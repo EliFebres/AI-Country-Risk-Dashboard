@@ -123,6 +123,36 @@ CREATE TABLE risk_snapshot_article (
 
 CREATE INDEX idx_risk_snapshot_article_country_date
     ON risk_snapshot_article (country_iso2, as_of);
+
+-- Global "AI Alerts": each run pools every country's Top-3 articles, the LLM
+-- ranks them by importance to the global economy, tags one topic + severity,
+-- and only the top-N (ALERTS_TOP_N) are stored. Replace-per-day semantics.
+CREATE TABLE news_alert (
+    id           BIGSERIAL PRIMARY KEY,
+    as_of        DATE         NOT NULL,
+    global_rank  SMALLINT     NOT NULL,
+    country_iso2 CHAR(2)      NOT NULL,
+    country_name TEXT,
+
+    url          TEXT         NOT NULL,
+    title        TEXT,
+    source       TEXT,
+    published_at TIMESTAMPTZ,
+    summary      TEXT,
+    image_url    TEXT,
+
+    topic        TEXT         NOT NULL,  -- Conflict|Sanctions|Macro|Politics|Trade|Energy|Security|Markets
+    severity     TEXT         NOT NULL CHECK (severity IN ('Critical','Caution','Watch')),
+    importance   DOUBLE PRECISION,       -- global-economy importance (0-1)
+    rationale    TEXT,
+
+    created_at   TIMESTAMPTZ  NOT NULL DEFAULT now(),
+    updated_at   TIMESTAMPTZ  NOT NULL DEFAULT now(),
+
+    UNIQUE (as_of, global_rank)
+);
+
+CREATE INDEX idx_news_alert_as_of ON news_alert (as_of);
 ```
 
 ---

@@ -62,6 +62,11 @@ CAL_RANK_HORIZON_DAYS: int = 14
 # instead of being flattened by a busier adjacent week.
 CAL_RANK_WEEK_DAYS: int = 7
 
+# Global news-alert ranking: after the per-country loop pools every country's
+# Top-3 articles, the LLM ranks them by importance to the global economy and
+# only the top-N are persisted to the `news_alert` table each run.
+ALERTS_TOP_N: int = 30
+
 # FMP "impact" -> front-end importance code ('h'/'m'/'l').
 FMP_IMPACT_TO_CODE: dict[str, str] = {"High": "h", "Medium": "m", "Low": "l"}
 

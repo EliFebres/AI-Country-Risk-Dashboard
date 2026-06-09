@@ -22,6 +22,7 @@ from backend.utils import constants
 from backend.utils import data_retrieval
 from backend.utils.ai import langchain_llm
 from backend.utils.ai import calendar_ranker
+from backend.utils.ai import alerts_ranker
 from backend.utils.data_upsert import data_push
 from backend.utils.news_fetching import fetch_links
 from backend.utils.data_fetching import fetch_metrics
@@ -305,6 +306,9 @@ def main() -> None:
     # Map "Country_Name" → "iso2" from the hardcoded roster
     country_map = {c["name"]: c["iso2"] for c in constants.COUNTRY_ROSTER}
 
+    # Pool every country's Top-3 articles for the post-loop global alert ranking.
+    global_alert_pool: List[Dict] = []
+
     for country_name, iso2 in country_map.items():
         try:
             # 1) Macro payload (pretty, JSON-serializable). ALL_INDICATORS adds
@@ -510,6 +514,10 @@ def main() -> None:
                     "image": it.get("image"),
                 })
 
+            # 6b) Add this country's Top-3 to the global alert pool (ranked after the loop)
+            for a in top_articles:
+                global_alert_pool.append({**a, "country_iso2": iso2, "country_name": country_name})
+
             # 7) Upsert to DB
             data_push.upsert_snapshot(
                 {**payload, "llm_output": llm_output, "top_articles": top_articles},
@@ -524,6 +532,21 @@ def main() -> None:
 
         except Exception as e:
             print(f"[{iso2}] ERROR: {e}")
+
+    # 8) Global news alerts: rank the pooled Top-3 articles by importance to the
+    #    global economy and persist the top-N. Guarded so a failure here never
+    #    affects the per-country snapshots already written above.
+    try:
+        ranked_alerts = alerts_ranker.rank_global_alerts(global_alert_pool)
+        if ranked_alerts:
+            data_push.upsert_news_alerts(
+                ranked_alerts, as_of=datetime.now(timezone.utc).date()
+            )
+            print(f"[alerts] ranked {len(ranked_alerts)}/{len(global_alert_pool)} pooled articles, stored {len(ranked_alerts)}")
+        else:
+            print(f"[alerts] no alerts ranked from {len(global_alert_pool)} pooled articles (skipping upsert)")
+    except Exception as e:
+        print(f"[alerts] ERROR: {e}")
 
     print(f"=== Run finished at {_to_utc_iso(datetime.now(timezone.utc))} UTC ===")
 
