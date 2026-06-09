@@ -1,10 +1,10 @@
 """
 Prices daemon — long-running market-data poller for the bottom-bar "Prices" pane.
 
-Runs SEPARATELY from the daily ``main.py`` ETL: a persistent loop (launched at
-boot via ``run_prices_daemon.bat``) that, every ``PRICES_POLL_SECONDS``, pulls
-live prices from FMP and upserts the latest snapshot into the ``market_price``
-table the frontend reads.
+Runs SEPARATELY from the daily ``main.py`` ETL: a persistent loop (run it
+directly, e.g. under Task Scheduler at boot) that, every ``PRICES_POLL_SECONDS``,
+pulls live prices from FMP and upserts the latest snapshot into the
+``market_price`` table the frontend reads.
 
 Cost control:
   • FMP live quotes are fetched in ONE batched call per tick, and only for asset

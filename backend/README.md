@@ -209,13 +209,13 @@ and upserts the latest snapshot into `market_price`.
 # One-shot tick (verification): fetch once, upsert, exit
 python backend/prices_daemon.py --once
 
-# Continuous loop (what the launcher runs)
+# Continuous loop: runs until stopped (Ctrl-C)
 python backend/prices_daemon.py
 ```
 
-On Windows, `run_prices_daemon.bat` (repo root) activates the venv and runs the daemon in
-an auto-restart loop; point a boot-time Task Scheduler entry at it so the feed runs
-alongside the `main.py` cron. Reuses `FMP_API_KEY` + `DATABASE_URL` — no other secret needed.
+Point a boot-time Task Scheduler entry (or any process supervisor) at
+`python backend/prices_daemon.py` so the feed runs continuously alongside the `main.py`
+cron. Reuses `FMP_API_KEY` + `DATABASE_URL` — no other secret needed.
 
 ---
 
