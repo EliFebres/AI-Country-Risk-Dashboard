@@ -41,30 +41,9 @@ export const SEV_LABEL: Record<AlertSeverity, string> = {
   watch: 'Watch',
 };
 
-/* ------------------------------- Econ Calendar (PLACEHOLDER) ------------------------------- */
-// No release-calendar feed yet; replace with an economic-calendar source when available.
-// `imp` reflects market-moving significance (rate decisions & major CPI/GDP = 'h').
-export type CalImportance = 'h' | 'm' | 'l';
-
-export type CalEvent = {
-  t: string;   // 'HH:MM'
-  day: string; // 'Today' | 'Tue' | …
-  evt: string;
-  cty: string;
-  imp: CalImportance;
-};
-
-export const CAL_EVENTS: CalEvent[] = [
-  { t: '08:30', day: 'Today', evt: 'US CPI (May)', cty: 'United States', imp: 'h' },
-  { t: '12:15', day: 'Today', evt: 'ECB Rate Decision', cty: 'Euro Area', imp: 'h' },
-  { t: '14:00', day: 'Today', evt: 'Banxico Minutes', cty: 'Mexico', imp: 'm' },
-  { t: '02:00', day: 'Tue', evt: 'China GDP Q2', cty: 'China', imp: 'h' },
-  { t: '06:00', day: 'Tue', evt: 'UK Unemployment', cty: 'United Kingdom', imp: 'm' },
-  { t: '09:00', day: 'Tue', evt: 'India WPI Inflation', cty: 'India', imp: 'l' },
-  { t: '00:50', day: 'Wed', evt: 'BoJ Policy Rate', cty: 'Japan', imp: 'h' },
-  { t: '17:00', day: 'Wed', evt: 'Brazil Selic Decision', cty: 'Brazil', imp: 'h' },
-  { t: '11:00', day: 'Thu', evt: 'Turkey CBRT Rate', cty: 'Turkey', imp: 'm' },
-];
+/* ------------------------------- Econ Calendar ------------------------------- */
+// Now backed by the live economic-calendar feed — see app/components/bottombar/
+// EconCalendar.tsx (reads the /api/dashboard `econCalendar` slice). No seed here.
 
 /* ------------------------------- Prices (PLACEHOLDER) ------------------------------- */
 export type Asset = {

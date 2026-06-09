@@ -70,3 +70,10 @@ export const getSummaries = unstable_cache(
   ["risk-summaries"],
   { revalidate: CACHE_TTL.RISK_SUMMARY, tags: ["risk-summary"] }
 );
+
+/** Up to 12 upcoming (next 7 days) economic-calendar events, closest first. */
+export const getEconCalendar = unstable_cache(
+  async () => riskRepository.fetchEconCalendarEvents(),
+  ["econ-calendar-upcoming"],
+  { revalidate: CACHE_TTL.ECON_CALENDAR, tags: ["econ-calendar"] }
+);

@@ -23,8 +23,11 @@ export const CACHE_TTL = {
   // more often; keep this shorter.
   ARTICLES: 6 * HOUR,
 
+  // Economic-calendar events are AI-ranked each ETL run; a 6h window keeps the
+  // "next 7 days" feed fresh (and lets just-passed events linger briefly).
+  ECON_CALENDAR: 6 * HOUR,
+
   // ---- Placeholders for future feeds (seed data today, no backend yet) ----
-  ECON_CALENDAR: 12 * HOUR, // weekly releases
   AI_ALERTS: 1 * HOUR,      // daily generation
   PRICES: 5 * 60,           // intra-day / daily market data
 } as const;
