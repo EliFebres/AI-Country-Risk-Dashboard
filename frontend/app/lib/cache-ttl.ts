@@ -27,7 +27,10 @@ export const CACHE_TTL = {
   // "next 7 days" feed fresh (and lets just-passed events linger briefly).
   ECON_CALENDAR: 6 * HOUR,
 
+  // AI news alerts are AI-ranked once per daily ETL run; a 12h window picks up a
+  // fresh run within hours while keeping Neon hits cheap (matches RISK).
+  AI_ALERTS: 12 * HOUR,     // daily generation
+
   // ---- Placeholders for future feeds (seed data today, no backend yet) ----
-  AI_ALERTS: 1 * HOUR,      // daily generation
   PRICES: 5 * 60,           // intra-day / daily market data
 } as const;

@@ -358,3 +358,141 @@ def upsert_economic_events(events: List[Dict[str, Any]]) -> None:
         raise
     finally:
         conn.close()
+
+
+_NEWS_ALERT_DDL = """
+CREATE TABLE IF NOT EXISTS news_alert (
+    id           BIGSERIAL PRIMARY KEY,
+    as_of        DATE        NOT NULL,
+    global_rank  SMALLINT    NOT NULL,
+    country_iso2 CHAR(2)     NOT NULL,
+    country_name TEXT,
+    url          TEXT        NOT NULL,
+    title        TEXT,
+    source       TEXT,
+    published_at TIMESTAMPTZ,
+    summary      TEXT,
+    image_url    TEXT,
+    topic        TEXT        NOT NULL,
+    severity     TEXT        NOT NULL CHECK (severity IN ('Critical','Caution','Watch')),
+    importance   DOUBLE PRECISION,
+    rationale    TEXT,
+    created_at   TIMESTAMPTZ NOT NULL DEFAULT now(),
+    updated_at   TIMESTAMPTZ NOT NULL DEFAULT now(),
+    UNIQUE (as_of, global_rank)
+);
+CREATE INDEX IF NOT EXISTS idx_news_alert_as_of ON news_alert (as_of);
+"""
+
+
+def _image_url_or_none(img: Any) -> Optional[str]:
+    """Normalize an image value (str or list) to a single http(s) URL, or None."""
+    if isinstance(img, str):
+        u = img.strip()
+        return u if u.startswith(("http://", "https://")) else None
+    if isinstance(img, list):
+        for v in img:
+            if isinstance(v, str) and v.strip().startswith(("http://", "https://")):
+                return v.strip()
+    return None
+
+
+def upsert_news_alerts(alerts: List[Dict[str, Any]], as_of: datetime.date) -> None:
+    """Replace the global news alerts for ``as_of`` with this run's ranked set.
+
+    Self-contained: ensures the ``news_alert`` table exists (the project has no
+    migration tool; this adds one table without touching the pre-created risk
+    schema), then uses replace-today semantics — all rows for ``as_of`` are
+    deleted and re-inserted so a re-run can never leave stale ranks. History for
+    prior ``as_of`` dates is preserved (matching ``risk_snapshot``).
+
+    Each alert dict (as produced by ``alerts_ranker.rank_global_alerts``):
+      - global_rank  (int 1..N)            — global importance rank
+      - country_iso2 (str ISO-2)           — originating country
+      - country_name (str)                 — display name
+      - url          (str)                 — article link
+      - title, source, summary             (optional)
+      - published_at (ISO str)             — article publish time
+      - image        (str or list)         — thumbnail URL(s)
+      - topic        (str)                 — one of constants.ALERT_TOPICS
+      - severity     (str)                 — Critical | Caution | Watch
+      - importance   (float 0..1)          — global importance score
+      - rationale    (str)                 — one-line ranking rationale
+
+    No-op if ``alerts`` is empty.
+    """
+    if not DB_URL:
+        raise RuntimeError("DATABASE_URL is not set in the environment")
+    if not alerts:
+        return
+
+    rows: List[Tuple] = []
+    for a in alerts:
+        if not isinstance(a, dict):
+            continue
+        rank = a.get("global_rank")
+        url = (a.get("url") or "").strip()
+        country = (a.get("country_iso2") or "").strip()
+        topic = (a.get("topic") or "").strip()
+        severity = (a.get("severity") or "").strip()
+        if not url or not country or not topic or severity not in ("Critical", "Caution", "Watch"):
+            continue
+        try:
+            rank = int(rank)
+        except (TypeError, ValueError):
+            continue
+
+        try:
+            importance = float(a["importance"]) if a.get("importance") is not None else None
+        except (TypeError, ValueError):
+            importance = None
+
+        rows.append(
+            (
+                as_of,                               # as_of (DATE)
+                rank,                                # global_rank
+                country,                             # country_iso2
+                a.get("country_name"),               # country_name
+                url,                                 # url (TEXT NOT NULL)
+                a.get("title"),                      # title
+                a.get("source"),                     # source
+                _to_ts_or_none(a.get("published_at")),  # published_at TIMESTAMPTZ
+                a.get("summary"),                    # summary
+                _image_url_or_none(a.get("image")),  # image_url
+                topic,                               # topic
+                severity,                            # severity
+                importance,                          # importance
+                a.get("rationale"),                  # rationale
+            )
+        )
+
+    if not rows:
+        return
+
+    conn = psycopg2.connect(DB_URL)
+    try:
+        conn.autocommit = False
+        with conn.cursor() as cur:
+            cur.execute(_NEWS_ALERT_DDL)
+
+            # Replace-today semantics: clear this run date, then insert the ranked set.
+            cur.execute("DELETE FROM news_alert WHERE as_of = %s", (as_of,))
+
+            extras.execute_values(
+                cur,
+                """
+                INSERT INTO news_alert
+                  (as_of, global_rank, country_iso2, country_name, url, title, source,
+                   published_at, summary, image_url, topic, severity, importance, rationale)
+                VALUES %s
+                """,
+                rows,
+                page_size=100,
+            )
+
+        conn.commit()
+    except Exception:
+        conn.rollback()
+        raise
+    finally:
+        conn.close()

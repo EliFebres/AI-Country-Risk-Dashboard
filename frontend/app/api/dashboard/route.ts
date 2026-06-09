@@ -6,17 +6,18 @@
 // (24h / 6h / 12h), so SQL is still hit at most once per topic per TTL.
 // Risk is intentionally excluded — the map loads it via the lean /api/risk
 // route for a fast first paint.
-import { getIndicators, getArticles, getSummaries, getEconCalendar } from "@/app/lib/cached-fetchers";
+import { getIndicators, getArticles, getSummaries, getEconCalendar, getNewsAlerts } from "@/app/lib/cached-fetchers";
 import { jsonRoute } from "@/app/lib/api";
 
 export const runtime = "nodejs";
 
 export const GET = jsonRoute(async () => {
-  const [indicators, articles, summaries, econCalendar] = await Promise.all([
+  const [indicators, articles, summaries, econCalendar, newsAlerts] = await Promise.all([
     getIndicators(),
     getArticles(),
     getSummaries(),
     getEconCalendar(),
+    getNewsAlerts(),
   ]);
-  return { indicators, articles, summaries, econCalendar };
+  return { indicators, articles, summaries, econCalendar, newsAlerts };
 });

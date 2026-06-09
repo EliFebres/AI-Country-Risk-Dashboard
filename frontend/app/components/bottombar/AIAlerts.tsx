@@ -1,27 +1,34 @@
 'use client';
 
-import { useMemo } from 'react';
-import { ALERTS, SEV_LABEL, type Alert } from '../../lib/terminal-seed';
-import type { CountryRisk } from '../../lib/risk-client';
-import type { SelectOpts } from '../TerminalDashboard';
+import { useEffect, useState } from 'react';
+import { loadDashboard, type NewsAlert } from '../../lib/dashboard-client';
+import { daysAgoLabel } from '../../lib/format';
 
-type Props = {
-  rows: CountryRisk[] | null;
-  onSelectCountry: (dot: CountryRisk | null, opts?: SelectOpts) => void;
-};
+/**
+ * Bottom-bar pane: globally-ranked AI news alerts. Data comes from the shared
+ * /api/dashboard payload (fetched once per session via loadDashboard()); each row
+ * links out to its source article. Mirrors the EconCalendar load pattern.
+ */
+export default function AIAlerts() {
+  // null = still loading; [] = loaded but empty.
+  const [alerts, setAlerts] = useState<NewsAlert[] | null>(null);
 
-function impactNode(a: Alert) {
-  if (a.impact === 'up') return <span className="alert-impact up">RISK ▲</span>;
-  if (a.impact === 'down') return <span className="alert-impact down">RISK ▼</span>;
-  return <span className="alert-impact flat">MONITOR</span>;
-}
+  useEffect(() => {
+    let cancelled = false;
+    loadDashboard()
+      .then((data) => {
+        if (!cancelled) setAlerts(data.newsAlerts ?? []);
+      })
+      .catch(() => {
+        if (!cancelled) setAlerts([]);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
-/** Bottom-bar pane: AI-generated geopolitical alerts; clicking a row selects its country. */
-export default function AIAlerts({ rows, onSelectCountry }: Props) {
-  const criticalCount = useMemo(() => ALERTS.filter((a) => a.sev === 'critical').length, []);
-
-  const findCountry = (iso2: string): CountryRisk | undefined =>
-    rows?.find((c) => (c.iso2 || '').toUpperCase() === iso2.toUpperCase());
+  const rows = alerts ?? [];
+  const criticalCount = rows.filter((a) => a.severity === 'Critical').length;
 
   return (
     <div className="mini-table alerts-col">
@@ -33,38 +40,48 @@ export default function AIAlerts({ rows, onSelectCountry }: Props) {
         <span className="mh-sub">{criticalCount} CRITICAL</span>
       </div>
       <div className="mini-body">
-        {ALERTS.map((a, i) => {
-          const country = findCountry(a.iso2);
-          const select = () => country && onSelectCountry(country, { pan: true });
-          return (
-            <div
-              key={i}
-              className="alert-row"
-              tabIndex={country ? 0 : -1}
-              role={country ? 'button' : undefined}
-              onClick={select}
-              onKeyDown={(e) => {
-                if (country && (e.key === 'Enter' || e.key === ' ')) {
-                  e.preventDefault();
-                  select();
-                }
-              }}
-            >
-              <div className="alert-top">
-                <span className={`alert-sev ${a.sev}`}>{SEV_LABEL[a.sev]}</span>
-                <span className="alert-cat">{a.cat}</span>
-                <span className="alert-iso">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img className="alert-flag" src={`/flags/${a.iso2}.svg`} alt="" />
-                  {a.iso2}
-                </span>
-                {impactNode(a)}
-              </div>
-              <div className="alert-text">{a.text}</div>
-            </div>
-          );
-        })}
+        {alerts === null ? (
+          <div className="alert-empty">Loading…</div>
+        ) : rows.length === 0 ? (
+          <div className="alert-empty">No alerts</div>
+        ) : (
+          rows.map((a) => {
+            const when = daysAgoLabel(a.published_at);
+            const meta = [a.source, when].filter(Boolean).join(' · ');
+            return (
+              <a
+                key={`${a.global_rank}-${a.url}`}
+                className="alert-row"
+                href={a.url}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <div className="alert-top">
+                  <span className={`alert-sev ${a.severity.toLowerCase()}`}>{a.severity}</span>
+                  <span className="alert-cat">{a.topic}</span>
+                  <span className="alert-iso">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img className="alert-flag" src={`/flags/${a.country_iso2}.svg`} alt="" />
+                    {a.country_iso2}
+                  </span>
+                  {meta && <span className="alert-src">{meta}</span>}
+                </div>
+                <div className="alert-text">{a.title}</div>
+              </a>
+            );
+          })
+        )}
       </div>
+
+      <style jsx>{`
+        .alert-empty {
+          padding: 14px 12px;
+          font-size: 10.5px;
+          color: var(--amber-dim);
+          letter-spacing: 0.04em;
+          text-transform: uppercase;
+        }
+      `}</style>
     </div>
   );
 }

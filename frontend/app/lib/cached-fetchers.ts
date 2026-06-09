@@ -77,3 +77,10 @@ export const getEconCalendar = unstable_cache(
   ["econ-calendar-upcoming"],
   { revalidate: CACHE_TTL.ECON_CALENDAR, tags: ["econ-calendar"] }
 );
+
+/** Latest run's globally-ranked AI news alerts, ordered by global rank. */
+export const getNewsAlerts = unstable_cache(
+  async () => riskRepository.fetchLatestNewsAlerts(),
+  ["ai-alerts-latest"],
+  { revalidate: CACHE_TTL.AI_ALERTS, tags: ["ai-alerts"] }
+);

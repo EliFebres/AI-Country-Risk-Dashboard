@@ -163,13 +163,15 @@ export default function WorldRiskIndexRail({ rows, onSelectCountry, onMeasure }:
     return { byOffset, avg, delta, high, elev, low, total: rows.length, deteriorating, improving, series };
   }, [rows]);
 
-  const distRow = (label: string, count: number, color: string, total: number) => {
+  // Bars fill as a share of all sovereigns, so the three counts sum to 100%; the
+  // raw count is shown on the right. All bars use the trend line's amber.
+  const distRow = (label: string, count: number, total: number) => {
     const pct = total ? Math.round((count / total) * 100) : 0;
     return (
       <div className="bar-row">
         <span className="bar-label">{label}</span>
         <span className="bar-track">
-          <span className="bar-fill" style={{ width: `${pct}%`, background: color }} />
+          <span className="bar-fill" style={{ width: `${pct}%`, background: AMBER }} />
         </span>
         <span className="bar-val">{count}</span>
       </div>
@@ -231,9 +233,9 @@ export default function WorldRiskIndexRail({ rows, onSelectCountry, onMeasure }:
               <div className="rs-sec-title">
                 Risk Distribution<span className="sub">count</span>
               </div>
-              {distRow('High >0.70', model.high, '#ff2d55', model.total)}
-              {distRow('Elevated', model.elev, '#ffd60a', model.total)}
-              {distRow('Low <0.50', model.low, '#39ff14', model.total)}
+              {distRow('High >0.70', model.high, model.total)}
+              {distRow('Elevated', model.elev, model.total)}
+              {distRow('Low <0.50', model.low, model.total)}
             </div>
 
             <div className="rs-sec">

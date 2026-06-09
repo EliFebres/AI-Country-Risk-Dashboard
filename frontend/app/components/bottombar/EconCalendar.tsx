@@ -18,7 +18,7 @@ function dayLabel(d: Date): string {
 }
 
 /**
- * Bottom-bar pane: up to 12 upcoming economic-calendar releases (next 7 days),
+ * Bottom-bar pane: up to 20 upcoming economic-calendar releases (next 7 days),
  * ordered closest-first. Data comes from the global /api/dashboard payload,
  * fetched once per session and shared via loadDashboard() (no per-country refetch).
  */
