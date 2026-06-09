@@ -11,6 +11,7 @@ from typing import List, Dict
 from urllib.parse import urlencode, quote_plus, urlparse
 
 from backend.utils.news_fetching.url_resolver import resolve_google_news_url
+from backend.utils.news_fetching.source_filter import is_blocked_url
 
 
 # Quiet noisy warnings from trafilatura
@@ -186,6 +187,10 @@ def gnews_rss(
             publisher_link = resolve_google_news_url(raw_link)
         except Exception:
             publisher_link = raw_link
+
+        # Drop denylisted publishers up front — never fetched, scored, or stored.
+        if is_blocked_url(publisher_link) or is_blocked_url(raw_link):
+            continue
 
         items.append({
             "title": getattr(e, "title", "") or "",

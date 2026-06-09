@@ -29,6 +29,7 @@ from backend.utils.data_fetching import country_data_fetch
 from backend.utils.data_fetching import fmp_calendar_fetch
 from backend.utils.news_fetching.url_resolver import resolve_google_news_url
 from backend.utils.news_fetching.simple_scraper import get_article_assets
+from backend.utils.news_fetching.source_filter import is_blocked_url
 from backend.utils.news_fetching.advanced_scraper import scrape_one as crawlbase_scrape_one
 
 # --- Paths ------------------------------------------------------------------
@@ -331,6 +332,14 @@ def main() -> None:
                     link = it.get("link")
                     if isinstance(link, str) and "news.google.com" in link:
                         it["link"] = resolve_google_news_url(link, session=_sess)
+
+                # a2) Defense-in-depth: drop denylisted sources now that links are
+                #     resolved, in case a wrapper couldn't be resolved earlier.
+                before = len(items)
+                items = [it for it in items if not is_blocked_url(it.get("link"))]
+                removed = before - len(items)
+                if removed:
+                    print(f"[{iso2}] Blocked {removed} article(s) from denylisted sources.")
 
                 # b) Ensure summary/content and thumbnail (simple scraper, single GET)
                 for it in items:
