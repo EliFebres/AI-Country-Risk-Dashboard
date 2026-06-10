@@ -49,6 +49,26 @@ export type CountryIndicatorLatest = {
   values: Partial<Record<IndicatorTargetName, IndicatorValue>>;
 };
 
+/**
+ * Indicators (by `indicator.name`) offered as cross-country average TRENDS in
+ * the rail's metric dropdown. Sourced from annual `yearly_value`, averaged
+ * across countries per year.
+ */
+export const AVG_TREND_INDICATOR_NAMES = [
+  "Inflation (% y/y)",
+  "Rule of law (z-score)",
+  "GDP per-capita growth (% y/y)",
+  "Unemployment (% labour force)",
+  "Interest payments (% revenue)",
+  "Political corruption index (0–1, higher = more corrupt)",
+] as const;
+
+/** One year's cross-country average for an indicator. */
+export type IndicatorAvgPoint = { year: number; avg: number };
+
+/** Map of `indicator.name` → its average-per-year series (oldest→newest). */
+export type IndicatorAverageTrends = Record<string, IndicatorAvgPoint[]>;
+
 export type CountryArticles = {
   iso2: string;
   name: string;
@@ -336,6 +356,46 @@ export class RiskRepository {
           };
     }
     return Array.from(byIso2.values());
+  }
+
+  /**
+   * Cross-country AVERAGE per year for each selectable trend indicator.
+   *
+   * Averages `yearly_value.value` across all reporting countries per year, for
+   * the indicators in {@link AVG_TREND_INDICATOR_NAMES}. Years with thin
+   * coverage are dropped (`HAVING COUNT(*) >= 10`) so a partially-reported
+   * latest World Bank year doesn't produce a jumpy final point, and the window
+   * is trimmed to recent years (`yr >= 2010`). Returns one array per indicator
+   * name, ordered oldest→newest. Defensive: returns `{}` on query failure so a
+   * missing column/table never fails the whole /api/dashboard payload.
+   */
+  async fetchIndicatorAverageTrends(): Promise<IndicatorAverageTrends> {
+    try {
+      const pool = await this.pool();
+      const { rows } = await pool.query<{ name: string; yr: number; avg: number }>(
+        `
+      SELECT i.name, y.yr, AVG(y.value) AS avg
+        FROM yearly_value y
+        JOIN indicator i ON i.id = y.indicator_id
+       WHERE i.name = ANY($1::text[])
+         AND y.value IS NOT NULL
+         AND y.yr >= 2010
+    GROUP BY i.name, y.yr
+      HAVING COUNT(*) >= 10
+    ORDER BY i.name, y.yr;
+      `,
+        [AVG_TREND_INDICATOR_NAMES]
+      );
+
+      const out: IndicatorAverageTrends = {};
+      for (const r of rows) {
+        (out[r.name] ??= []).push({ year: Number(r.yr), avg: Number(r.avg) });
+      }
+      return out;
+    } catch (err) {
+      console.warn("fetchIndicatorAverageTrends failed; returning {}:", err);
+      return {};
+    }
   }
 
   /**

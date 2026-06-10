@@ -671,6 +671,76 @@ table.mini.tracker tbody td:last-child {
   letter-spacing: 0.12em;
 }
 
+/* Trend metric dropdown (replaces the static "Avg Risk · Trend" title). The
+   menu is absolutely positioned so opening it never changes the rail's measured
+   content height (which drives the bottom bar). */
+.metric-dd {
+  display: inline-flex;
+}
+.metric-dd-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 8px;
+  background: rgba(255, 180, 60, 0.08);
+  border: 1px solid var(--amber-border);
+  border-radius: 5px;
+  cursor: pointer;
+  color: var(--amber);
+  font: inherit;
+  font-size: 10px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  transition: background 120ms ease, border-color 120ms ease;
+}
+.metric-dd-btn:hover,
+.metric-dd-btn[aria-expanded='true'] {
+  background: rgba(255, 180, 60, 0.16);
+  border-color: var(--amber);
+}
+.metric-dd-caret {
+  font-size: 8px;
+  line-height: 1;
+  color: var(--amber-dim);
+  transition: transform 140ms ease;
+}
+.metric-dd-btn[aria-expanded='true'] .metric-dd-caret {
+  transform: rotate(180deg);
+}
+/* Portaled to <body> and fixed-positioned (top/left set inline from the button
+   rect) so it overlays every panel and never shifts layout. */
+.metric-dd-menu {
+  z-index: 4000;
+  margin: 0;
+  padding: 4px;
+  list-style: none;
+  min-width: 190px;
+  background: rgba(14, 14, 14, 0.97);
+  border: 1px solid var(--amber-border);
+  border-radius: 6px;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.6);
+  font-family: var(--term-font);
+}
+.metric-dd-item {
+  padding: 7px 10px;
+  border-radius: 4px;
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--amber-dim);
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background 120ms ease, color 120ms ease;
+}
+.metric-dd-item:hover {
+  background: rgba(255, 180, 60, 0.1);
+  color: var(--amber);
+}
+.metric-dd-item.sel {
+  color: var(--amber);
+  background: rgba(255, 180, 60, 0.08);
+}
+
 .rs-hero {
   display: flex;
   align-items: baseline;

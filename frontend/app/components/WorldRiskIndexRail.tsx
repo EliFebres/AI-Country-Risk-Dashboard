@@ -1,9 +1,11 @@
 'use client';
 
-import { useEffect, useMemo, useRef } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import type { CountryRisk } from '../lib/risk-client';
 import type { SelectOpts } from './TerminalDashboard';
 import { colorForRisk } from '../lib/risk';
+import { loadDashboard, getIndicatorAverages, type IndicatorAverageTrends } from '../lib/dashboard-client';
 import RiskTrendChart from './RiskTrendChart';
 
 type Props = {
@@ -15,6 +17,43 @@ type Props = {
 };
 
 const AMBER = '#ffb43b';
+
+/**
+ * Metrics offered by the trend dropdown. `'risk'` is the global average risk
+ * series computed client-side from `rows`; the rest are cross-country
+ * average-per-year trends pulled from the dashboard payload
+ * (`indicatorAverages`, keyed by `indicatorName`). `domain` fixes the y-range
+ * (risk only); indicators auto-scale to their own values.
+ */
+type Metric = {
+  key: string;
+  label: string;          // dropdown label, e.g. "Avg Inflation"
+  kind: 'risk' | 'indicator';
+  indicatorName?: string; // key into IndicatorAverageTrends (kind 'indicator')
+  unit?: string;          // tooltip value suffix
+  decimals: number;       // tooltip decimals
+  domain?: [number, number];
+};
+
+const METRICS: Metric[] = [
+  { key: 'risk',         label: 'Avg Risk',                kind: 'risk',      decimals: 2, domain: [0, 1] },
+  { key: 'inflation',    label: 'Avg Inflation',           kind: 'indicator', indicatorName: 'Inflation (% y/y)',                                    unit: '%', decimals: 1 },
+  { key: 'rule_of_law',  label: 'Avg Rule of Law',         kind: 'indicator', indicatorName: 'Rule of law (z-score)',                                           decimals: 2 },
+  { key: 'gdp',          label: 'Avg GDP Growth',          kind: 'indicator', indicatorName: 'GDP per-capita growth (% y/y)',                        unit: '%', decimals: 1 },
+  { key: 'unemployment', label: 'Avg Unemployment',        kind: 'indicator', indicatorName: 'Unemployment (% labour force)',                        unit: '%', decimals: 1 },
+  { key: 'interest',     label: 'Avg Interest Burden',     kind: 'indicator', indicatorName: 'Interest payments (% revenue)',                        unit: '%', decimals: 1 },
+  { key: 'corruption',   label: 'Avg Political Corruption', kind: 'indicator', indicatorName: 'Political corruption index (0–1, higher = more corrupt)',         decimals: 2 },
+];
+
+/** Padded [min,max] domain for an indicator series (falls back to [0,1] empty). */
+function autoDomain(vals: number[]): [number, number] {
+  if (!vals.length) return [0, 1];
+  let lo = Math.min(...vals);
+  let hi = Math.max(...vals);
+  if (lo === hi) { lo -= 1; hi += 1; }
+  const pad = (hi - lo) * 0.12;
+  return [lo - pad, hi + pad];
+}
 
 /** Immediate-predecessor delta for a country (current − previous reading). */
 function computeDelta(c: CountryRisk): number {
@@ -163,6 +202,86 @@ export default function WorldRiskIndexRail({ rows, onSelectCountry, onMeasure }:
     return { byOffset, avg, delta, high, elev, low, total: rows.length, deteriorating, improving, series };
   }, [rows]);
 
+  // --- Trend metric dropdown -------------------------------------------------
+  // Indicator average-trends come from the shared dashboard payload (loaded once
+  // per session); avg-risk stays client-computed from `rows`.
+  const [selectedKey, setSelectedKey] = useState<string>('risk');
+  const [menuOpen, setMenuOpen] = useState(false);
+  // Fixed-viewport coords for the portaled menu, captured from the button rect
+  // when it opens (so the menu floats above everything without shifting layout).
+  const [menuPos, setMenuPos] = useState<{ top: number; left: number; minWidth: number } | null>(null);
+  const [averages, setAverages] = useState<IndicatorAverageTrends | null>(null);
+  const btnRef = useRef<HTMLButtonElement>(null);
+  const menuRef = useRef<HTMLUListElement>(null);
+
+  const toggleMenu = () => {
+    if (menuOpen) { setMenuOpen(false); return; }
+    const r = btnRef.current?.getBoundingClientRect();
+    if (r) setMenuPos({ top: r.bottom + 6, left: r.left, minWidth: r.width });
+    setMenuOpen(true);
+  };
+
+  useEffect(() => {
+    let cancelled = false;
+    loadDashboard()
+      .then((data) => { if (!cancelled) setAverages(getIndicatorAverages(data)); })
+      .catch(() => { if (!cancelled) setAverages({}); });
+    return () => { cancelled = true; };
+  }, []);
+
+  // Dismiss on outside click / Escape; also on scroll or resize, since the
+  // fixed-positioned menu can't track the button once the page moves.
+  useEffect(() => {
+    if (!menuOpen) return;
+    const onDown = (e: MouseEvent) => {
+      const t = e.target as Node;
+      if (btnRef.current?.contains(t) || menuRef.current?.contains(t)) return;
+      setMenuOpen(false);
+    };
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setMenuOpen(false); };
+    const close = () => setMenuOpen(false);
+    document.addEventListener('mousedown', onDown);
+    document.addEventListener('keydown', onKey);
+    window.addEventListener('scroll', close, true);
+    window.addEventListener('resize', close);
+    return () => {
+      document.removeEventListener('mousedown', onDown);
+      document.removeEventListener('keydown', onKey);
+      window.removeEventListener('scroll', close, true);
+      window.removeEventListener('resize', close);
+    };
+  }, [menuOpen]);
+
+  // Resolve the selected metric's chart inputs (series, domain, formatting).
+  const trend = useMemo(() => {
+    const metric = METRICS.find((m) => m.key === selectedKey) ?? METRICS[0];
+    const tipLabel = metric.label.replace(/^Avg\s+/, '');
+    const fmt = (n: number) => `${n.toFixed(metric.decimals)}${metric.unit ?? ''}`;
+
+    if (metric.kind === 'risk') {
+      const series = model?.series ?? [];
+      return {
+        metric, series,
+        domain: metric.domain ?? ([0, 1] as [number, number]),
+        clampValues: true,
+        formatValue: fmt, valueLabel: tipLabel,
+        noun: 'periods', count: series.length,
+        ready: series.length >= 2,
+      };
+    }
+
+    const pts = (averages && metric.indicatorName ? averages[metric.indicatorName] : undefined) ?? [];
+    const series = pts.map((p) => p.avg);
+    return {
+      metric, series,
+      domain: autoDomain(series),
+      clampValues: false,
+      formatValue: fmt, valueLabel: tipLabel,
+      noun: 'years', count: series.length,
+      ready: series.length >= 2,
+    };
+  }, [selectedKey, model, averages]);
+
   // Bars fill as a share of all sovereigns, so the three counts sum to 100%; the
   // raw count is shown on the right. All bars use the trend line's amber.
   const distRow = (label: string, count: number, total: number) => {
@@ -219,15 +338,67 @@ export default function WorldRiskIndexRail({ rows, onSelectCountry, onMeasure }:
 
             <div className="rs-sec">
               <div className="rs-sec-title">
-                Avg Risk · Trend<span className="sub">{model.byOffset.length} periods</span>
+                <div className="metric-dd">
+                  <button
+                    ref={btnRef}
+                    type="button"
+                    className="metric-dd-btn"
+                    aria-haspopup="listbox"
+                    aria-expanded={menuOpen}
+                    onClick={toggleMenu}
+                  >
+                    <span>{trend.metric.label}</span>
+                    <span className="metric-dd-caret" aria-hidden="true">▾</span>
+                  </button>
+                  {menuOpen && menuPos &&
+                    createPortal(
+                      <ul
+                        ref={menuRef}
+                        className="metric-dd-menu"
+                        role="listbox"
+                        style={{
+                          position: 'fixed',
+                          top: menuPos.top,
+                          left: menuPos.left,
+                          minWidth: Math.max(menuPos.minWidth, 190),
+                        }}
+                      >
+                        {METRICS.map((m) => (
+                          <li
+                            key={m.key}
+                            role="option"
+                            aria-selected={m.key === selectedKey}
+                            className={`metric-dd-item ${m.key === selectedKey ? 'sel' : ''}`}
+                            onClick={() => { setSelectedKey(m.key); setMenuOpen(false); }}
+                          >
+                            {m.label}
+                          </li>
+                        ))}
+                      </ul>,
+                      document.body
+                    )}
+                </div>
+                <span className="sub">{trend.ready ? `${trend.count} ${trend.noun}` : ''}</span>
               </div>
-              <RiskTrendChart
-                series={model.series}
-                color={AMBER}
-                height={130}
-                gradientId="railTrendGrad"
-                baseline="average"
-              />
+              {trend.ready ? (
+                <RiskTrendChart
+                  series={trend.series}
+                  color={AMBER}
+                  height={130}
+                  gradientId="railTrendGrad"
+                  baseline="average"
+                  domain={trend.domain}
+                  clampValues={trend.clampValues}
+                  formatValue={trend.formatValue}
+                  valueLabel={trend.valueLabel}
+                  tooltip
+                  activeDot
+                />
+              ) : (
+                <div className="rs-hero-sub" style={{ marginTop: 0 }}>
+                  {averages === null && trend.metric.kind === 'indicator' ? 'Loading…' : 'No data'}
+                </div>
+              )}
             </div>
 
             <div className="rs-sec">

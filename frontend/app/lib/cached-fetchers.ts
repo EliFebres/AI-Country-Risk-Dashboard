@@ -57,6 +57,13 @@ export const getIndicators = unstable_cache(
   { revalidate: CACHE_TTL.INDICATORS, tags: ["indicators"] }
 );
 
+/** Cross-country average-per-year trend for each selectable rail indicator. */
+export const getIndicatorAverages = unstable_cache(
+  async () => riskRepository.fetchIndicatorAverageTrends(),
+  ["indicator-averages"],
+  { revalidate: CACHE_TTL.INDICATORS, tags: ["indicators"] }
+);
+
 /** Top-3 articles per country's latest snapshot. */
 export const getArticles = unstable_cache(
   async () => riskRepository.fetchLatestArticlesForLatestSnapshots(),

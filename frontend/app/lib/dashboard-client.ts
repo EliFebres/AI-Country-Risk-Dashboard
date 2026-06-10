@@ -61,8 +61,15 @@ export type NewsAlert = {
   image_url: string | null;     // thumbnail URL
 };
 
+/** One year's cross-country average for an indicator (oldest→newest in a series). */
+export type IndicatorAvgPoint = { year: number; avg: number };
+
+/** Map of `indicator.name` → its average-per-year series, for the rail's trend dropdown. */
+export type IndicatorAverageTrends = Record<string, IndicatorAvgPoint[]>;
+
 export type DashboardData = {
   indicators: CountryIndicatorLatest[];
+  indicatorAverages: IndicatorAverageTrends;
   articles: CountryArticles[];
   summaries: SummaryEntry[];
   econCalendar: EconCalendarEvent[];
@@ -136,6 +143,11 @@ export function getArticlesFor(
   if (!iso2) return undefined;
   const isoU = iso2.toUpperCase();
   return data.articles.find((c) => (c.iso2 || "").toUpperCase() === isoU);
+}
+
+/** The cross-country indicator average-per-year trends (keyed by `indicator.name`). */
+export function getIndicatorAverages(data: DashboardData): IndicatorAverageTrends {
+  return data.indicatorAverages ?? {};
 }
 
 /** Match a country's AI summary by ISO2. */

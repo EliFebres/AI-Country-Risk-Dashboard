@@ -37,6 +37,20 @@ type Props = {
    *    fill down to it, segments below fill up to it.
    */
   baseline?: 'zero' | 'average';
+  /**
+   * Y-axis value domain. Default `[0, 1]` (risk). Pass a metric's own range for
+   * indicators whose scale isn't 0..1 (z-scores, percentages, indices).
+   */
+  domain?: [number, number];
+  /**
+   * Clamp each series value into the `[0, 1]` range before plotting. Default
+   * `true` (risk). Set `false` for metrics with a non-0..1 `domain`.
+   */
+  clampValues?: boolean;
+  /** Tooltip value formatter. Default 2-decimal fixed. */
+  formatValue?: (n: number) => string;
+  /** Tooltip series label. Default `'Risk'`. */
+  valueLabel?: string;
 };
 
 /**
@@ -55,6 +69,10 @@ export default function RiskTrendChart({
   tooltip = false,
   activeDot = false,
   baseline = 'zero',
+  domain = [0, 1],
+  clampValues = true,
+  formatValue,
+  valueLabel = 'Risk',
 }: Props) {
   const wrapRef = useRef<HTMLDivElement>(null);
   const [width, setWidth] = useState(0);
@@ -67,8 +85,8 @@ export default function RiskTrendChart({
   }, []);
 
   const data = useMemo(
-    () => series.map((v, i) => ({ idx: i, v: clamp01(v) })),
-    [series]
+    () => series.map((v, i) => ({ idx: i, v: clampValues ? clamp01(v) : v })),
+    [series, clampValues]
   );
 
   const useAvg = baseline === 'average';
@@ -105,7 +123,7 @@ export default function RiskTrendChart({
 
           <CartesianGrid stroke="rgba(255,255,255,0.12)" vertical={false} strokeDasharray="3 5" />
           <XAxis dataKey="idx" hide />
-          <YAxis domain={[0, 1]} hide />
+          <YAxis domain={domain} hide />
 
           {/* Average line the fill is measured against. */}
           {useAvg && (
@@ -122,7 +140,10 @@ export default function RiskTrendChart({
           {tooltip && (
             <Tooltip
               cursor={{ stroke: 'rgba(255,255,255,0.25)', strokeWidth: 1 }}
-              formatter={(val) => [(Number(val)).toFixed(2), 'Risk']}
+              formatter={(val) => [
+                formatValue ? formatValue(Number(val)) : Number(val).toFixed(2),
+                valueLabel,
+              ]}
               labelFormatter={() => ''}
               contentStyle={{
                 background: 'rgba(14,14,14,0.92)',
