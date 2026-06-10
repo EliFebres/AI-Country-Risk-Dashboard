@@ -76,6 +76,19 @@ export type NewsAlert = {
   image_url: string | null;     // thumbnail URL
 };
 
+/** One asset row for the bottom-bar "Prices" pane (maintained by the prices daemon). */
+export type MarketPrice = {
+  symbol: string;       // stable internal id (DB primary key)
+  label: string;        // display label
+  asset_class: "stocks" | "bonds" | "crypto" | "commodities";
+  is_yield: boolean;    // bonds: chg/q/ytd are POINT diffs, not % moves
+  px: number | null;    // last price / yield
+  chg: number | null;   // 1D  (% for prices, points for yields)
+  q: number | null;     // 1Q
+  ytd: number | null;   // YTD
+  sort_order: number;   // curated display order
+};
+
 // ----------------------------- DB (Neon / pg) -----------------------------
 
 declare global {
@@ -436,6 +449,52 @@ export class RiskRepository {
       }));
     } catch (err) {
       console.warn("fetchLatestNewsAlerts failed; returning []:", err);
+      return [];
+    }
+  }
+
+  /**
+   * Latest market-price snapshot for the bottom-bar "Prices" pane, in curated
+   * display order (`sort_order`).
+   *
+   * Self-contained and defensive: the `market_price` table is maintained by the
+   * separate prices daemon and may not exist in every environment yet, so a query
+   * failure (missing table, etc.) is swallowed and returns `[]` rather than
+   * failing the /api/prices route.
+   */
+  async fetchMarketPrices(): Promise<MarketPrice[]> {
+    try {
+      const pool = await this.pool();
+      const { rows } = await pool.query<{
+        symbol: string;
+        label: string;
+        asset_class: "stocks" | "bonds" | "crypto" | "commodities";
+        is_yield: boolean;
+        px: number | null;
+        chg: number | null;
+        q: number | null;
+        ytd: number | null;
+        sort_order: number;
+      }>(`
+        SELECT symbol, label, asset_class, is_yield, px, chg, q, ytd, sort_order
+          FROM market_price
+      ORDER BY sort_order ASC;
+      `);
+
+      const num = (v: number | null) => (v != null ? Number(v) : null);
+      return rows.map((r) => ({
+        symbol: r.symbol,
+        label: r.label,
+        asset_class: r.asset_class,
+        is_yield: Boolean(r.is_yield),
+        px: num(r.px),
+        chg: num(r.chg),
+        q: num(r.q),
+        ytd: num(r.ytd),
+        sort_order: Number(r.sort_order),
+      }));
+    } catch (err) {
+      console.warn("fetchMarketPrices failed; returning []:", err);
       return [];
     }
   }

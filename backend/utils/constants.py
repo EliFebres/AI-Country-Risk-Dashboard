@@ -15,6 +15,25 @@ WB_ENDPOINT: str = ("https://api.worldbank.org/v2/country/{code}/indicator/{ind}
 # the legacy slug instead, swap to "https://financialmodelingprep.com/api/v3/economic_calendar".
 FMP_ECON_CALENDAR_ENDPOINT: str = "https://financialmodelingprep.com/stable/economic-calendar"
 
+# FMP batch quote (Prices feed). The stable `batch-quote` endpoint accepts a
+# comma-separated `symbols` param of MIXED types (indices like ^GSPC, ETFs,
+# crypto *USD pairs, commodity futures) and returns one array, so a single call
+# fetches every non-yield asset per tick. (The legacy v3 `quote` path is 403 on
+# this plan; stable is the one to use — same as the economic-calendar feed.)
+FMP_QUOTE_ENDPOINT: str = "https://financialmodelingprep.com/stable/batch-quote"
+
+# FMP daily historical EOD closes (Prices feed). Used at most once/day to read
+# the quarter-start and year-start reference closes for the 1Q/YTD calcs. Queried
+# with `symbol` + from/to date params; returns a list of {date, close, ...}.
+FMP_HISTORICAL_ENDPOINT: str = "https://financialmodelingprep.com/stable/historical-price-eod/full"
+
+# FMP US Treasury par yields (Prices feed — the Bonds rows). One from/to call
+# returns a daily history with all tenors as columns (year2/year10/year30/…),
+# from which px and the 1D/1Q/YTD POINT changes are derived. Refreshed once/day.
+# (Foreign sovereign yields are not offered by FMP and have no clean free daily
+# source, so the Bonds pane tracks US tenors only.)
+FMP_TREASURY_ENDPOINT: str = "https://financialmodelingprep.com/stable/treasury-rates"
+
 # ---------------------------------------------------------------------------
 # Economic / governance indicators (World Bank series)
 # ---------------------------------------------------------------------------
@@ -101,6 +120,64 @@ FMP_CALENDAR_COUNTRIES: dict[str, str] = {
     "SA": "Saudi Arabia",
     "ZA": "South Africa",
 }
+
+# ---------------------------------------------------------------------------
+# Prices feed (bottom-bar "Prices" pane)
+# ---------------------------------------------------------------------------
+# A standalone long-running daemon (backend/prices_daemon.py) polls these assets
+# on PRICES_POLL_SECONDS and upserts them to the `market_price` table. Live
+# prices (stocks/crypto/commodities) come from FMP's batch-quote endpoint; US
+# Treasury yields come from FMP's treasury-rates endpoint. To minimize API hits,
+# FMP quote classes are fetched only while their market is open (see
+# backend/utils/market_hours.py); the yields and the 1Q/YTD reference closes
+# refresh at most once per (ET) day.
+
+# How often the daemon polls live FMP quotes (seconds).
+PRICES_POLL_SECONDS: int = 300
+
+# Market-hours windows in US Eastern decimal hours (DST handled in market_hours).
+# NYSE regular session (stocks/ETFs).
+NYSE_OPEN_ET: float = 9.5    # 09:30 ET
+NYSE_CLOSE_ET: float = 16.0  # 16:00 ET
+# CME Globex daily maintenance break (commodities are otherwise ~24h on weekdays).
+GLOBEX_BREAK_START_ET: float = 17.0  # 17:00 ET
+GLOBEX_BREAK_END_ET: float = 18.0    # 18:00 ET
+
+# Ordered asset universe for the Prices pane. `sort_order` is the list index.
+#   symbol        — internal stable id / DB primary key
+#   label         — display label (MSCI rows are relabeled to their tracking ETF)
+#   asset_class   — stocks | bonds | crypto | commodities
+#   source        — 'fmp' (batch quote) | 'fmp_treasury' (treasury-rates yields)
+#   source_symbol — FMP quote symbol, or the treasury-rates tenor field for bonds
+#   is_yield      — bonds: changes are POINT differences shown as %, not % moves
+# NOTE: the 3 MSCI indices are MSCI-licensed and not on FMP, so they are tracked
+# via liquid ETF proxies and relabeled to the ETF ticker (ACWI/ACWX/EEM). Swap a
+# source_symbol here if the plan returns a different symbol for any asset.
+PRICE_ASSETS: list[dict] = [
+    # --- Stocks (indices + relabeled MSCI ETF proxies) ---
+    {"symbol": "SP500",   "label": "S&P 500",      "asset_class": "stocks",      "source": "fmp",          "source_symbol": "^GSPC",  "is_yield": False},
+    {"symbol": "RUS3000", "label": "Russell 3000", "asset_class": "stocks",      "source": "fmp",          "source_symbol": "^RUA",   "is_yield": False},
+    {"symbol": "ACWI",    "label": "ACWI",         "asset_class": "stocks",      "source": "fmp",          "source_symbol": "ACWI",   "is_yield": False},
+    {"symbol": "ACWX",    "label": "ACWX",         "asset_class": "stocks",      "source": "fmp",          "source_symbol": "ACWX",   "is_yield": False},
+    {"symbol": "EEM",     "label": "EEM",          "asset_class": "stocks",      "source": "fmp",          "source_symbol": "EEM",    "is_yield": False},
+    # --- Bonds (US Treasury par yields, via FMP treasury-rates tenor fields) ---
+    {"symbol": "US2Y",    "label": "US 2Y",        "asset_class": "bonds",       "source": "fmp_treasury", "source_symbol": "year2",  "is_yield": True},
+    {"symbol": "US10Y",   "label": "US 10Y",       "asset_class": "bonds",       "source": "fmp_treasury", "source_symbol": "year10", "is_yield": True},
+    {"symbol": "US30Y",   "label": "US 30Y",       "asset_class": "bonds",       "source": "fmp_treasury", "source_symbol": "year30", "is_yield": True},
+    # --- Crypto (24/7) ---
+    {"symbol": "BTC",     "label": "BTC",          "asset_class": "crypto",      "source": "fmp",          "source_symbol": "BTCUSD",  "is_yield": False},
+    {"symbol": "ETH",     "label": "ETH",          "asset_class": "crypto",      "source": "fmp",          "source_symbol": "ETHUSD",  "is_yield": False},
+    {"symbol": "SOL",     "label": "SOL",          "asset_class": "crypto",      "source": "fmp",          "source_symbol": "SOLUSD",  "is_yield": False},
+    {"symbol": "XRP",     "label": "XRP",          "asset_class": "crypto",      "source": "fmp",          "source_symbol": "XRPUSD",  "is_yield": False},
+    # --- Commodities ---
+    {"symbol": "GOLD",    "label": "Gold",         "asset_class": "commodities", "source": "fmp",          "source_symbol": "GCUSD",   "is_yield": False},
+    {"symbol": "SILVER",  "label": "Silver",       "asset_class": "commodities", "source": "fmp",          "source_symbol": "SIUSD",   "is_yield": False},
+    {"symbol": "WTI",     "label": "WTI Crude Oil","asset_class": "commodities", "source": "fmp",          "source_symbol": "CLUSD",   "is_yield": False},
+    {"symbol": "BRENT",   "label": "Brent Crude Oil","asset_class": "commodities","source": "fmp",  "source_symbol": "BZUSD",   "is_yield": False},
+    {"symbol": "NATGAS",  "label": "Natural Gas",  "asset_class": "commodities", "source": "fmp",          "source_symbol": "NGUSD",   "is_yield": False},
+    {"symbol": "WHEAT",   "label": "Wheat",        "asset_class": "commodities", "source": "fmp",          "source_symbol": "KEUSX",   "is_yield": False},
+    {"symbol": "CORN",    "label": "Corn",         "asset_class": "commodities", "source": "fmp",          "source_symbol": "ZCUSX",   "is_yield": False},
+]
 
 # ---------------------------------------------------------------------------
 # Coverage universe (50 countries: 25 Developed + 25 Emerging)

@@ -2,8 +2,6 @@
 //
 // Seed data for the terminal bottom bar.
 //
-// • ASSETS  — PLACEHOLDER. No live price feed yet; the 1D value is simulated with a
-//             random walk client-side. Swap for a real market-data source later.
 // • EXCHANGES — production data: open/closed status is computed live from the UTC
 //               clock against each exchange's real trading window.
 // • CHANNELS  — production data: YouTube channel IDs for the Live TV embeds.
@@ -16,65 +14,9 @@
 // Now backed by the live economic-calendar feed — see app/components/bottombar/
 // EconCalendar.tsx (reads the /api/dashboard `econCalendar` slice). No seed here.
 
-/* ------------------------------- Prices (PLACEHOLDER) ------------------------------- */
-export type Asset = {
-  sym: string;
-  px: number;
-  chg: number; // 1D
-  q: number; // 1Q
-  ytd: number;
-  y?: 1; // yield instrument (bonds): show '%' and point changes
-  open?: number; // seeded opening price for live change calc
-};
-
-export type AssetCategoryKey = 'stocks' | 'bonds' | 'crypto' | 'commodities';
-
-export const ASSETS: Record<AssetCategoryKey, Asset[]> = {
-  stocks: [
-    { sym: 'S&P 500', px: 5487.2, chg: 0.42, q: 4.8, ytd: 11.2 },
-    { sym: 'Nasdaq', px: 17862.3, chg: 0.71, q: 6.1, ytd: 14.6 },
-    { sym: 'Dow Jones', px: 39145.0, chg: -0.18, q: 2.3, ytd: 5.4 },
-    { sym: 'FTSE 100', px: 8214.5, chg: 0.23, q: 3.1, ytd: 6.8 },
-    { sym: 'DAX', px: 18412.0, chg: 0.55, q: 5.0, ytd: 9.7 },
-    { sym: 'Nikkei 225', px: 38703.5, chg: -0.34, q: 7.2, ytd: 15.3 },
-    { sym: 'Hang Seng', px: 18021.2, chg: 1.12, q: -2.1, ytd: -4.5 },
-    { sym: 'STOXX 50', px: 4985.7, chg: 0.31, q: 4.2, ytd: 8.9 },
-  ],
-  bonds: [
-    { sym: 'US 10Y', px: 4.28, chg: -0.03, q: 0.18, ytd: 0.41, y: 1 },
-    { sym: 'US 2Y', px: 4.71, chg: 0.02, q: -0.05, ytd: 0.22, y: 1 },
-    { sym: 'US 30Y', px: 4.45, chg: -0.02, q: 0.21, ytd: 0.38, y: 1 },
-    { sym: 'Bund 10Y', px: 2.51, chg: 0.01, q: 0.12, ytd: 0.29, y: 1 },
-    { sym: 'Gilt 10Y', px: 4.12, chg: -0.04, q: 0.15, ytd: 0.33, y: 1 },
-    { sym: 'JGB 10Y', px: 1.07, chg: 0.0, q: 0.09, ytd: 0.34, y: 1 },
-    { sym: 'OAT 10Y', px: 3.18, chg: 0.02, q: 0.14, ytd: 0.31, y: 1 },
-  ],
-  crypto: [
-    { sym: 'BTC', px: 67432, chg: 2.14, q: 12.5, ytd: 48.2 },
-    { sym: 'ETH', px: 3287.5, chg: 1.42, q: 8.1, ytd: 31.7 },
-    { sym: 'SOL', px: 172.3, chg: 3.55, q: 22.3, ytd: 86.4 },
-    { sym: 'XRP', px: 0.532, chg: -0.88, q: -5.2, ytd: -12.1 },
-    { sym: 'BNB', px: 603.1, chg: 0.66, q: 9.4, ytd: 24.8 },
-    { sym: 'DOGE', px: 0.1487, chg: -1.21, q: -8.7, ytd: 19.5 },
-    { sym: 'ADA', px: 0.451, chg: 0.34, q: -3.1, ytd: -7.8 },
-  ],
-  commodities: [
-    { sym: 'Gold', px: 2358.4, chg: 0.38, q: 6.4, ytd: 14.1 },
-    { sym: 'Silver', px: 30.72, chg: 0.91, q: 8.9, ytd: 19.6 },
-    { sym: 'WTI Crude', px: 81.45, chg: -1.12, q: -4.5, ytd: 3.2 },
-    { sym: 'Brent', px: 85.3, chg: -0.95, q: -3.8, ytd: 2.7 },
-    { sym: 'Nat Gas', px: 2.71, chg: 2.4, q: -11.2, ytd: -18.4 },
-    { sym: 'Copper', px: 4.62, chg: 0.54, q: 7.1, ytd: 12.8 },
-    { sym: 'Wheat', px: 621.5, chg: -0.42, q: -6.3, ytd: -9.1 },
-  ],
-};
-
-export const TRK_CATS: [AssetCategoryKey, string][] = [
-  ['stocks', 'Stocks'],
-  ['bonds', 'Bonds'],
-  ['crypto', 'Crypto'],
-  ['commodities', 'Commodities'],
-];
+/* ------------------------------- Prices ------------------------------- */
+// Now backed by the live market_price feed — see app/components/bottombar/
+// Prices.tsx (polls the /api/prices route). No seed here.
 
 /* ------------------------------- World Markets (live logic) ------------------------------- */
 // Trading windows in UTC decimal hours (DST approximated for the current season);

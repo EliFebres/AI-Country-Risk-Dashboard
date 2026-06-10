@@ -84,3 +84,10 @@ export const getNewsAlerts = unstable_cache(
   ["ai-alerts-latest"],
   { revalidate: CACHE_TTL.AI_ALERTS, tags: ["ai-alerts"] }
 );
+
+/** Latest market-price snapshot for the Prices pane, in curated display order. */
+export const getMarketPrices = unstable_cache(
+  async () => riskRepository.fetchMarketPrices(),
+  ["market-prices"],
+  { revalidate: CACHE_TTL.PRICES, tags: ["prices"] }
+);

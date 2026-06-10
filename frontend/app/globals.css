@@ -197,15 +197,17 @@ body {
 /* World Markets is pinned to the right rail's width; Prices (tracker) holds a
    fixed share and AI Alerts flexes to absorb the remaining space. */
 .mini-table.markets-col {
-  /* −1px so the pane matches the rail's content width: the rail's --right-w
-     box includes a 1px border-left, which this pane has no equivalent of. */
-  flex: 0 0 calc(var(--right-w) - 1px);
+  /* Shrink-wrap to exactly the three-column table width (Exchange / UTC /
+     Status) — no wider. The table below is sized to its content, and the pane
+     wraps to it. */
+  flex: 0 0 auto;
+  width: max-content;
 }
 .mini-table.alerts-col {
   flex: 1 1 0;
 }
 .mini-table.tracker-col {
-  flex: 0 0 22.5%;
+  flex: 0 0 25%;
 }
 .mini-table.calendar-col {
   flex: 0 0 22%;
@@ -312,6 +314,10 @@ table.mini .mname .name {
 /* World markets */
 table.mini.markets {
   height: 100%;
+  /* Size to the three columns' content rather than stretching to the pane, so
+     the pane (width: max-content) can shrink-wrap around it. */
+  width: max-content;
+  table-layout: auto;
 }
 table.mini.markets td {
   padding: 4px 6px;
@@ -438,13 +444,13 @@ table.mini.tracker .trk-sym {
   text-overflow: ellipsis;
 }
 table.mini.tracker .trk-px {
-  width: 56px;
+  width: 64px;
   text-align: right;
   color: #fff;
   font-variant-numeric: tabular-nums;
 }
 table.mini.tracker .trk-c {
-  width: 50px;
+  width: 56px;
   text-align: right;
   font-weight: 700;
   font-variant-numeric: tabular-nums;
@@ -459,7 +465,7 @@ table.mini.tracker .trk-c {
 /* Extra right-edge padding so the last (YTD) value clears the pane border;
    widen that column so the value still fits. */
 table.mini.tracker thead th:last-child {
-  width: 68px;
+  width: 74px;
 }
 table.mini.tracker thead th:last-child,
 table.mini.tracker tbody td:last-child {

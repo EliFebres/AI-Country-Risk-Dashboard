@@ -31,6 +31,8 @@ export const CACHE_TTL = {
   // fresh run within hours while keeping Neon hits cheap (matches RISK).
   AI_ALERTS: 12 * HOUR,     // daily generation
 
-  // ---- Placeholders for future feeds (seed data today, no backend yet) ----
-  PRICES: 5 * 60,           // intra-day / daily market data
+  // Live market snapshot written by the prices daemon every ~5 min; the Prices
+  // pane polls /api/prices on the same cadence, so a 5-min TTL serves cached
+  // rows between writes and hits Neon at most once per window.
+  PRICES: 5 * 60,
 } as const;
