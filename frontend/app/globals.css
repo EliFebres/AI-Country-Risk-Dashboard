@@ -560,7 +560,7 @@ table.mini.tracker tbody td:last-child {
   flex: 0 0 auto;
 }
 .alert-text {
-  font-size: 11.5px;
+  font-size: 12px;
   line-height: 1.3;
   color: #e7e3d6;
   display: -webkit-box;
