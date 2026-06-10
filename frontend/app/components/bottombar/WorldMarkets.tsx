@@ -54,7 +54,7 @@ export default function WorldMarkets() {
           <tbody>
             {statuses.map(({ ex, open }) => (
               <tr key={ex.code}>
-                <td className="mname">
+                <td className="mname" title={`${ex.name} · ${ex.country}`}>
                   <div className="mname-inner">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img className="mkt-flag" src={`/flags/${ex.iso2}.svg`} alt="" />
