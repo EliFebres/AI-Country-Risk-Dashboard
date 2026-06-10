@@ -51,7 +51,7 @@ function autoDomain(vals: number[]): [number, number] {
   let lo = Math.min(...vals);
   let hi = Math.max(...vals);
   if (lo === hi) { lo -= 1; hi += 1; }
-  const pad = (hi - lo) * 0.12;
+  const pad = (hi - lo) * 0.3;
   return [lo - pad, hi + pad];
 }
 
@@ -260,9 +260,12 @@ export default function WorldRiskIndexRail({ rows, onSelectCountry, onMeasure }:
 
     if (metric.kind === 'risk') {
       const series = model?.series ?? [];
+      // Fit the axis to the series (kept within risk's 0..1 bounds) rather than
+      // the full [0,1] range, so the trend's variation isn't squashed flat.
+      const [lo, hi] = autoDomain(series);
       return {
         metric, series,
-        domain: metric.domain ?? ([0, 1] as [number, number]),
+        domain: [Math.max(0, lo), Math.min(1, hi)] as [number, number],
         clampValues: true,
         formatValue: fmt, valueLabel: tipLabel,
         noun: 'periods', count: series.length,
