@@ -14,7 +14,7 @@ type Props = {
 // Bounds for the auto-fit summary text. The text grows toward MAX when short
 // and shrinks toward MIN when long, so it always fills its flexed card.
 const MIN_FONT = 10.5;
-const MAX_FONT = 20;
+const MAX_FONT = 30;
 
 /**
  * Scales the summary paragraph so it fills `boxRef`'s height without

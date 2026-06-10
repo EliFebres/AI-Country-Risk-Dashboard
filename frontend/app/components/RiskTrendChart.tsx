@@ -9,6 +9,7 @@ import {
   YAxis,
   Tooltip,
   CartesianGrid,
+  ReferenceLine,
 } from 'recharts';
 import { clamp01 } from '../lib/format';
 
@@ -28,6 +29,14 @@ type Props = {
   tooltip?: boolean;
   /** Show the active dot on hover. Default `false`. */
   activeDot?: boolean;
+  /**
+   * Where the area fill is measured from:
+   *  - `'zero'` (default): fill from the line down to the baseline (0).
+   *  - `'average'`: draw a reference line at the series average and fill the
+   *    band *between the line and that average* — segments above the average
+   *    fill down to it, segments below fill up to it.
+   */
+  baseline?: 'zero' | 'average';
 };
 
 /**
@@ -45,6 +54,7 @@ export default function RiskTrendChart({
   gradientId,
   tooltip = false,
   activeDot = false,
+  baseline = 'zero',
 }: Props) {
   const wrapRef = useRef<HTMLDivElement>(null);
   const [width, setWidth] = useState(0);
@@ -61,20 +71,53 @@ export default function RiskTrendChart({
     [series]
   );
 
+  const useAvg = baseline === 'average';
+
+  // Average of the series — used as the area's baseline (when `baseline` is
+  // `'average'`) so the fill is drawn *between the line and the average*:
+  // segments above the average fill down to it, segments below fill up to it.
+  const avg = useMemo(
+    () => (data.length ? data.reduce((s, d) => s + d.v, 0) / data.length : 0.5),
+    [data]
+  );
+
   return (
     <div ref={wrapRef} className="rs-trend">
       <ResponsiveContainer key={`${width}-${Math.round(height)}`} width="100%" height={height}>
         <AreaChart data={data} margin={{ left: 4, right: 4, top: 8, bottom: 0 }}>
           <defs>
-            <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor={color} stopOpacity={0.45} />
-              <stop offset="100%" stopColor={color} stopOpacity={0} />
-            </linearGradient>
+            {useAvg ? (
+              /* Symmetric fade: densest at the top/bottom extremes (near the
+                 trend line) and faint in the middle (near the average baseline),
+                 so the fill hugs the line on both sides of the average. */
+              <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor={color} stopOpacity={0.45} />
+                <stop offset="50%" stopColor={color} stopOpacity={0.04} />
+                <stop offset="100%" stopColor={color} stopOpacity={0.45} />
+              </linearGradient>
+            ) : (
+              <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor={color} stopOpacity={0.45} />
+                <stop offset="100%" stopColor={color} stopOpacity={0} />
+              </linearGradient>
+            )}
           </defs>
 
           <CartesianGrid stroke="rgba(255,255,255,0.12)" vertical={false} strokeDasharray="3 5" />
           <XAxis dataKey="idx" hide />
           <YAxis domain={[0, 1]} hide />
+
+          {/* Average line the fill is measured against. */}
+          {useAvg && (
+            <ReferenceLine
+              y={avg}
+              stroke={color}
+              strokeOpacity={0.55}
+              strokeWidth={1}
+              strokeDasharray="4 3"
+              ifOverflow="extendDomain"
+            />
+          )}
 
           {tooltip && (
             <Tooltip
@@ -94,6 +137,7 @@ export default function RiskTrendChart({
           <Area
             type="monotone"
             dataKey="v"
+            baseValue={useAvg ? avg : 0}
             stroke={color}
             strokeWidth={2.2}
             fill={`url(#${gradientId})`}

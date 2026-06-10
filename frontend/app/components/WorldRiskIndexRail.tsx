@@ -224,8 +224,9 @@ export default function WorldRiskIndexRail({ rows, onSelectCountry, onMeasure }:
               <RiskTrendChart
                 series={model.series}
                 color={AMBER}
-                height={92}
+                height={130}
                 gradientId="railTrendGrad"
+                baseline="average"
               />
             </div>
 

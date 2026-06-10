@@ -29,7 +29,7 @@
   /* Layout vars */
   --top-h: 46px;
   --right-w: min(360px, 26vw);
-  --bottom-h-base: clamp(230px, 26vh, 340px);
+  --bottom-h-base: clamp(208px, 23.5vh, 307px);
   --bottom-h: var(--bottom-h-base);
   --strip-h: 30px;
   --vid-head: 36px;
