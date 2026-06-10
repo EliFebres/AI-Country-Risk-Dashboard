@@ -5,6 +5,7 @@ import { createPortal } from 'react-dom';
 import type { CountryRisk } from '../lib/risk-client';
 import type { SelectOpts } from './TerminalDashboard';
 import { colorForRisk } from '../lib/risk';
+import { shortDate } from '../lib/format';
 import { loadDashboard, getIndicatorAverages, type IndicatorAverageTrends } from '../lib/dashboard-client';
 import RiskTrendChart from './RiskTrendChart';
 
@@ -65,6 +66,31 @@ function computeDelta(c: CountryRisk): number {
       : null;
   if (typeof prev !== 'number') return 0;
   return Math.round((c.risk - prev) * 100) / 100;
+}
+
+/** A country's snapshot date at historical offset `k` (0 = current reading). */
+function dateAt(c: CountryRisk, k: number): string | undefined {
+  if (k === 0) return c.asOf;
+  return c.prevAsOfs && c.prevAsOfs.length >= k ? c.prevAsOfs[k - 1] : undefined;
+}
+
+/**
+ * Representative snapshot date per offset across all countries: the latest
+ * (max) ISO date seen at that offset. Snapshots are generated in weekly batches,
+ * so a given offset shares one date across countries; the max guards against the
+ * occasional country that's missing a reading at that offset.
+ */
+function globalDateByOffset(rows: CountryRisk[], len: number): (string | null)[] {
+  const out: (string | null)[] = [];
+  for (let k = 0; k < len; k++) {
+    let best: string | null = null;
+    rows.forEach((c) => {
+      const d = dateAt(c, k);
+      if (d && (!best || d > best)) best = d;
+    });
+    out.push(best);
+  }
+  return out;
 }
 
 /** Global average risk per historical offset. [0]=current, [1]=previous, … */
@@ -197,9 +223,15 @@ export default function WorldRiskIndexRail({ rows, onSelectCountry, onMeasure }:
     const deteriorating = withDelta.filter((x) => x.d > 0).sort((a, b) => b.d - a.d).slice(0, 5);
     const improving = withDelta.filter((x) => x.d < 0).sort((a, b) => a.d - b.d).slice(0, 5);
 
-    const series = byOffset.filter((v): v is number => v != null).slice().reverse(); // oldest→newest
+    // Series + parallel dates, dropping null offsets together, oldest→newest.
+    const datesByOffset = globalDateByOffset(rows, byOffset.length);
+    const kept = byOffset
+      .map((v, k) => ({ v, d: datesByOffset[k] }))
+      .filter((p): p is { v: number; d: string | null } => p.v != null);
+    const series = kept.map((p) => p.v).reverse();
+    const seriesDates = kept.map((p) => p.d).reverse();
 
-    return { byOffset, avg, delta, high, elev, low, total: rows.length, deteriorating, improving, series };
+    return { byOffset, avg, delta, high, elev, low, total: rows.length, deteriorating, improving, series, seriesDates };
   }, [rows]);
 
   // --- Trend metric dropdown -------------------------------------------------
@@ -265,6 +297,7 @@ export default function WorldRiskIndexRail({ rows, onSelectCountry, onMeasure }:
       const [lo, hi] = autoDomain(series);
       return {
         metric, series,
+        labels: (model?.seriesDates ?? []).map((d) => shortDate(d)),
         domain: [Math.max(0, lo), Math.min(1, hi)] as [number, number],
         clampValues: true,
         formatValue: fmt, valueLabel: tipLabel,
@@ -277,6 +310,7 @@ export default function WorldRiskIndexRail({ rows, onSelectCountry, onMeasure }:
     const series = pts.map((p) => p.avg);
     return {
       metric, series,
+      labels: pts.map((p) => String(p.year)),
       domain: autoDomain(series),
       clampValues: false,
       formatValue: fmt, valueLabel: tipLabel,
@@ -386,6 +420,7 @@ export default function WorldRiskIndexRail({ rows, onSelectCountry, onMeasure }:
               {trend.ready ? (
                 <RiskTrendChart
                   series={trend.series}
+                  labels={trend.labels}
                   color={AMBER}
                   height={130}
                   gradientId="railTrendGrad"

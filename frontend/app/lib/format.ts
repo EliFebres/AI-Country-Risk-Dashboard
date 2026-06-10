@@ -45,3 +45,21 @@ export function daysAgoLabel(iso?: string | null): string {
   if (days === 1) return '1 day ago';
   return `${days} days ago`;
 }
+
+/**
+ * Compact calendar-date label (e.g. `'Jun 1, 2024'`) for an ISO date string.
+ *
+ * A bare `'YYYY-MM-DD'` is read as a *local* calendar date (not UTC midnight) so
+ * the day never shifts backward in negative-offset timezones; richer ISO strings
+ * with a time component fall back to the native `Date` parser.
+ *
+ * @param iso - ISO date string, or null/undefined.
+ * @returns The formatted date, or `''` when input is missing or unparseable.
+ */
+export function shortDate(iso?: string | null): string {
+  if (!iso) return '';
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso.trim());
+  const d = m ? new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3])) : new Date(iso);
+  if (isNaN(d.getTime())) return '';
+  return d.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
+}

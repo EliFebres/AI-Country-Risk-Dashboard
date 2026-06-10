@@ -11,6 +11,8 @@ export type CountryRisk = {
   risk: number;             // 0..1 (current risk)
   prevRisk?: number;        // previous single value (convenience)
   prevRiskSeries?: number[]; // all prior scores, newest→oldest (excludes current)
+  asOf?: string;            // latest snapshot date (ISO 'YYYY-MM-DD')
+  prevAsOfs?: string[];     // prior snapshot dates, newest→oldest (parallel to prevRiskSeries)
   iso2?: string;            // populated by weekly refresh
 };
 

@@ -51,6 +51,12 @@ type Props = {
   formatValue?: (n: number) => string;
   /** Tooltip series label. Default `'Risk'`. */
   valueLabel?: string;
+  /**
+   * Per-point labels (parallel to `series`, same oldest→newest order) shown as
+   * the tooltip heading — typically the reading's date or year. Omit for no
+   * heading. Only meaningful when `tooltip` is set.
+   */
+  labels?: (string | number | null | undefined)[];
 };
 
 /**
@@ -73,6 +79,7 @@ export default function RiskTrendChart({
   clampValues = true,
   formatValue,
   valueLabel = 'Risk',
+  labels,
 }: Props) {
   const wrapRef = useRef<HTMLDivElement>(null);
   const [width, setWidth] = useState(0);
@@ -85,8 +92,13 @@ export default function RiskTrendChart({
   }, []);
 
   const data = useMemo(
-    () => series.map((v, i) => ({ idx: i, v: clampValues ? clamp01(v) : v })),
-    [series, clampValues]
+    () =>
+      series.map((v, i) => ({
+        idx: i,
+        v: clampValues ? clamp01(v) : v,
+        label: labels?.[i] ?? '',
+      })),
+    [series, clampValues, labels]
   );
 
   const useAvg = baseline === 'average';
@@ -144,7 +156,11 @@ export default function RiskTrendChart({
                 formatValue ? formatValue(Number(val)) : Number(val).toFixed(2),
                 valueLabel,
               ]}
-              labelFormatter={() => ''}
+              labelFormatter={(_, payload) => {
+                const lbl = payload?.[0]?.payload?.label;
+                return lbl != null && lbl !== '' ? String(lbl) : '';
+              }}
+              labelStyle={{ color: '#6b7280' }}
               contentStyle={{
                 background: 'rgba(14,14,14,0.92)',
                 border: '1px solid rgba(255,255,255,0.08)',
