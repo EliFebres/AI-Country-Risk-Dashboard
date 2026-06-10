@@ -73,11 +73,15 @@ export default function RiskSidebar({
           if (!isNaN(asOf)) times.push(asOf);
         }
 
-        // Indicators: newest year, treated as that calendar year's end
+        // Indicators: prefer a fresh observation's precise end-of-period date;
+        // otherwise treat the annual value as that calendar year's end.
         const ind = getIndicatorsFor(data, iso);
         if (ind?.values) {
           for (const v of Object.values(ind.values)) {
-            if (typeof v?.year === 'number') {
+            if (v?.period) {
+              const t = new Date(v.period).getTime();
+              if (!isNaN(t)) times.push(t);
+            } else if (typeof v?.year === 'number') {
               times.push(new Date(v.year, 11, 31).getTime());
             }
           }

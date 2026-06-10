@@ -16,7 +16,14 @@ type IndicatorName =
   | 'Interest payments (% revenue)'
   | 'GDP per-capita growth (% y/y)';
 
-type IndicatorSnapshot = { year: number; value: number; unit?: string };
+type IndicatorSnapshot = {
+  year: number;
+  value: number;
+  unit?: string;
+  period?: string;        // ISO date for sub-annual (monthly/quarterly) readings
+  freq?: 'M' | 'Q' | 'A'; // 'A' = annual World Bank fallback
+  source?: string;
+};
 
 /** ------------------------------------------------------------------------ */
 /** HOVER TEXT DICTIONARY — edit here to change tooltip copy for each gauge. */
@@ -76,6 +83,26 @@ function formatValue(name: IndicatorName, snap?: IndicatorSnapshot): string {
   }
 }
 
+const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+/**
+ * As-of label for a reading's recency: a precise month/quarter for fresh
+ * sub-annual data ("Mar 2026", "Q1 2026"), or the fiscal year for the annual
+ * World Bank fallback ("FY2024"). Makes mixed-frequency gauges honest.
+ */
+function formatAsOf(snap?: IndicatorSnapshot): string {
+  if (!snap) return '';
+  if (snap.period && snap.freq === 'M') {
+    const d = new Date(snap.period);
+    return `${MONTHS[d.getUTCMonth()]} ${d.getUTCFullYear()}`;
+  }
+  if (snap.period && snap.freq === 'Q') {
+    const d = new Date(snap.period);
+    return `Q${Math.floor(d.getUTCMonth() / 3) + 1} ${d.getUTCFullYear()}`;
+  }
+  return typeof snap.year === 'number' ? `FY${snap.year}` : '';
+}
+
 /** Short labels for aria/titles */
 function shortLabel(name: IndicatorName): string {
   switch (name) {
@@ -115,12 +142,13 @@ function MiniGauge(props: {
   aria?: string;
   ringColor?: string; // optional override for the ring color
   tooltip?: string;   // ← dictionary-provided hover text
+  asOf?: string;      // recency label ("Mar 2026" / "FY2024")
 }) {
   const {
     title, caption, valueText, progress,
     size = GAUGE_SIZE, trackAlpha = 0.15, aria,
     ringColor: ringColorOverride,
-    tooltip,
+    tooltip, asOf,
   } = props;
 
   const stroke = 5;
@@ -175,6 +203,21 @@ function MiniGauge(props: {
         {caption}
       </div>
 
+      {asOf ? (
+        <div
+          className="gaugeAsOf"
+          style={{
+            width: '100%', textAlign: 'center', fontSize: 8.5,
+            color: 'var(--amber-dim)', opacity: 0.7, letterSpacing: '0.04em',
+            whiteSpace: 'nowrap', lineHeight: 1, marginTop: 2,
+            overflow: 'hidden', textOverflow: 'ellipsis',
+          }}
+          aria-hidden="true"
+        >
+          {asOf}
+        </div>
+      ) : null}
+
       <style jsx>{`
         .gaugeItem { display: flex; flex-direction: column; align-items: center; gap: 6px; min-width: 0; }
         .gaugeSvg { display: block; }
@@ -225,6 +268,8 @@ export default function EconomicGaugeSection({
               ? colorForGDP(snap?.value)
               : undefined;
 
+          const asOf = formatAsOf(snap);
+
           return {
             key: name,
             title: shortLabel(name),
@@ -232,7 +277,8 @@ export default function EconomicGaugeSection({
             valueText: valText,
             progress,
             ringColor,
-            aria: `${shortLabel(name)} ${valText}`,
+            asOf,
+            aria: `${shortLabel(name)} ${valText}${asOf ? `, ${asOf}` : ''}`,
             tooltip: INDICATOR_TOOLTIPS[name], // ← use dictionary hover text
           };
         })
@@ -256,6 +302,7 @@ export default function EconomicGaugeSection({
                 aria={g.aria}
                 ringColor={g.ringColor}
                 tooltip={g.tooltip}
+                asOf={g.asOf}
               />
             </div>
           ))}

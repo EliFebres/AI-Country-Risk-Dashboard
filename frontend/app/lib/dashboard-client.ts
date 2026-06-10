@@ -15,12 +15,24 @@ export type IndicatorTargetName =
   | "Interest payments (% revenue)"
   | "GDP per-capita growth (% y/y)";
 
+/**
+ * One indicator reading. `value` is the freshest available — a sub-annual IMF
+ * observation (with a precise `period`/`freq`/`source`) when present, otherwise
+ * the latest World Bank annual value (`freq: 'A'`). `year` is always set.
+ */
+export type IndicatorValue = {
+  value: number;
+  unit?: string;
+  year: number;
+  period?: string;         // ISO date 'YYYY-MM-DD' end-of-period (sub-annual rows)
+  freq?: "M" | "Q" | "A";
+  source?: string;
+};
+
 export type CountryIndicatorLatest = {
   iso2: string;
   name: string;
-  values: Partial<
-    Record<IndicatorTargetName, { year: number; value: number; unit?: string }>
-  >;
+  values: Partial<Record<IndicatorTargetName, IndicatorValue>>;
 };
 
 export type SummaryEntry = { country_iso2: string; bullet_summary: string };

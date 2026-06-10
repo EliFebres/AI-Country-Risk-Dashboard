@@ -65,6 +65,45 @@ EXTRA_INDICATORS = {
 ALL_INDICATORS = {**INDICATORS, **EXTRA_INDICATORS}
 
 # ---------------------------------------------------------------------------
+# IMF higher-frequency refresh (new IMF Data API, SDMX 2.1)
+# ---------------------------------------------------------------------------
+# The World Bank series above are ANNUAL and published with a 1–2 year lag, so a
+# country in the middle of a fast-moving shock (e.g. Argentina inflation) shows a
+# badly stale headline. A handful of those indicators DO exist at monthly/quarterly
+# frequency from the IMF, so we refresh just those into the `recent_indicator`
+# table; the front-end prefers that fresher value and falls back to the WB annual
+# one when absent.
+#
+# NOTE: the legacy IFS SDMX host (dataservices.imf.org) was RETIRED. The current
+# IMF Data API is SDMX 2.1 at api.imf.org/external/sdmx/2.1, where the country
+# dimension is ISO-3 (e.g. ARG, USA — see COUNTRY_ROSTER iso3) and data is returned
+# as SDMX-ML. Series key order for the CPI dataset is
+#   COUNTRY.INDEX_TYPE.COICOP_1999.TYPE_OF_TRANSFORMATION.FREQUENCY
+# and IMF PRE-COMPUTES the year-over-year percent change (YOY_PCH_PA_PT), so no
+# manual y/y math is needed.
+IMF_DATA_ENDPOINT: str = "https://api.imf.org/external/sdmx/2.1/data"
+
+# Map of WB display name (matches `indicator.name` / NICE_NAME) -> IMF query spec:
+#   dataflow — SDMX dataflow id (dataset)
+#   key      — dot-separated series key with an "{iso3}" placeholder
+#   freq     — observation frequency code stored alongside the value ('M'|'Q'|'A')
+#   unit     — unit string persisted to recent_indicator
+# Only Inflation is wired today. GDP and Unemployment are deliberately NOT included:
+# IMF quarterly GDP (QGDP_WCA) is a group-based, multi-attribute cube with no
+# pre-computed y/y and patchy emerging-market coverage, and annual national
+# accounts (NA_MAIN) is a 14-dimension cube — neither is a clean per-country fetch.
+# They can be added here once a dependable series is chosen; the rest of the
+# pipeline is indicator-agnostic.
+IMF_RECENT_INDICATORS: dict[str, dict[str, str]] = {
+    "Inflation (% y/y)": {
+        "dataflow": "CPI",                          # IMF.STA Consumer Price Index dataset
+        "key": "{iso3}.CPI._T.YOY_PCH_PA_PT.M",     # headline (CPI), all-items (_T), y/y %, monthly
+        "freq": "M",
+        "unit": "% y/y",
+    },
+}
+
+# ---------------------------------------------------------------------------
 # Economic calendar (FMP) — major global decisions/releases for the front-end
 # "Econ Calendar" pane.
 # ---------------------------------------------------------------------------
