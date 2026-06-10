@@ -1,70 +1,74 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import { ASSETS, TRK_CATS, type Asset } from '../../lib/terminal-seed';
+import {
+  fetchMarketPrices,
+  groupByCategory,
+  type MarketPrice,
+  type PriceCategory,
+} from '../../lib/prices-client';
 
-type Cat = { key: string; label: string; assets: Asset[] };
+/** Refresh cadence — matches the prices daemon's ~5-minute write cadence. */
+const POLL_MS = 5 * 60 * 1000;
 
-/** Seed opening prices so the live 1D change can be derived from a random walk. */
-function seedCats(): Cat[] {
-  return TRK_CATS.map(([key, label]) => ({
-    key,
-    label,
-    assets: ASSETS[key].map((a) => ({
-      ...a,
-      open: a.y ? a.px - a.chg : a.px / (1 + a.chg / 100),
-    })),
-  }));
-}
-
-function tick(cats: Cat[]): Cat[] {
-  return cats.map((cat) => ({
-    ...cat,
-    assets: cat.assets.map((a) => {
-      const open = a.open ?? a.px;
-      if (a.y) {
-        const px = Math.max(0, a.px + (Math.random() - 0.5) * 0.02);
-        return { ...a, px, chg: +(px - open).toFixed(2) };
-      }
-      const px = a.px * (1 + (Math.random() - 0.5) * 0.0025);
-      return { ...a, px, chg: +(((px - open) / open) * 100).toFixed(2) };
-    }),
-  }));
-}
-
-function fmtPx(a: Asset) {
-  if (a.y) return a.px.toFixed(2) + '%';
+function fmtPx(a: MarketPrice) {
+  if (a.px == null) return '—';
+  if (a.is_yield) return a.px.toFixed(2) + '%';
   if (a.px >= 1000) return a.px.toLocaleString(undefined, { maximumFractionDigits: 1 });
   if (a.px >= 1) return a.px.toFixed(2);
   return a.px.toFixed(4);
 }
-function fmtCv(v: number, isY?: 1) {
+function fmtCv(v: number | null, isYield: boolean) {
+  if (v == null) return '—';
   const s = v >= 0 ? '+' : '';
-  return isY ? `${s}${v.toFixed(2)}` : `${s}${v.toFixed(2)}%`;
+  return isYield ? `${s}${v.toFixed(2)}` : `${s}${v.toFixed(2)}%`;
 }
-const cls = (v: number) => (v >= 0 ? 'up' : 'down');
+const cls = (v: number | null) => (v == null ? '' : v >= 0 ? 'up' : 'down');
 
-/** Bottom-bar pane: simulated live price tracker (seed data + periodic random walk). */
-
+/**
+ * Bottom-bar pane: live market prices backed by the `market_price` table. Polls
+ * the dedicated /api/prices route every ~5 minutes (the daemon's write cadence)
+ * and renders the latest snapshot in place. A failed poll keeps the last good
+ * data rather than blanking the pane.
+ */
 export default function Prices() {
-  const [cats, setCats] = useState<Cat[]>(seedCats);
+  // null = still loading; [] = loaded but empty.
+  const [prices, setPrices] = useState<MarketPrice[] | null>(null);
 
   useEffect(() => {
-    const id = setInterval(() => setCats((c) => tick(c)), 4000);
-    return () => clearInterval(id);
+    let cancelled = false;
+    const controller = new AbortController();
+    const load = () => {
+      fetchMarketPrices(controller.signal)
+        .then((rows) => {
+          if (!cancelled) setPrices(rows);
+        })
+        .catch(() => {
+          // Keep prior data on a failed poll; only fall back to [] on first load.
+          if (!cancelled) setPrices((prev) => prev ?? []);
+        });
+    };
+    load();
+    const id = setInterval(load, POLL_MS);
+    return () => {
+      cancelled = true;
+      controller.abort();
+      clearInterval(id);
+    };
   }, []);
+
+  const cats = useMemo<PriceCategory[]>(() => groupByCategory(prices ?? []), [prices]);
 
   const { up, total } = useMemo(() => {
     let u = 0;
     let t = 0;
-    cats.forEach((cat) =>
-      cat.assets.forEach((a) => {
-        t++;
-        if (a.chg >= 0) u++;
-      })
-    );
+    (prices ?? []).forEach((a) => {
+      if (a.chg == null) return;
+      t++;
+      if (a.chg >= 0) u++;
+    });
     return { up: u, total: t };
-  }, [cats]);
+  }, [prices]);
 
   return (
     <div className="mini-table tracker-col">
@@ -99,19 +103,19 @@ export default function Prices() {
   );
 }
 
-function FragmentRows({ cat }: { cat: Cat }) {
+function FragmentRows({ cat }: { cat: PriceCategory }) {
   return (
     <>
       <tr className="trk-group">
         <td colSpan={5}>{cat.label}</td>
       </tr>
       {cat.assets.map((a) => (
-        <tr key={a.sym}>
-          <td className="trk-sym">{a.sym}</td>
+        <tr key={a.symbol}>
+          <td className="trk-sym">{a.label}</td>
           <td className="trk-px">{fmtPx(a)}</td>
-          <td className={`trk-c ${cls(a.chg)}`}>{fmtCv(a.chg, a.y)}</td>
-          <td className={`trk-c ${cls(a.q)}`}>{fmtCv(a.q, a.y)}</td>
-          <td className={`trk-c ${cls(a.ytd)}`}>{fmtCv(a.ytd, a.y)}</td>
+          <td className={`trk-c ${cls(a.chg)}`}>{fmtCv(a.chg, a.is_yield)}</td>
+          <td className={`trk-c ${cls(a.q)}`}>{fmtCv(a.q, a.is_yield)}</td>
+          <td className={`trk-c ${cls(a.ytd)}`}>{fmtCv(a.ytd, a.is_yield)}</td>
         </tr>
       ))}
     </>
