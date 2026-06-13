@@ -8,10 +8,11 @@ The **AI Country Risk Dashboard** is an open‑source web application that quan
 
 ### Features
 
-* **Data ingestion** – Downloads and formats World‑Bank macro‑economic indicators such as inflation, unemployment, political stability and other factors and stores them in per‑country panel datasets. The coverage universe currently includes 50 countries (25 developed and 25 emerging).
+* **Data ingestion** – Downloads and formats World‑Bank macro‑economic indicators such as inflation, unemployment, political stability and other factors and stores them in per‑country panel datasets. The coverage universe currently includes 50 countries (25 developed and 25 emerging). Sub‑annual prints (e.g. monthly/quarterly inflation) are refreshed from the **IMF** so fast‑moving economies aren't stuck on a year‑old annual figure.
 * **Risk scoring** – Uses a large‑language model (via LangChain and OpenAI) to combine macro data and recent headlines into a single 0–1 risk score and a bullet‑point explanation. The AI prompt enforces hard rules around war, political stability and macro floors to ensure consistent scoring.
-* **Persistence** – Persists macro series and risk snapshots into a Neon‑hosted PostgreSQL database using a transactional upsert strategy.
-* **Interactive frontend** – A Next.js frontend renders a world map with clickable markers. Risk values are read from `public/api/risk.json`, and a server‑side function updates the file no more than once per week. Clicking a marker opens a sidebar with the country name, risk score and explanation.
+* **Live market & event feeds** – A standalone prices daemon polls **Financial Modeling Prep (FMP)** for live equity, bond‑yield, crypto and commodity quotes, a global **AI Alerts** feed re‑ranks every country's top headlines by importance to the world economy, and an AI‑ranked **economic calendar** surfaces the next ~14 days of major releases.
+* **Persistence** – Persists macro series, risk snapshots, alerts, calendar events and live prices into a Neon‑hosted PostgreSQL database using a transactional upsert strategy.
+* **Interactive frontend** – A Next.js (App Router) dashboard renders an interactive world map with clickable risk markers, a slide‑in country sidebar, a global "World Risk Index" rail, and a bottom ticker bar. All data is served live from Postgres through cached API routes — there is no static JSON file and no weekly refresh job.
 * **Extensible architecture** – The backend is pure Python and uses modular utilities for metric fetching, news scraping and LLM calls. The frontend uses modern React/Next.js and is ready to deploy to Vercel or your own server.
 
 ## My Ai Prompt
@@ -96,10 +97,10 @@ Create the following `.env` files before running:
 
 | Location | File | Keys & purpose |
 |------------|--------------|---------------------------------------------------------------------|
-| `backend` | `.env` | `DATABASE_URL` – PostgreSQL connection string; `OPENAI_API_KEY` – OpenAI API key |
-| `frontend` | `.env.local` | `DATABASE_URL` – Postgres URL with `sslmode=require` |
+| `backend` | `.env` | `DATABASE_URL` – PostgreSQL connection string; `OPENAI_API_KEY` – OpenAI API key; `FMP_API_KEY` – Financial Modeling Prep key (economic calendar + prices daemon); optional `CRAWLBASE_JS_TOKEN` / `CRAWLBASE_TOKEN` for Reuters/Bloomberg enrichment |
+| `frontend` | `.env` | `DATABASE_URL` – Postgres URL with `sslmode=require` |
 
-The `backend/.env` file is read by the ETL pipeline and the database upsert routines. The `frontend/.env.local` is used by the Next.js server‑side function that refreshes `public/api/risk.json`.
+The `backend/.env` file is read by the ETL pipeline and the database upsert routines. The `frontend/.env` is read by the Next.js server‑side API routes that serve the dashboard data.
 
 ### Backend setup
 
@@ -132,54 +133,65 @@ cd frontend
 npm install
  ```
 
-2. **Seed risk data:**
-Ensure there is an initial `public/api/risk.json` file populated with objects of the form `{name, lngLat, risk}`. You can create a simple seed manually or export from the database.
-
-3. **Run the development server:**
+2. **Run the development server:**
  ```bash
 npm run dev
  ```
 
-On first load the client calls `POST /api/refresh-risk`. The server checks when the last refresh was run and either skips the update or queries Neon for fresh risk scores and writes them to `public/api/risk`.json. The client then fetches the JSON with a cache‑busting query to avoid stale data.
+The app reads live from Postgres through cached API routes — the map loads risk markers from `/api/risk`, and clicking a country opens the sidebar, which loads its details from `/api/dashboard`. There is no static seed file to populate. See `frontend/README.md` for the full route, caching and component breakdown.
 
-### Updating risk values
-The front‑end includes a server‑only route `/api/refresh-risk` that automatically updates risk scores if more than seven days have passed since the last run. To trigger an update manually, send:
+### Live prices feed (optional)
+
+The bottom‑bar **Prices** pane is fed by a standalone, long‑running daemon — `backend/prices_daemon.py` — that is **separate from the daily `main.py` ETL**. Point a process supervisor (or boot‑time Task Scheduler entry) at it so the feed stays fresh:
+
  ```bash
-curl -X POST http://localhost:3000/api/refresh-risk
+python backend/prices_daemon.py        # continuous loop (Ctrl‑C to stop)
+python backend/prices_daemon.py --once # one‑shot tick for verification
  ```
+
+It reuses `FMP_API_KEY` + `DATABASE_URL`. See `backend/README.md` for details.
 
 ### Directory Structure
 ```bash
 AI-Country-Risk-Dashboard/
-├── backend/               # Python ETL, LLM scoring and DB interface
-│   ├── ai/                # LangChain LLM wrapper and prompt templates
-│   ├── data/              # Raw and processed World‑Bank panels
-│   ├── notebooks/         # Jupyter notebooks for exploration
-│   ├── utils/             # Helper functions for data fetching and parsing
-│   ├── main.py            # Entry point for end‑to‑end ETL
-│   ├── constants.py       # Indicator definitions and LLM prompt
-│   ├── data_push.py       # Transactional upsert into PostgreSQL
-│   └── README.md          # Detailed backend instructions
-├── frontend/              # Next.js app that renders the world map
-│   ├── app/               # App Router pages and API routes
-│   ├── components/        # Map component and UI elements
-│   ├── public/api/        # `risk.json` and metadata files
-│   └── README.md          # Detailed frontend instructions
-├── LICENSE                # MIT license
-└── README.md              # (You are here)
+├── backend/                    # Python ETL, LLM scoring and DB interface
+│   ├── main.py                 # Entry point for the end‑to‑end daily ETL
+│   ├── prices_daemon.py        # Standalone live‑prices poller (separate process)
+│   ├── utils/
+│   │   ├── ai/                 # LangChain LLM wrapper, prompt constants, alert/calendar rankers
+│   │   ├── data_fetching/      # World Bank, IMF, FMP (calendar/prices) fetchers
+│   │   ├── news_fetching/      # Google News RSS, URL resolver, simple/advanced scrapers
+│   │   ├── data_upsert/        # Transactional upserts into PostgreSQL (data_push.py)
+│   │   ├── data_retrieval.py   # Reads panels and builds the LLM payload
+│   │   ├── market_hours.py     # Market‑open gating for the prices daemon
+│   │   └── constants.py        # Indicator definitions, asset universe, LLM prompt
+│   └── README.md               # Detailed backend instructions
+├── frontend/                   # Next.js (App Router) dashboard
+│   ├── app/
+│   │   ├── api/                # Cached DB‑backed API routes
+│   │   ├── components/         # Map, sidebar, rail, bottom‑bar panes, charts
+│   │   └── lib/                # Server queries, cached fetchers, client caches
+│   └── README.md               # Detailed frontend instructions
+├── assets/                     # Screenshots / demo media
+├── LICENSE                     # MIT license
+└── README.md                   # (You are here)
 ```
 
 ### Database Schema
-The following schema is created automatically by the ETL and used by the dashboard:
+The schema is created idempotently by the ETL (and the prices daemon) — there is no separate migration tool. See `backend/README.md` for the full DDL.
 
-| Table | Description
-|------------|--------------
-|`country`      | Country ISO‑2 code and canonical name |
-|`indicator`    | Indicator definitions and units |
-|`yearly_value` | Yearly macro indicator values per country | 
-|`risk_snapshot`| Risk score and bullet summary for a given date|
-
-The `risk_snapshot` table stores the 0–1 risk score and the human‑readable summary produced by the LLM.
+| Table | Description |
+|-------|-------------|
+| `country` | Country ISO‑2 code and canonical name |
+| `indicator` | Indicator definitions and units |
+| `yearly_value` | Annual World Bank macro values per country |
+| `recent_indicator` | Freshest sub‑annual (IMF) values, preferred over the annual ones |
+| `risk_snapshot` | 0–1 risk score and LLM bullet summary for a given date |
+| `risk_snapshot_article` | Top‑3 news articles tied to a snapshot |
+| `news_alert` | Globally AI‑ranked alerts feed |
+| `economic_calendar_event` | Upcoming economic events with AI importance |
+| `market_price` | Live prices (stocks/bonds/crypto/commodities) |
+| `price_reference` | Quarter‑/year‑start closes for the 1Q/YTD calc |
 
 ### Contributing
 Contributions, bug reports and feature requests are welcome! Please open an issue or submit a pull request on GitHub. When adding new data sources or indicators, update the `constants.py` mappings and ensure your changes are reflected in both the backend and the frontend.
@@ -188,4 +200,4 @@ Contributions, bug reports and feature requests are welcome! Please open an issu
 This project is licensed under the MIT License. See the `LICENSE` file for details.
 
 ### Acknowledgements
-The dashboard relies on open data from the World Bank for macro‑economic indicators, Google News for headline scraping, and OpenAI’s models for risk scoring. Thanks to the maintainers of LangChain, Next.js and the open‑source community for their tools and libraries.
+The dashboard relies on open data from the World Bank and the IMF for macro‑economic indicators, Financial Modeling Prep (FMP) for live market prices and the economic calendar, Google News for headline scraping, and OpenAI’s models for risk scoring. Thanks to the maintainers of LangChain, Next.js and the open‑source community for their tools and libraries.

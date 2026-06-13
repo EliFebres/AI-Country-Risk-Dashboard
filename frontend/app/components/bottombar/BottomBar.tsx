@@ -1,27 +1,20 @@
 'use client';
 
-import type { CountryRisk } from '../../lib/risk-client';
-import type { SelectOpts } from '../TerminalDashboard';
 import LiveTV from './LiveTV';
 import AIAlerts from './AIAlerts';
 import EconCalendar from './EconCalendar';
 import Prices from './Prices';
 import WorldMarkets from './WorldMarkets';
 
-type Props = {
-  rows: CountryRisk[] | null;
-  onSelectCountry: (dot: CountryRisk | null, opts?: SelectOpts) => void;
-};
-
 /** Bottom ticker bar: live TV, AI alerts, econ calendar, price tracker, and world markets. */
-export default function BottomBar({ rows, onSelectCountry }: Props) {
+export default function BottomBar() {
   return (
     <section className="bottombar" aria-label="Live stream and rankings">
       <div className="bottombar-main">
         <LiveTV />
         <div className="tables-pane">
           <EconCalendar />
-          <AIAlerts rows={rows} onSelectCountry={onSelectCountry} />
+          <AIAlerts />
           <Prices />
           <WorldMarkets />
         </div>

@@ -23,8 +23,21 @@ export const CACHE_TTL = {
   // more often; keep this shorter.
   ARTICLES: 6 * HOUR,
 
-  // ---- Placeholders for future feeds (seed data today, no backend yet) ----
-  ECON_CALENDAR: 12 * HOUR, // weekly releases
-  AI_ALERTS: 1 * HOUR,      // daily generation
-  PRICES: 5 * 60,           // intra-day / daily market data
+  // Economic-calendar events are AI-ranked each ETL run; a 6h window keeps the
+  // "next 7 days" feed fresh (and lets just-passed events linger briefly).
+  ECON_CALENDAR: 6 * HOUR,
+
+  // AI news alerts are AI-ranked once per daily ETL run; a 12h window picks up a
+  // fresh run within hours while keeping Neon hits cheap (matches RISK).
+  AI_ALERTS: 12 * HOUR,     // daily generation
+
+  // Live market snapshot written by the prices daemon every ~5 min; the Prices
+  // pane polls /api/prices on the same cadence, so a 5-min TTL serves cached
+  // rows between writes and hits Neon at most once per window.
+  PRICES: 5 * 60,
+
+  // Live TV channel list (the `live_tv_channel` table). Edited by hand via SQL
+  // when a stream dies, so a short 10-min TTL lets a fix propagate quickly while
+  // keeping Neon hits cheap for this tiny, rarely-changed table.
+  CHANNELS: 10 * 60,
 } as const;

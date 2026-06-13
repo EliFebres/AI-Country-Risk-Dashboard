@@ -16,7 +16,7 @@ import backend.utils.constants as constants
 
 
 # ---------------------------- Helpers --------------------------------- #
-_RETRYABLE_STATUS = {429, 500, 502, 503, 504}
+_RETRYABLE_STATUS = {400, 429, 500, 502, 503, 504}  # WB sporadically throws spurious 400s under load
 _DEFAULT_HEADERS = {
     "User-Agent": "AI-Country-Risk/1.0 (+https://github.com/EliFebres/AI-Country-Risk-Dashboard)"
 }

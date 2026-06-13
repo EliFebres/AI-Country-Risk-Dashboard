@@ -22,7 +22,7 @@ All data comes from a Neon Postgres database, served through cached API routes t
 
 1. From the repo root: `cd frontend`
 2. Install deps: `npm i`
-3. Create `.env.local` with:
+3. Create `.env` with:
    ```
    DATABASE_URL=postgres://USER:PASSWORD@HOST/DB?sslmode=require
    ```
@@ -42,11 +42,11 @@ A single route (`app/page.tsx`) renders `TerminalDashboard`, the client orchestr
 
 - **Map** (`app/components/Map.tsx`, via `MapClient.tsx`) — MapLibre map with SVG ring markers per country; loads `/api/risk` on mount.
 - **RiskSidebar** (`app/components/RiskSidebar.tsx`) — slide-in detail panel with Risk Reading + trend chart, Economic Gauges, AI Summary, and News sections; loads `/api/dashboard`.
-- **WorldRiskIndexRail** (`app/components/WorldRiskIndexRail.tsx`) — always-visible rail showing the global average, risk distribution, and top movers.
+- **WorldRiskIndexRail** (`app/components/WorldRiskIndexRail.tsx`) — always-visible rail showing the global average trend, risk distribution, and top movers. The trend chart has a **metric dropdown selector** (avg risk plus the cross-country indicator averages) rendered through a **body-portaled overlay menu** so it floats above every panel, and it draws each series in average-baseline fill mode.
 - **Masthead** (`app/components/Masthead.tsx`) — top status bar (coverage count, live clock, idle-tour toggle).
-- **BottomBar** (`app/components/bottombar/`) — ticker bar with Live TV, markets, prices, econ calendar, and AI alerts.
+- **BottomBar** (`app/components/bottombar/`) — ticker bar with Live TV, World Markets, Prices, Econ Calendar, and AI Alerts panes.
 
-`RiskTrendChart` (`app/components/RiskTrendChart.tsx`) is a shared Recharts area chart used by both the sidebar's Risk Reading section and the rail.
+`RiskTrendChart` (`app/components/RiskTrendChart.tsx`) is a shared Recharts area chart used by the sidebar's Risk Reading section and the rail. It supports two fill modes via its `baseline` prop: `'zero'` (default — fills from the line down to zero) and `'average'` (draws a dashed reference line at the series mean and fills the band between the line and that mean with a symmetric gradient).
 
 ## Data & API Routes
 
@@ -55,12 +55,14 @@ All routes run on the Node.js runtime, respond to `GET`, and are wrapped by `jso
 | Route | Returns | Used by |
 | --- | --- | --- |
 | `/api/risk` | Latest risk score + history per country, with resolved map coordinates | Map (fast first paint) |
-| `/api/dashboard` | Indicators + articles + summaries composed in parallel (one request) | Sidebar |
-| `/api/indicators` | Latest year/value for the four target indicators per country | (individual topic) |
+| `/api/dashboard` | Indicators + articles + summaries, plus cross-country indicator average trends, AI alerts, and econ-calendar events, composed in parallel (one request) | Sidebar, rail, AI Alerts, Econ Calendar |
+| `/api/indicators` | Latest year/value for the target indicators per country | (individual topic) |
 | `/api/articles` | Top-3 articles per country's latest snapshot | (individual topic) |
 | `/api/risk-summary` | Latest AI bullet summary per country | (individual topic) |
+| `/api/prices` | Live market prices (stocks / bonds / crypto / commodities) from the prices daemon | Prices pane (polls ~5 min) |
+| `/api/econ-calendar` | Upcoming economic-calendar events | (individual topic) |
 
-On the client, `RISK_CACHE` (`app/lib/risk-client.ts`) and `DASHBOARD_CACHE` (`app/lib/dashboard-client.ts`) dedupe these fetches across components.
+On the client, `RISK_CACHE` (`app/lib/risk-client.ts`) and `DASHBOARD_CACHE` (`app/lib/dashboard-client.ts`) dedupe their fetches across components for the session. The Prices pane instead polls through `app/lib/prices-client.ts` on a ~5-minute cadence (no session memo — the server-side `unstable_cache` TTL protects Neon), so it keeps ticking with fresh data.
 
 ## Caching
 
@@ -70,6 +72,9 @@ Each topic is a single `unstable_cache` instance shared by every route that need
 - **Risk summaries** — 12h
 - **Indicators** — 24h
 - **Articles** — 6h
+- **Econ calendar** — 6h
+- **AI alerts** — 12h
+- **Prices** — 5 min (matches the prices daemon's write cadence)
 
 This is an in-memory/CDN cache — nothing is written to the filesystem.
 
@@ -80,10 +85,19 @@ Queries live in `app/lib/risk-server.ts` (`server-only`), which uses a process-w
 - `country` — ISO2 code + name
 - `risk_snapshot` — per-country risk scores over time (and `bullet_summary`)
 - `risk_snapshot_article` — news articles tied to a snapshot
-- `indicator` / `yearly_value` — World Bank indicator definitions and values
+- `indicator` / `yearly_value` — World Bank indicator definitions and annual values
+- `recent_indicator` — freshest sub-annual (IMF) values, preferred over the annual `yearly_value` when present
+- `news_alert` — globally AI-ranked alerts feeding the AI Alerts pane
+- `economic_calendar_event` — upcoming events (with AI importance) feeding the Econ Calendar pane
+- `market_price` / `price_reference` — live prices + 1Q/YTD reference closes feeding the Prices pane
 
 Map positions are resolved from the static lookup in `app/lib/country-coords.ts` (by ISO2/name). Countries with no known position are skipped on the map.
 
 ## Placeholder / Seed Features
 
-Some bottom-bar panes — Prices, World Markets, Econ Calendar, AI Alerts, and Live TV — currently render seed or simulated data and have no backend yet. They are wired into the UI but not connected to the database.
+Most bottom-bar panes are now live-backed:
+
+- **Prices** — live from `/api/prices` (the prices daemon's `market_price` rows).
+- **AI Alerts** and **Econ Calendar** — live from the `/api/dashboard` payload (`news_alert` and `economic_calendar_event`).
+
+Only **World Markets** and **Live TV** still render seed data (`app/lib/terminal-seed.ts`) — they are wired into the UI but not yet connected to the database.

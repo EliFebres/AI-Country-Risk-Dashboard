@@ -29,7 +29,7 @@
   /* Layout vars */
   --top-h: 46px;
   --right-w: min(360px, 26vw);
-  --bottom-h-base: clamp(230px, 26vh, 340px);
+  --bottom-h-base: clamp(208px, 23.5vh, 307px);
   --bottom-h: var(--bottom-h-base);
   --strip-h: 30px;
   --vid-head: 36px;
@@ -197,15 +197,17 @@ body {
 /* World Markets is pinned to the right rail's width; Prices (tracker) holds a
    fixed share and AI Alerts flexes to absorb the remaining space. */
 .mini-table.markets-col {
-  /* −1px so the pane matches the rail's content width: the rail's --right-w
-     box includes a 1px border-left, which this pane has no equivalent of. */
-  flex: 0 0 calc(var(--right-w) - 1px);
+  /* Shrink-wrap to exactly the three-column table width (Exchange / UTC /
+     Status) — no wider. The table below is sized to its content, and the pane
+     wraps to it. */
+  flex: 0 0 auto;
+  width: max-content;
 }
 .mini-table.alerts-col {
   flex: 1 1 0;
 }
 .mini-table.tracker-col {
-  flex: 0 0 22.5%;
+  flex: 0 0 25%;
 }
 .mini-table.calendar-col {
   flex: 0 0 22%;
@@ -312,6 +314,10 @@ table.mini .mname .name {
 /* World markets */
 table.mini.markets {
   height: 100%;
+  /* Size to the three columns' content rather than stretching to the pane, so
+     the pane (width: max-content) can shrink-wrap around it. */
+  width: max-content;
+  table-layout: auto;
 }
 table.mini.markets td {
   padding: 4px 6px;
@@ -438,13 +444,13 @@ table.mini.tracker .trk-sym {
   text-overflow: ellipsis;
 }
 table.mini.tracker .trk-px {
-  width: 56px;
+  width: 64px;
   text-align: right;
   color: #fff;
   font-variant-numeric: tabular-nums;
 }
 table.mini.tracker .trk-c {
-  width: 50px;
+  width: 56px;
   text-align: right;
   font-weight: 700;
   font-variant-numeric: tabular-nums;
@@ -459,7 +465,7 @@ table.mini.tracker .trk-c {
 /* Extra right-edge padding so the last (YTD) value clears the pane border;
    widen that column so the value still fits. */
 table.mini.tracker thead th:last-child {
-  width: 68px;
+  width: 74px;
 }
 table.mini.tracker thead th:last-child,
 table.mini.tracker tbody td:last-child {
@@ -468,10 +474,13 @@ table.mini.tracker tbody td:last-child {
 
 /* AI alerts */
 .alert-row {
+  display: block;
   padding: 8px 12px;
   border-bottom: 1px solid var(--row-rule);
   cursor: pointer;
   transition: background 120ms ease;
+  text-decoration: none;
+  color: inherit;
 }
 .alert-row:hover {
   background: rgba(255, 180, 60, 0.08);
@@ -538,25 +547,20 @@ table.mini.tracker tbody td:last-child {
   object-fit: cover;
   box-shadow: inset 0 0 0 1px var(--rule);
 }
-.alert-impact {
+.alert-src {
   margin-left: auto;
   font-size: 9px;
-  font-weight: 800;
+  font-weight: 700;
   letter-spacing: 0.04em;
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 45%;
+  color: var(--amber-dim);
   flex: 0 0 auto;
 }
-.alert-impact.up {
-  color: var(--up);
-}
-.alert-impact.down {
-  color: var(--down);
-}
-.alert-impact.flat {
-  color: var(--amber-dim);
-}
 .alert-text {
-  font-size: 11.5px;
+  font-size: 12px;
   line-height: 1.3;
   color: #e7e3d6;
   display: -webkit-box;
@@ -667,6 +671,76 @@ table.mini.tracker tbody td:last-child {
   letter-spacing: 0.12em;
 }
 
+/* Trend metric dropdown (replaces the static "Avg Risk · Trend" title). The
+   menu is absolutely positioned so opening it never changes the rail's measured
+   content height (which drives the bottom bar). */
+.metric-dd {
+  display: inline-flex;
+}
+.metric-dd-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 8px;
+  background: rgba(255, 180, 60, 0.08);
+  border: 1px solid var(--amber-border);
+  border-radius: 5px;
+  cursor: pointer;
+  color: var(--amber);
+  font: inherit;
+  font-size: 10px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  transition: background 120ms ease, border-color 120ms ease;
+}
+.metric-dd-btn:hover,
+.metric-dd-btn[aria-expanded='true'] {
+  background: rgba(255, 180, 60, 0.16);
+  border-color: var(--amber);
+}
+.metric-dd-caret {
+  font-size: 8px;
+  line-height: 1;
+  color: var(--amber-dim);
+  transition: transform 140ms ease;
+}
+.metric-dd-btn[aria-expanded='true'] .metric-dd-caret {
+  transform: rotate(180deg);
+}
+/* Portaled to <body> and fixed-positioned (top/left set inline from the button
+   rect) so it overlays every panel and never shifts layout. */
+.metric-dd-menu {
+  z-index: 4000;
+  margin: 0;
+  padding: 4px;
+  list-style: none;
+  min-width: 190px;
+  background: rgba(14, 14, 14, 0.97);
+  border: 1px solid var(--amber-border);
+  border-radius: 6px;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.6);
+  font-family: var(--term-font);
+}
+.metric-dd-item {
+  padding: 7px 10px;
+  border-radius: 4px;
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--amber-dim);
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background 120ms ease, color 120ms ease;
+}
+.metric-dd-item:hover {
+  background: rgba(255, 180, 60, 0.1);
+  color: var(--amber);
+}
+.metric-dd-item.sel {
+  color: var(--amber);
+  background: rgba(255, 180, 60, 0.08);
+}
+
 .rs-hero {
   display: flex;
   align-items: baseline;
@@ -734,8 +808,11 @@ table.mini.tracker tbody td:last-child {
   overflow: hidden;
 }
 .bar-fill {
+  display: block;
   height: 100%;
+  min-width: 2px;
   border-radius: 2px;
+  transition: width 200ms ease;
 }
 .bar-val {
   text-align: right;

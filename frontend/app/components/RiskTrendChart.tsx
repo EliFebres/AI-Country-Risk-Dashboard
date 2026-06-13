@@ -9,6 +9,7 @@ import {
   YAxis,
   Tooltip,
   CartesianGrid,
+  ReferenceLine,
 } from 'recharts';
 import { clamp01 } from '../lib/format';
 
@@ -28,6 +29,34 @@ type Props = {
   tooltip?: boolean;
   /** Show the active dot on hover. Default `false`. */
   activeDot?: boolean;
+  /**
+   * Where the area fill is measured from:
+   *  - `'zero'` (default): fill from the line down to the baseline (0).
+   *  - `'average'`: draw a reference line at the series average and fill the
+   *    band *between the line and that average* — segments above the average
+   *    fill down to it, segments below fill up to it.
+   */
+  baseline?: 'zero' | 'average';
+  /**
+   * Y-axis value domain. Default `[0, 1]` (risk). Pass a metric's own range for
+   * indicators whose scale isn't 0..1 (z-scores, percentages, indices).
+   */
+  domain?: [number, number];
+  /**
+   * Clamp each series value into the `[0, 1]` range before plotting. Default
+   * `true` (risk). Set `false` for metrics with a non-0..1 `domain`.
+   */
+  clampValues?: boolean;
+  /** Tooltip value formatter. Default 2-decimal fixed. */
+  formatValue?: (n: number) => string;
+  /** Tooltip series label. Default `'Risk'`. */
+  valueLabel?: string;
+  /**
+   * Per-point labels (parallel to `series`, same oldest→newest order) shown as
+   * the tooltip heading — typically the reading's date or year. Omit for no
+   * heading. Only meaningful when `tooltip` is set.
+   */
+  labels?: (string | number | null | undefined)[];
 };
 
 /**
@@ -45,6 +74,12 @@ export default function RiskTrendChart({
   gradientId,
   tooltip = false,
   activeDot = false,
+  baseline = 'zero',
+  domain = [0, 1],
+  clampValues = true,
+  formatValue,
+  valueLabel = 'Risk',
+  labels,
 }: Props) {
   const wrapRef = useRef<HTMLDivElement>(null);
   const [width, setWidth] = useState(0);
@@ -57,8 +92,23 @@ export default function RiskTrendChart({
   }, []);
 
   const data = useMemo(
-    () => series.map((v, i) => ({ idx: i, v: clamp01(v) })),
-    [series]
+    () =>
+      series.map((v, i) => ({
+        idx: i,
+        v: clampValues ? clamp01(v) : v,
+        label: labels?.[i] ?? '',
+      })),
+    [series, clampValues, labels]
+  );
+
+  const useAvg = baseline === 'average';
+
+  // Average of the series — used as the area's baseline (when `baseline` is
+  // `'average'`) so the fill is drawn *between the line and the average*:
+  // segments above the average fill down to it, segments below fill up to it.
+  const avg = useMemo(
+    () => (data.length ? data.reduce((s, d) => s + d.v, 0) / data.length : 0.5),
+    [data]
   );
 
   return (
@@ -66,21 +116,51 @@ export default function RiskTrendChart({
       <ResponsiveContainer key={`${width}-${Math.round(height)}`} width="100%" height={height}>
         <AreaChart data={data} margin={{ left: 4, right: 4, top: 8, bottom: 0 }}>
           <defs>
-            <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor={color} stopOpacity={0.45} />
-              <stop offset="100%" stopColor={color} stopOpacity={0} />
-            </linearGradient>
+            {useAvg ? (
+              /* Symmetric fade: densest at the top/bottom extremes (near the
+                 trend line) and faint in the middle (near the average baseline),
+                 so the fill hugs the line on both sides of the average. */
+              <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor={color} stopOpacity={0.45} />
+                <stop offset="50%" stopColor={color} stopOpacity={0.04} />
+                <stop offset="100%" stopColor={color} stopOpacity={0.45} />
+              </linearGradient>
+            ) : (
+              <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor={color} stopOpacity={0.45} />
+                <stop offset="100%" stopColor={color} stopOpacity={0} />
+              </linearGradient>
+            )}
           </defs>
 
           <CartesianGrid stroke="rgba(255,255,255,0.12)" vertical={false} strokeDasharray="3 5" />
           <XAxis dataKey="idx" hide />
-          <YAxis domain={[0, 1]} hide />
+          <YAxis domain={domain} hide />
+
+          {/* Average line the fill is measured against. */}
+          {useAvg && (
+            <ReferenceLine
+              y={avg}
+              stroke={color}
+              strokeOpacity={0.55}
+              strokeWidth={1}
+              strokeDasharray="4 3"
+              ifOverflow="extendDomain"
+            />
+          )}
 
           {tooltip && (
             <Tooltip
               cursor={{ stroke: 'rgba(255,255,255,0.25)', strokeWidth: 1 }}
-              formatter={(val) => [(Number(val)).toFixed(2), 'Risk']}
-              labelFormatter={() => ''}
+              formatter={(val) => [
+                formatValue ? formatValue(Number(val)) : Number(val).toFixed(2),
+                valueLabel,
+              ]}
+              labelFormatter={(_, payload) => {
+                const lbl = payload?.[0]?.payload?.label;
+                return lbl != null && lbl !== '' ? String(lbl) : '';
+              }}
+              labelStyle={{ color: '#6b7280' }}
               contentStyle={{
                 background: 'rgba(14,14,14,0.92)',
                 border: '1px solid rgba(255,255,255,0.08)',
@@ -94,6 +174,7 @@ export default function RiskTrendChart({
           <Area
             type="monotone"
             dataKey="v"
+            baseValue={useAvg ? avg : 0}
             stroke={color}
             strokeWidth={2.2}
             fill={`url(#${gradientId})`}

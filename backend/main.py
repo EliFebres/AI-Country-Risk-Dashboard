@@ -2,11 +2,10 @@ import os
 import sys
 import pathlib
 import requests
-import pandas as pd
 
 from typing import List, Dict, Tuple
 from collections import defaultdict
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 
 # --- Resolve project root so "backend/" is importable ------------------------
 project_root = pathlib.Path.cwd().resolve()
@@ -22,18 +21,22 @@ if str(project_root) not in sys.path:
 from backend.utils import constants
 from backend.utils import data_retrieval
 from backend.utils.ai import langchain_llm
+from backend.utils.ai import calendar_ranker
+from backend.utils.ai import alerts_ranker
 from backend.utils.data_upsert import data_push
 from backend.utils.news_fetching import fetch_links
 from backend.utils.data_fetching import fetch_metrics
 from backend.utils.data_fetching import country_data_fetch
+from backend.utils.data_fetching import fmp_calendar_fetch
+from backend.utils.data_fetching import imf_macro_fetch
 from backend.utils.news_fetching.url_resolver import resolve_google_news_url
 from backend.utils.news_fetching.simple_scraper import get_article_assets
+from backend.utils.news_fetching.source_filter import is_blocked_url
 from backend.utils.news_fetching.advanced_scraper import scrape_one as crawlbase_scrape_one
 
 # --- Paths ------------------------------------------------------------------
 BACKEND_DIR    = project_root / "backend"
 PROCESSED_DATA = BACKEND_DIR / "data" / "wb_panel_wide"
-RAW_DATA_EXCEL = BACKEND_DIR / "data" / "country_data.xlsx"
 
 
 # --- Helpers ----------------------------------------------------------------
@@ -207,31 +210,29 @@ def _fetch_relevant_news(country_name: str, max_articles: int = 20) -> List[Dict
 
     return filtered[:max_articles]
 
-def ensure_missing_country_panels(excel_path: pathlib.Path,
-                                  root: pathlib.Path,
+def ensure_missing_country_panels(root: pathlib.Path,
                                   indicators: dict,
                                   start: int | None = None,
                                   end: int | None = None) -> None:
     """
-    Make sure every country in excel_path has a partition under root.
+    Make sure every country in constants.COUNTRY_ROSTER has a partition under root.
     Only (re)build and write partitions that are missing or empty.
     """
     root.mkdir(parents=True, exist_ok=True)
 
-    df = pd.read_excel(excel_path)
-    if not {"Country_Name", "iso2Code"}.issubset(df.columns):
-        raise ValueError(f"{excel_path} must include 'Country_Name' and 'iso2Code' columns.")
+    roster = constants.COUNTRY_ROSTER
+    iso3_by_iso2 = constants.ISO3_BY_ISO2
 
     missing = []
-    for _, row in df.iterrows():
-        iso2 = str(row["iso2Code"]).strip()
+    for country in roster:
+        iso2 = str(country["iso2"]).strip()
         if not iso2:
             continue
         if not _has_country_partition(root, iso2):
             missing.append(iso2)
 
     if not missing:
-        print(f"All {len(df)} countries already have parquet partitions in {root}.")
+        print(f"All {len(roster)} countries already have parquet partitions in {root}.")
         return
 
     print(f"Backfilling {len(missing)} missing panels → {missing}")
@@ -244,8 +245,12 @@ def ensure_missing_country_panels(excel_path: pathlib.Path,
                 end=end,
                 tidy_fetch=True,
             )
+
+            # Merge non-WB indicators (e.g. Political Corruption Index from OWID)
+            panel = country_data_fetch.merge_extra_indicators(panel, iso2, iso3_by_iso2)
+
             if panel is None or panel.empty:
-                print(f"[{iso2}] No World Bank rows for selected indicators — skipping write.")
+                print(f"[{iso2}] No rows for selected indicators — skipping write.")
                 continue
 
             country_data_fetch.ingest_panel_wide(panel, iso2, root)
@@ -258,30 +263,78 @@ def main() -> None:
     """Loop countries → payload → news → LLM score → enrich Top-3 images if missing → DB."""
     print(f"=== AI Country Risk run started at {_to_utc_iso(datetime.now(timezone.utc))} UTC ===")
 
-    # 0) Ensure/Backfill World Bank panels per country (incremental, idempotent)
+    # 0) Ensure/Backfill panels per country (incremental, idempotent)
+    #    World Bank indicators are fetched per-country; non-WB indicators
+    #    (Political Corruption Index) are merged in via merge_extra_indicators.
     ensure_missing_country_panels(
-        excel_path=RAW_DATA_EXCEL,
         root=PROCESSED_DATA,
         indicators=constants.INDICATORS,
         start=None,
         end=None,
     )
 
-    # Map "Country_Name" → "iso2Code" from your Excel
-    df_countries: pd.DataFrame = pd.read_excel(RAW_DATA_EXCEL)
-    country_map = (
-        df_countries[["Country_Name", "iso2Code"]]
-        .dropna()
-        .set_index("Country_Name")["iso2Code"]
-        .to_dict()
-    )
+    # 0b) Economic calendar (FMP) for the front-end Econ Calendar pane. Guarded
+    #     so a calendar failure never aborts the country/risk loop below.
+    try:
+        events = fmp_calendar_fetch.fetch_economic_calendar()
+        if events:
+            # AI-rank the next-14-day subset by importance to investors (US-tilted).
+            # Failure here must not block the upsert, so it is guarded separately.
+            cutoff = datetime.now(timezone.utc) + timedelta(days=constants.CAL_RANK_HORIZON_DAYS)
+            subset = [ev for ev in events if ev["event_time"] <= cutoff]
+            for i, ev in enumerate(subset, start=1):
+                ev["_rank_id"] = f"e{i}"
+            try:
+                scores = calendar_ranker.rank_calendar_events(subset)
+                scored_at = datetime.now(timezone.utc)
+                for ev in subset:
+                    s = scores.get(ev.get("_rank_id"))
+                    if s:
+                        ev["ai_importance"] = s.get("importance")
+                        ev["ai_rationale"]  = s.get("rationale")
+                        ev["ai_scored_at"]  = scored_at
+                print(f"[econ-calendar] AI-ranked {len(scores)}/{len(subset)} next-14d events")
+            except Exception as rank_err:
+                print(f"[econ-calendar] ranking ERROR: {rank_err}")
+
+            data_push.upsert_economic_events(events)
+            print(f"[econ-calendar] upserted {len(events)} events")
+        else:
+            print("[econ-calendar] no events fetched (skipping upsert)")
+    except Exception as e:
+        print(f"[econ-calendar] ERROR: {e}")
+
+    # 0c) Refresh fast-moving indicators (Inflation) from the IMF at monthly
+    #     frequency into `recent_indicator`. World Bank values are annual and lag
+    #     1–2 years; the front-end prefers this fresher value and falls back to the
+    #     WB annual one when a country has no IMF observation. Guarded per-country
+    #     so an IMF gap or outage never blocks the risk loop below.
+    if constants.IMF_RECENT_INDICATORS:
+        refreshed = 0
+        for c in constants.COUNTRY_ROSTER:
+            try:
+                recent = imf_macro_fetch.fetch_recent_indicators(c["iso3"])
+                if recent:
+                    data_push.upsert_recent_indicators(c["iso2"], recent)
+                    refreshed += 1
+            except Exception as e:
+                print(f"[imf-refresh] {c['iso2']} ERROR: {e}")
+        print(f"[imf-refresh] refreshed {refreshed}/{len(constants.COUNTRY_ROSTER)} countries")
+
+    # Map "Country_Name" → "iso2" from the hardcoded roster
+    country_map = {c["name"]: c["iso2"] for c in constants.COUNTRY_ROSTER}
+
+    # Pool every country's Top-3 articles for the post-loop global alert ranking.
+    global_alert_pool: List[Dict] = []
 
     for country_name, iso2 in country_map.items():
         try:
-            # 1) Macro payload (pretty, JSON-serializable)
+            # 1) Macro payload (pretty, JSON-serializable). ALL_INDICATORS adds
+            #    the merged non-WB indicators (Political Corruption Index) so they
+            #    reach both the LLM payload and the DB upsert.
             payload = data_retrieval.prepare_llm_payload_pretty(
                 country_iso=iso2,
-                indicators=constants.INDICATORS,
+                indicators=constants.ALL_INDICATORS,
                 since=2015,
                 lookback=10,
                 deltas=(1, 5),
@@ -301,6 +354,14 @@ def main() -> None:
                     link = it.get("link")
                     if isinstance(link, str) and "news.google.com" in link:
                         it["link"] = resolve_google_news_url(link, session=_sess)
+
+                # a2) Defense-in-depth: drop denylisted sources now that links are
+                #     resolved, in case a wrapper couldn't be resolved earlier.
+                before = len(items)
+                items = [it for it in items if not is_blocked_url(it.get("link"))]
+                removed = before - len(items)
+                if removed:
+                    print(f"[{iso2}] Blocked {removed} article(s) from denylisted sources.")
 
                 # b) Ensure summary/content and thumbnail (simple scraper, single GET)
                 for it in items:
@@ -471,6 +532,10 @@ def main() -> None:
                     "image": it.get("image"),
                 })
 
+            # 6b) Add this country's Top-3 to the global alert pool (ranked after the loop)
+            for a in top_articles:
+                global_alert_pool.append({**a, "country_iso2": iso2, "country_name": country_name})
+
             # 7) Upsert to DB
             data_push.upsert_snapshot(
                 {**payload, "llm_output": llm_output, "top_articles": top_articles},
@@ -485,6 +550,21 @@ def main() -> None:
 
         except Exception as e:
             print(f"[{iso2}] ERROR: {e}")
+
+    # 8) Global news alerts: rank the pooled Top-3 articles by importance to the
+    #    global economy and persist the top-N. Guarded so a failure here never
+    #    affects the per-country snapshots already written above.
+    try:
+        ranked_alerts = alerts_ranker.rank_global_alerts(global_alert_pool)
+        if ranked_alerts:
+            data_push.upsert_news_alerts(
+                ranked_alerts, as_of=datetime.now(timezone.utc).date()
+            )
+            print(f"[alerts] ranked {len(ranked_alerts)}/{len(global_alert_pool)} pooled articles, stored {len(ranked_alerts)}")
+        else:
+            print(f"[alerts] no alerts ranked from {len(global_alert_pool)} pooled articles (skipping upsert)")
+    except Exception as e:
+        print(f"[alerts] ERROR: {e}")
 
     print(f"=== Run finished at {_to_utc_iso(datetime.now(timezone.utc))} UTC ===")
 

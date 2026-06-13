@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { getRiskCache, primeRiskCache, type CountryRisk } from '../../lib/risk-client';
 import { colorForRisk } from '../../lib/risk';
+import { shortDate } from '../../lib/format';
 import RiskTrendChart from '../RiskTrendChart';
 
 /** risk.json entry */
@@ -30,6 +31,7 @@ export default function RiskReadingSection({
     currentRisk: number | null;
     avgCurrent: number | null;
     history: number[]; // oldest→newest inclusive of current
+    historyDates: string[]; // snapshot date per history point (parallel to history)
     delta: number | null; // current - previous
   } | null>(null);
 
@@ -101,15 +103,27 @@ export default function RiskReadingSection({
           entry = findEntry();
         }
 
-        // Build history: [...prevRiskSeries reversed, risk]
+        // Build history: [...prevRiskSeries reversed, risk] with snapshot dates
+        // kept parallel (so the chart tooltip can show each reading's date).
         let history: number[] = [];
+        let historyDates: string[] = [];
         let currentRisk: number | null = null;
         let delta: number | null = null;
 
         if (entry) {
           const prior = (entry.prevRiskSeries ?? []).slice().reverse(); // oldest→newest
+          const priorDates = (entry.prevAsOfs ?? []).slice().reverse(); // parallel to prior
           const latest = entry.risk;
-          history = [...prior, latest].filter((v) => typeof v === 'number' && Number.isFinite(v));
+          prior.forEach((v, i) => {
+            if (typeof v === 'number' && Number.isFinite(v)) {
+              history.push(v);
+              historyDates.push(priorDates[i] ?? '');
+            }
+          });
+          if (typeof latest === 'number' && Number.isFinite(latest)) {
+            history.push(latest);
+            historyDates.push(entry.asOf ?? '');
+          }
           currentRisk = typeof latest === 'number' ? latest : null;
 
           // delta = latest - previous (immediate predecessor)
@@ -146,7 +160,7 @@ export default function RiskReadingSection({
         const avgCurrent = values.length ? values.reduce((a, b) => a + b, 0) / values.length : null;
 
         if (!cancelled) {
-          setStats({ currentRisk, avgCurrent, history, delta });
+          setStats({ currentRisk, avgCurrent, history, historyDates, delta });
         }
       } catch {
         if (!cancelled) setStatsError('Failed to load risk stats');
@@ -217,6 +231,7 @@ export default function RiskReadingSection({
             <div className="chartWrap">
               <RiskTrendChart
                 series={history}
+                labels={(stats?.historyDates ?? []).map((d) => shortDate(d))}
                 color={currentColor}
                 height={leftColHeight || 120}
                 gradientId={gradId}
