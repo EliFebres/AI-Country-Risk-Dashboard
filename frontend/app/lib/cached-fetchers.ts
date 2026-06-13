@@ -97,6 +97,13 @@ export const getIndicatorAverages = unstable_cache(
   { revalidate: CACHE_TTL.INDICATORS, tags: ["indicators"] }
 );
 
+/** Live TV channel list for the bottom-bar pane (DB-backed, SQL-editable). */
+export const getChannels = unstable_cache(
+  async () => riskRepository.fetchChannels(),
+  ["live-tv-channels"],
+  { revalidate: CACHE_TTL.CHANNELS, tags: ["channels"] }
+);
+
 /** Top-3 articles per country's latest snapshot. */
 export const getArticles = unstable_cache(
   async () => riskRepository.fetchLatestArticlesForLatestSnapshots(),

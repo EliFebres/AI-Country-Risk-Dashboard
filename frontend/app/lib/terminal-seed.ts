@@ -50,10 +50,16 @@ export const EXCHANGES: Exchange[] = [
 ].sort((a, b) => b.vol - a.vol);
 
 /* ------------------------------- Live TV channels ------------------------------- */
+// Fallback/initial list for the Live TV pane. The live source of truth is the
+// `live_tv_channel` DB table (served via /api/dashboard `channels`), so a dead
+// stream can be re-pointed by SQL with no deploy; this seed is only used for the
+// first render and if the DB read fails. Keep it in sync as a sane default.
 export type Channel = { key: string; label: string; id: string };
 
 export const CHANNELS: Channel[] = [
-  { key: 'bloomberg', label: 'Bloomberg', id: 'UCIALMKvObZNtJ6AmdCLP7Lg' },
+  // Bloomberg Originals — Bloomberg Television's free 24/7 stream moved to paid
+  // Bloomberg TV+ on YouTube TV (Oct 2025), so the embed points at Originals.
+  { key: 'bloomberg', label: 'Bloomberg', id: 'UCUMZ7gohGI9HcU9VNsr2FJQ' },
   { key: 'euronews', label: 'Euronews', id: 'UCSrZ3UV4jOidv8ppoVuvW9Q' },
   { key: 'dw', label: 'DW News', id: 'UCknLrEdhRCp1aegoMqRaCZg' },
   { key: 'aljazeera', label: 'Al Jazeera', id: 'UCNye-wNBqNL5ZzHSJj3l8Bg' },

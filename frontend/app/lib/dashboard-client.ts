@@ -8,6 +8,7 @@
 // guard means concurrent callers (the map's background prefetch + a sidebar
 // opening) share one network request instead of racing.
 import type { CountryArticles } from "./risk-client";
+import type { Channel } from "./terminal-seed";
 
 export type IndicatorTargetName =
   | "Rule of law (z-score)"
@@ -74,6 +75,7 @@ export type DashboardData = {
   summaries: SummaryEntry[];
   econCalendar: EconCalendarEvent[];
   newsAlerts: NewsAlert[];
+  channels: Channel[];
 };
 
 export const DASHBOARD_JSON_PUBLIC_PATH = "/api/dashboard";
@@ -98,8 +100,14 @@ export async function loadDashboard(): Promise<DashboardData> {
 
   inFlight = (async () => {
     try {
+      // `no-store`, not `force-cache`: per-session de-dup is already handled by
+      // the DASHBOARD_CACHE singleton + inFlight guard, so the only thing
+      // `force-cache` added was a browser HTTP cache that could pin a STALE
+      // payload SHAPE (e.g. one fetched before `indicatorAverages` existed),
+      // silently breaking the rail's metric dropdown. `no-store` guarantees the
+      // browser always receives the current payload shape.
       const res = await fetch(DASHBOARD_JSON_PUBLIC_PATH, {
-        cache: "force-cache",
+        cache: "no-store",
         headers: { accept: "application/json" },
       });
       if (!res.ok) {
@@ -148,6 +156,11 @@ export function getArticlesFor(
 /** The cross-country indicator average-per-year trends (keyed by `indicator.name`). */
 export function getIndicatorAverages(data: DashboardData): IndicatorAverageTrends {
   return data.indicatorAverages ?? {};
+}
+
+/** The DB-backed Live TV channel list (empty until loaded, or on read failure). */
+export function getChannelsFrom(data: DashboardData): Channel[] {
+  return data.channels ?? [];
 }
 
 /** Match a country's AI summary by ISO2. */

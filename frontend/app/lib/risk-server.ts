@@ -1,6 +1,7 @@
 // app/lib/risk-server.ts
 import "server-only";
 import type { Pool } from "pg";
+import type { Channel } from "./terminal-seed";
 
 // ----------------------------- Types --------------------------------------
 
@@ -395,6 +396,26 @@ export class RiskRepository {
     } catch (err) {
       console.warn("fetchIndicatorAverageTrends failed; returning {}:", err);
       return {};
+    }
+  }
+
+  /**
+   * Live TV channel list for the bottom-bar pane, from the `live_tv_channel`
+   * table (key, label, YouTube `channel_id`, sort order). Kept in the DB — not
+   * hardcoded — so a dead stream can be re-pointed with a single SQL UPDATE,
+   * no code deploy. Maps `channel_id` → the client `Channel.id`. Defensive:
+   * returns `[]` on query failure so the component falls back to its seed list.
+   */
+  async fetchChannels(): Promise<Channel[]> {
+    try {
+      const pool = await this.pool();
+      const { rows } = await pool.query<{ key: string; label: string; channel_id: string }>(
+        `SELECT key, label, channel_id FROM live_tv_channel ORDER BY sort, key`
+      );
+      return rows.map((r) => ({ key: r.key, label: r.label, id: r.channel_id }));
+    } catch (err) {
+      console.warn("fetchChannels failed; returning []:", err);
+      return [];
     }
   }
 

@@ -46,14 +46,21 @@ const METRICS: Metric[] = [
   { key: 'corruption',   label: 'Avg Political Corruption', kind: 'indicator', indicatorName: 'Political corruption index (0–1, higher = more corrupt)',         decimals: 2 },
 ];
 
-/** Padded [min,max] domain for an indicator series (falls back to [0,1] empty). */
+/**
+ * Padded [min,max] domain for a series (falls back to [0,1] when empty): the
+ * y-axis top sits 15% above the max value and the bottom 15% below the min.
+ * Each bound is padded by 15% of ITS OWN magnitude so the axis always extends
+ * outward — for the usual positive series this is `min*0.85`..`max*1.15`, and it
+ * stays correct if a bound goes negative (e.g. an average-GDP-growth recession
+ * year), where a literal `min*0.85` would move the bound up and clip the data.
+ */
 function autoDomain(vals: number[]): [number, number] {
   if (!vals.length) return [0, 1];
-  let lo = Math.min(...vals);
-  let hi = Math.max(...vals);
-  if (lo === hi) { lo -= 1; hi += 1; }
-  const pad = (hi - lo) * 0.3;
-  return [lo - pad, hi + pad];
+  const lo = Math.min(...vals);
+  const hi = Math.max(...vals);
+  // Flat series: pad by 15% of the value's magnitude (±1 when it's zero).
+  if (lo === hi) { const p = Math.abs(lo) * 0.15 || 1; return [lo - p, hi + p]; }
+  return [lo - Math.abs(lo) * 0.15, hi + Math.abs(hi) * 0.15];
 }
 
 /** Immediate-predecessor delta for a country (current − previous reading). */
