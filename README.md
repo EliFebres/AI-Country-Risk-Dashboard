@@ -1,6 +1,8 @@
 # AI Country Risk Dashboard
 
-![AI Risk Dashboard](/assets/ai-risk-dashboard.gif)
+🔗 **[View the live dashboard](https://www.elifebres.com/work/ai-country-risk-dashboard/live)**
+
+![AI Risk Dashboard](/assets/ai-dashboard-snapshot.png)
 
 ## Overview
 
