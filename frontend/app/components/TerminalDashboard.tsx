@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useRef, useState, type CSSProperties } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
 import Map, { type MapApi } from './Map';
 import Masthead from './Masthead';
 import MapFullscreenButton from './MapFullscreenButton';
@@ -55,6 +55,18 @@ export default function TerminalDashboard() {
       setDataTimestamp(timestamp);
     },
     []
+  );
+
+  // Newest as_of across all countries = most recent risk_snapshot date. Drives
+  // the masthead's "Data As Of" so it reflects when the data was generated
+  // rather than when the client fetched it. ISO 'YYYY-MM-DD' sorts lexically.
+  const latestAsOf = useMemo(
+    () =>
+      riskRows?.reduce<string | null>(
+        (max, r) => (r.asOf && (!max || r.asOf > max) ? r.asOf : max),
+        null
+      ) ?? null,
+    [riskRows]
   );
 
   // Idle auto-tour: when armed via the masthead toggle, cycle through random
@@ -120,7 +132,7 @@ export default function TerminalDashboard() {
     <div className={`app ${bottomMinimized ? 'bottom-min' : ''}`} style={appStyle}>
       <Masthead
         coverage={riskRows?.length ?? null}
-        dataTimestamp={dataTimestamp}
+        dataTimestamp={latestAsOf}
         idleEnabled={idleEnabled}
         onToggleIdle={() => setIdleEnabled((v) => !v)}
       />
