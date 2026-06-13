@@ -28,6 +28,7 @@ from backend.utils.news_fetching import fetch_links
 from backend.utils.data_fetching import fetch_metrics
 from backend.utils.data_fetching import country_data_fetch
 from backend.utils.data_fetching import fmp_calendar_fetch
+from backend.utils.data_fetching import imf_macro_fetch
 from backend.utils.news_fetching.url_resolver import resolve_google_news_url
 from backend.utils.news_fetching.simple_scraper import get_article_assets
 from backend.utils.news_fetching.source_filter import is_blocked_url
@@ -302,6 +303,23 @@ def main() -> None:
             print("[econ-calendar] no events fetched (skipping upsert)")
     except Exception as e:
         print(f"[econ-calendar] ERROR: {e}")
+
+    # 0c) Refresh fast-moving indicators (Inflation) from the IMF at monthly
+    #     frequency into `recent_indicator`. World Bank values are annual and lag
+    #     1–2 years; the front-end prefers this fresher value and falls back to the
+    #     WB annual one when a country has no IMF observation. Guarded per-country
+    #     so an IMF gap or outage never blocks the risk loop below.
+    if constants.IMF_RECENT_INDICATORS:
+        refreshed = 0
+        for c in constants.COUNTRY_ROSTER:
+            try:
+                recent = imf_macro_fetch.fetch_recent_indicators(c["iso3"])
+                if recent:
+                    data_push.upsert_recent_indicators(c["iso2"], recent)
+                    refreshed += 1
+            except Exception as e:
+                print(f"[imf-refresh] {c['iso2']} ERROR: {e}")
+        print(f"[imf-refresh] refreshed {refreshed}/{len(constants.COUNTRY_ROSTER)} countries")
 
     # Map "Country_Name" → "iso2" from the hardcoded roster
     country_map = {c["name"]: c["iso2"] for c in constants.COUNTRY_ROSTER}

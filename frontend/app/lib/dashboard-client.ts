@@ -8,6 +8,7 @@
 // guard means concurrent callers (the map's background prefetch + a sidebar
 // opening) share one network request instead of racing.
 import type { CountryArticles } from "./risk-client";
+import type { Channel } from "./terminal-seed";
 
 export type IndicatorTargetName =
   | "Rule of law (z-score)"
@@ -15,12 +16,24 @@ export type IndicatorTargetName =
   | "Interest payments (% revenue)"
   | "GDP per-capita growth (% y/y)";
 
+/**
+ * One indicator reading. `value` is the freshest available — a sub-annual IMF
+ * observation (with a precise `period`/`freq`/`source`) when present, otherwise
+ * the latest World Bank annual value (`freq: 'A'`). `year` is always set.
+ */
+export type IndicatorValue = {
+  value: number;
+  unit?: string;
+  year: number;
+  period?: string;         // ISO date 'YYYY-MM-DD' end-of-period (sub-annual rows)
+  freq?: "M" | "Q" | "A";
+  source?: string;
+};
+
 export type CountryIndicatorLatest = {
   iso2: string;
   name: string;
-  values: Partial<
-    Record<IndicatorTargetName, { year: number; value: number; unit?: string }>
-  >;
+  values: Partial<Record<IndicatorTargetName, IndicatorValue>>;
 };
 
 export type SummaryEntry = { country_iso2: string; bullet_summary: string };
@@ -49,12 +62,20 @@ export type NewsAlert = {
   image_url: string | null;     // thumbnail URL
 };
 
+/** One year's cross-country average for an indicator (oldest→newest in a series). */
+export type IndicatorAvgPoint = { year: number; avg: number };
+
+/** Map of `indicator.name` → its average-per-year series, for the rail's trend dropdown. */
+export type IndicatorAverageTrends = Record<string, IndicatorAvgPoint[]>;
+
 export type DashboardData = {
   indicators: CountryIndicatorLatest[];
+  indicatorAverages: IndicatorAverageTrends;
   articles: CountryArticles[];
   summaries: SummaryEntry[];
   econCalendar: EconCalendarEvent[];
   newsAlerts: NewsAlert[];
+  channels: Channel[];
 };
 
 export const DASHBOARD_JSON_PUBLIC_PATH = "/api/dashboard";
@@ -79,8 +100,14 @@ export async function loadDashboard(): Promise<DashboardData> {
 
   inFlight = (async () => {
     try {
+      // `no-store`, not `force-cache`: per-session de-dup is already handled by
+      // the DASHBOARD_CACHE singleton + inFlight guard, so the only thing
+      // `force-cache` added was a browser HTTP cache that could pin a STALE
+      // payload SHAPE (e.g. one fetched before `indicatorAverages` existed),
+      // silently breaking the rail's metric dropdown. `no-store` guarantees the
+      // browser always receives the current payload shape.
       const res = await fetch(DASHBOARD_JSON_PUBLIC_PATH, {
-        cache: "force-cache",
+        cache: "no-store",
         headers: { accept: "application/json" },
       });
       if (!res.ok) {
@@ -124,6 +151,16 @@ export function getArticlesFor(
   if (!iso2) return undefined;
   const isoU = iso2.toUpperCase();
   return data.articles.find((c) => (c.iso2 || "").toUpperCase() === isoU);
+}
+
+/** The cross-country indicator average-per-year trends (keyed by `indicator.name`). */
+export function getIndicatorAverages(data: DashboardData): IndicatorAverageTrends {
+  return data.indicatorAverages ?? {};
+}
+
+/** The DB-backed Live TV channel list (empty until loaded, or on read failure). */
+export function getChannelsFrom(data: DashboardData): Channel[] {
+  return data.channels ?? [];
 }
 
 /** Match a country's AI summary by ISO2. */

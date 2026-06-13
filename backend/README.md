@@ -2,20 +2,21 @@
 
 ## Overview
 
-This directory contains the **data-engineering and inference pipeline** that powers the Country-Risk dashboard. It performs four core jobs:
+This directory contains the **data-engineering and inference pipeline** that powers the Country-Risk dashboard. It performs five core jobs:
 
-1. **Data ingestion** — downloads World Bank macro-economic indicators and stores them as tidy, per-country panel datasets.
+1. **Data ingestion** — downloads World Bank macro-economic indicators as tidy, per-country panel datasets, and refreshes the freshest sub-annual prints (e.g. monthly/quarterly inflation) from the **IMF** so the dashboard isn't stuck on stale annual values.
 2. **Headline collection** — gathers recent articles via Google News RSS and resolves publisher URLs.
-3. **Risk scoring** — calls an LLM (via LangChain) to transform macro data + recent headlines into a single 0-1 risk score and an explanatory bullet summary.
-4. **Persistence** — upserts the score and all underlying data into a Neon-hosted PostgreSQL database for the frontend to consume.
+3. **Economic calendar** — pulls the upcoming ~14-day economic calendar from **FMP** and AI-ranks the events by investor importance.
+4. **Risk scoring** — calls an LLM (via LangChain) to transform macro data + recent headlines into a single 0-1 risk score and an explanatory bullet summary, and to rank a global "AI Alerts" feed from every country's Top-3 articles.
+5. **Persistence** — upserts the scores and all underlying data (indicators, articles, alerts, calendar) into a Neon-hosted PostgreSQL database for the frontend to consume.
 
 ### How headline scraping works (fast first, then targeted enrichment)
 
-- All links are first processed with the **simple scraper** (`backend/utils/webscraping/simple_scraper.py`) which:
+- All links are first processed with the **simple scraper** (`backend/utils/news_fetching/simple_scraper.py`) which:
   - fetches each article **once**,
   - extracts a clean **summary**, **full text** (truncated for storage), and a **thumbnail** (OG/Twitter/JSON-LD with fallbacks).
 - The LLM ranks articles by impact.
-- **Only the Top-3** are optionally enriched with the **advanced scraper** (`backend/utils/webscraping/advanced_scraper.py`) **when they are from Reuters or Bloomberg** and a Crawlbase token is available. This uses Crawlbase to improve metadata while respecting `robots.txt`.
+- **Only the Top-3** are optionally enriched with the **advanced scraper** (`backend/utils/news_fetching/advanced_scraper.py`) **when they are from Reuters or Bloomberg** and a Crawlbase token is available. This uses Crawlbase to improve metadata while respecting `robots.txt`.
 
 ---
 
@@ -33,6 +34,7 @@ This directory contains the **data-engineering and inference pipeline** that pow
 | --------------------- | ----------------------------------------------------------------------- |
 | `DATABASE_URL`        | Postgres connection string (Neon or local)                              |
 | `OPENAI_API_KEY`      | OpenAI key used by `langchain_openai`                                   |
+| `FMP_API_KEY`         | Financial Modeling Prep key — economic calendar in `main.py` and the live prices daemon |
 | `CRAWLBASE_JS_TOKEN`  | *(optional)* Crawlbase JS token for advanced Reuters/Bloomberg enrichment |
 | `CRAWLBASE_TOKEN`     | *(optional)* Crawlbase standard token (used if JS token not provided)   |
 
@@ -60,11 +62,16 @@ python backend/main.py
 ## Key modules
 
 * `backend/main.py` — orchestrates the run: data payload → news → LLM scoring → DB upsert.
-* `backend/utils/webscraping/simple_scraper.py` — single-request extractor for summary, full text, and thumbnail.
-* `backend/utils/webscraping/advanced_scraper.py` — Crawlbase-powered metadata for **Top-3** Reuters/Bloomberg links only.
-* `backend/utils/url_resolver.py` — resolves `news.google.com` wrappers to publisher URLs.
-* `backend/utils/country_data_fetch.py` — World Bank panel ingestion.
-* `backend/ai/langchain_llm.py` — LLM call for risk scoring.
+* `backend/utils/news_fetching/simple_scraper.py` — single-request extractor for summary, full text, and thumbnail.
+* `backend/utils/news_fetching/advanced_scraper.py` — Crawlbase-powered metadata for **Top-3** Reuters/Bloomberg links only.
+* `backend/utils/news_fetching/url_resolver.py` — resolves `news.google.com` wrappers to publisher URLs.
+* `backend/utils/data_fetching/country_data_fetch.py` — World Bank panel ingestion.
+* `backend/utils/data_fetching/imf_macro_fetch.py` — IMF SDMX 2.1 fetch of the freshest monthly/quarterly indicators (e.g. inflation) → `recent_indicator`.
+* `backend/utils/data_fetching/fmp_calendar_fetch.py` — FMP ~14-day economic-calendar pull.
+* `backend/utils/ai/langchain_llm.py` — LLM call for risk scoring.
+* `backend/utils/ai/alerts_ranker.py` — LLM global ranking of pooled Top-3 articles into the `news_alert` feed.
+* `backend/utils/ai/calendar_ranker.py` — LLM ranking of calendar events by investor importance.
+* `backend/utils/data_upsert/data_push.py` — transactional upserts for every table below.
 
 ---
 
@@ -88,6 +95,22 @@ CREATE TABLE yearly_value (
     yr           INT,
     value        DOUBLE PRECISION,
     PRIMARY KEY (country_iso2, indicator_id, yr)
+);
+
+-- Freshest sub-annual (monthly/quarterly) observation per (country, indicator),
+-- sourced from the IMF. The front-end prefers these over the annual yearly_value
+-- and falls back to the annual one when a country has no fresh row. One row per
+-- (country, indicator), upserted in place.
+CREATE TABLE recent_indicator (
+    country_iso2 CHAR(2)  NOT NULL,
+    indicator    TEXT     NOT NULL,        -- display name, matches indicator.name
+    period       DATE     NOT NULL,        -- end-of-period date of the observation
+    freq         CHAR(1)  NOT NULL CHECK (freq IN ('M','Q','A')),
+    value        DOUBLE PRECISION NOT NULL,
+    unit         TEXT,
+    source       TEXT,
+    updated_at   TIMESTAMPTZ NOT NULL DEFAULT now(),
+    PRIMARY KEY (country_iso2, indicator)
 );
 
 CREATE TABLE risk_snapshot (
@@ -154,6 +177,30 @@ CREATE TABLE news_alert (
 
 CREATE INDEX idx_news_alert_as_of ON news_alert (as_of);
 
+-- Upcoming economic-calendar events (next ~14 days) from FMP, for the bottom-bar
+-- "Econ Calendar" pane. Each ETL run upserts events and the LLM tags an
+-- investor-importance score (US-tilted) so the pane can sort by what matters.
+CREATE TABLE economic_calendar_event (
+    id           BIGSERIAL PRIMARY KEY,
+    event_time   TIMESTAMPTZ NOT NULL,
+    country_code TEXT NOT NULL,
+    country_name TEXT NOT NULL,
+    event        TEXT NOT NULL,
+    importance   TEXT NOT NULL CHECK (importance IN ('h','m','l')),  -- FMP impact
+    currency     TEXT,
+    previous     DOUBLE PRECISION,
+    estimate     DOUBLE PRECISION,
+    actual       DOUBLE PRECISION,
+
+    ai_importance DOUBLE PRECISION,    -- LLM investor-importance score (0-1)
+    ai_rationale  TEXT,
+    ai_scored_at  TIMESTAMPTZ,
+
+    created_at   TIMESTAMPTZ NOT NULL DEFAULT now(),
+    updated_at   TIMESTAMPTZ NOT NULL DEFAULT now(),
+    UNIQUE (event_time, country_code, event)
+);
+
 -- Live "Prices" pane. Maintained by the standalone prices_daemon.py (NOT main.py):
 -- one row per tracked asset, upserted in place every few minutes. Stocks/crypto/
 -- commodities come from FMP batch-quote; US Treasury yields from FMP treasury-
@@ -188,6 +235,21 @@ CREATE TABLE price_reference (
 ```
 
 ---
+
+## IMF & economic-calendar refresh (inside `main.py`)
+
+Unlike the standalone prices daemon, these two refreshes run **as part of the daily
+`main.py` ETL**:
+
+* **IMF higher-frequency macro.** `utils/data_fetching/imf_macro_fetch.py` pulls the
+  freshest sub-annual prints (e.g. monthly/quarterly inflation) from the IMF SDMX 2.1
+  API and upserts them into `recent_indicator`. The front-end prefers these over the
+  annual World Bank `yearly_value`, so a country in a fast-moving inflation regime shows
+  a current figure instead of a year-old one. The tracked set lives in `constants.IMF_RECENT_INDICATORS`.
+* **Economic calendar.** `utils/data_fetching/fmp_calendar_fetch.py` pulls the upcoming
+  ~14-day calendar from FMP; `utils/ai/calendar_ranker.py` then scores each event's
+  investor importance (`ai_importance` / `ai_rationale`) before the rows are upserted into
+  `economic_calendar_event`.
 
 ## Live prices feed (`prices_daemon.py`)
 

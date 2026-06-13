@@ -1,6 +1,7 @@
 // app/lib/risk-server.ts
 import "server-only";
 import type { Pool } from "pg";
+import type { Channel } from "./terminal-seed";
 
 // ----------------------------- Types --------------------------------------
 
@@ -28,16 +29,46 @@ export const INDICATOR_TARGET_NAMES = [
 
 export type IndicatorTargetName = (typeof INDICATOR_TARGET_NAMES)[number];
 
+/**
+ * One indicator reading for a country. `value` is the freshest available: a
+ * sub-annual IMF observation from `recent_indicator` when present (carrying a
+ * precise `period`/`freq`/`source`), otherwise the latest World Bank annual
+ * value. `year` is always set (the period's year for fresh rows) for back-compat.
+ */
+export type IndicatorValue = {
+  value: number;
+  unit?: string;
+  year: number;            // calendar year of the reading (period year for fresh rows)
+  period?: string;         // ISO date 'YYYY-MM-DD' end-of-period (sub-annual rows only)
+  freq?: "M" | "Q" | "A";  // observation frequency ('A' = annual WB fallback)
+  source?: string;         // e.g. 'IMF' for fresh rows; undefined for WB annual
+};
+
 export type CountryIndicatorLatest = {
   iso2: string;
   name: string;
-  values: Partial<
-    Record<
-      IndicatorTargetName,
-      { year: number; value: number; unit?: string }
-    >
-  >;
+  values: Partial<Record<IndicatorTargetName, IndicatorValue>>;
 };
+
+/**
+ * Indicators (by `indicator.name`) offered as cross-country average TRENDS in
+ * the rail's metric dropdown. Sourced from annual `yearly_value`, averaged
+ * across countries per year.
+ */
+export const AVG_TREND_INDICATOR_NAMES = [
+  "Inflation (% y/y)",
+  "Rule of law (z-score)",
+  "GDP per-capita growth (% y/y)",
+  "Unemployment (% labour force)",
+  "Interest payments (% revenue)",
+  "Political corruption index (0–1, higher = more corrupt)",
+] as const;
+
+/** One year's cross-country average for an indicator. */
+export type IndicatorAvgPoint = { year: number; avg: number };
+
+/** Map of `indicator.name` → its average-per-year series (oldest→newest). */
+export type IndicatorAverageTrends = Record<string, IndicatorAvgPoint[]>;
 
 export type CountryArticles = {
   iso2: string;
@@ -206,22 +237,37 @@ export class RiskRepository {
   }
 
   /**
-   * Each country's most recent year/value for the four target indicators.
-   * Returns one entry per country with a values map keyed by indicator name.
+   * Each country's freshest value for the four target indicators.
+   *
+   * For every (country, indicator) the latest World Bank annual value is taken
+   * (DISTINCT ON … yr DESC), then a sub-annual IMF observation from
+   * `recent_indicator` — refreshed far more often than the WB annual series — is
+   * preferred when present. The annual value remains the fallback, so a country
+   * the IMF doesn't cover still shows its WB figure (labeled as annual).
+   *
+   * Defensive: `recent_indicator` is maintained by the backend run and may not
+   * exist yet in a fresh environment, so a join failure falls back to the
+   * annual-only query rather than failing the whole /api/dashboard payload.
    */
   async fetchLatestIndicatorValues(): Promise<CountryIndicatorLatest[]> {
     const pool = await this.pool();
 
-    // DISTINCT ON picks the latest yr per (country, indicator)
-    const { rows } = await pool.query<{
+    type Row = {
       iso2: string;
       name: string;
       indicator_name: IndicatorTargetName;
       unit: string | null;
       yr: number;
-      value: number;
-    }>(
-      `
+      annual_value: number;
+      recent_value: number | null;
+      recent_period: string | null;
+      recent_freq: "M" | "Q" | "A" | null;
+      recent_source: string | null;
+    };
+
+    // latest WB annual value per (country, indicator), with the freshest IMF
+    // observation LEFT JOINed by indicator name.
+    const joinedSql = `
     WITH targets AS (
       SELECT id, name, unit
         FROM indicator
@@ -236,17 +282,53 @@ export class RiskRepository {
     )
     SELECT c.iso2,
            c.name,
-           t.name AS indicator_name,
+           t.name        AS indicator_name,
            t.unit,
            l.yr,
-           l.value
+           l.value       AS annual_value,
+           ri.value      AS recent_value,
+           ri.period::text AS recent_period,
+           ri.freq       AS recent_freq,
+           ri.source     AS recent_source
+      FROM latest l
+      JOIN targets t  ON t.id = l.indicator_id
+      JOIN country c  ON c.iso2 = l.country_iso2
+ LEFT JOIN recent_indicator ri
+        ON ri.country_iso2 = c.iso2
+       AND ri.indicator    = t.name
+    ORDER BY c.name, t.name;
+    `;
+
+    // Annual-only fallback (identical shape, recent_* nulled) for environments
+    // where the recent_indicator table doesn't exist yet.
+    const annualOnlySql = `
+    WITH targets AS (
+      SELECT id, name, unit FROM indicator WHERE name = ANY($1::text[])
+    ),
+    latest AS (
+      SELECT DISTINCT ON (y.country_iso2, y.indicator_id)
+             y.country_iso2, y.indicator_id, y.yr, y.value
+        FROM yearly_value y
+        JOIN targets t ON t.id = y.indicator_id
+    ORDER BY y.country_iso2, y.indicator_id, y.yr DESC
+    )
+    SELECT c.iso2, c.name, t.name AS indicator_name, t.unit, l.yr,
+           l.value AS annual_value,
+           NULL::float8 AS recent_value, NULL::text AS recent_period,
+           NULL::text AS recent_freq, NULL::text AS recent_source
       FROM latest l
       JOIN targets t ON t.id = l.indicator_id
       JOIN country c ON c.iso2 = l.country_iso2
     ORDER BY c.name, t.name;
-    `,
-      [INDICATOR_TARGET_NAMES]
-    );
+    `;
+
+    let rows: Row[];
+    try {
+      ({ rows } = await pool.query<Row>(joinedSql, [INDICATOR_TARGET_NAMES]));
+    } catch (err) {
+      console.warn("fetchLatestIndicatorValues: recent_indicator join failed, using annual-only:", err);
+      ({ rows } = await pool.query<Row>(annualOnlySql, [INDICATOR_TARGET_NAMES]));
+    }
 
     const byIso2 = new Map<string, CountryIndicatorLatest>();
     for (const r of rows) {
@@ -256,13 +338,85 @@ export class RiskRepository {
         entry = { iso2: key, name: r.name, values: {} };
         byIso2.set(key, entry);
       }
-      entry.values[r.indicator_name] = {
-        year: Number(r.yr),
-        value: Number(r.value),
-        unit: r.unit ?? undefined,
-      };
+
+      const useRecent = r.recent_value != null && !!r.recent_period;
+      entry.values[r.indicator_name] = useRecent
+        ? {
+            value: Number(r.recent_value),
+            unit: r.unit ?? undefined,
+            year: new Date(r.recent_period as string).getUTCFullYear(),
+            period: r.recent_period as string,
+            freq: (r.recent_freq ?? "M") as "M" | "Q" | "A",
+            source: r.recent_source ?? undefined,
+          }
+        : {
+            value: Number(r.annual_value),
+            unit: r.unit ?? undefined,
+            year: Number(r.yr),
+            freq: "A",
+          };
     }
     return Array.from(byIso2.values());
+  }
+
+  /**
+   * Cross-country AVERAGE per year for each selectable trend indicator.
+   *
+   * Averages `yearly_value.value` across all reporting countries per year, for
+   * the indicators in {@link AVG_TREND_INDICATOR_NAMES}. Years with thin
+   * coverage are dropped (`HAVING COUNT(*) >= 10`) so a partially-reported
+   * latest World Bank year doesn't produce a jumpy final point, and the window
+   * is trimmed to recent years (`yr >= 2010`). Returns one array per indicator
+   * name, ordered oldest→newest. Defensive: returns `{}` on query failure so a
+   * missing column/table never fails the whole /api/dashboard payload.
+   */
+  async fetchIndicatorAverageTrends(): Promise<IndicatorAverageTrends> {
+    try {
+      const pool = await this.pool();
+      const { rows } = await pool.query<{ name: string; yr: number; avg: number }>(
+        `
+      SELECT i.name, y.yr, AVG(y.value) AS avg
+        FROM yearly_value y
+        JOIN indicator i ON i.id = y.indicator_id
+       WHERE i.name = ANY($1::text[])
+         AND y.value IS NOT NULL
+         AND y.yr >= 2010
+    GROUP BY i.name, y.yr
+      HAVING COUNT(*) >= 10
+    ORDER BY i.name, y.yr;
+      `,
+        [AVG_TREND_INDICATOR_NAMES]
+      );
+
+      const out: IndicatorAverageTrends = {};
+      for (const r of rows) {
+        (out[r.name] ??= []).push({ year: Number(r.yr), avg: Number(r.avg) });
+      }
+      return out;
+    } catch (err) {
+      console.warn("fetchIndicatorAverageTrends failed; returning {}:", err);
+      return {};
+    }
+  }
+
+  /**
+   * Live TV channel list for the bottom-bar pane, from the `live_tv_channel`
+   * table (key, label, YouTube `channel_id`, sort order). Kept in the DB — not
+   * hardcoded — so a dead stream can be re-pointed with a single SQL UPDATE,
+   * no code deploy. Maps `channel_id` → the client `Channel.id`. Defensive:
+   * returns `[]` on query failure so the component falls back to its seed list.
+   */
+  async fetchChannels(): Promise<Channel[]> {
+    try {
+      const pool = await this.pool();
+      const { rows } = await pool.query<{ key: string; label: string; channel_id: string }>(
+        `SELECT key, label, channel_id FROM live_tv_channel ORDER BY sort, key`
+      );
+      return rows.map((r) => ({ key: r.key, label: r.label, id: r.channel_id }));
+    } catch (err) {
+      console.warn("fetchChannels failed; returning []:", err);
+      return [];
+    }
   }
 
   /**

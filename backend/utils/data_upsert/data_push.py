@@ -230,6 +230,94 @@ def upsert_snapshot(payload: Dict[str, Any], country_name: str) -> None:
         conn.close()
 
 
+_RECENT_INDICATOR_DDL = """
+CREATE TABLE IF NOT EXISTS recent_indicator (
+    country_iso2 CHAR(2)  NOT NULL,
+    indicator    TEXT     NOT NULL,        -- display name, matches indicator.name
+    period       DATE     NOT NULL,        -- end-of-period date of the observation
+    freq         CHAR(1)  NOT NULL CHECK (freq IN ('M','Q','A')),
+    value        DOUBLE PRECISION NOT NULL,
+    unit         TEXT,
+    source       TEXT,
+    updated_at   TIMESTAMPTZ NOT NULL DEFAULT now(),
+    PRIMARY KEY (country_iso2, indicator)
+);
+"""
+
+
+def upsert_recent_indicators(country_iso2: str, indicators: Dict[str, Dict[str, Any]]) -> None:
+    """Upsert the freshest sub-annual observation per (country, indicator).
+
+    Self-contained: ensures the ``recent_indicator`` table exists (the project has
+    no migration tool; this adds one table without touching the pre-created risk
+    schema), then upserts one row per (country, indicator) keyed by the indicator's
+    display name. The front-end prefers these values over the World Bank annual
+    ``yearly_value`` and falls back to the annual one when a country has no fresh
+    row for an indicator.
+
+    Args:
+        country_iso2: ISO-2 country code (the DB country key, e.g. ``'AR'``).
+        indicators: ``{indicator_name: {value, period (date), freq, unit?, source?}}``
+            as produced by ``imf_macro_fetch.fetch_recent_indicators`` (keyed back
+            from ISO-3 to ISO-2 by the caller). Rows missing value/period/freq are
+            skipped.
+
+    No-op if ``country_iso2`` is blank or ``indicators`` is empty.
+    """
+    if not DB_URL:
+        raise RuntimeError("DATABASE_URL is not set in the environment")
+    if not country_iso2 or not indicators:
+        return
+
+    rows: List[Tuple] = []
+    for name, d in indicators.items():
+        if not isinstance(d, dict):
+            continue
+        value = d.get("value")
+        period = d.get("period")
+        freq = d.get("freq")
+        if value is None or period is None or freq not in ("M", "Q", "A"):
+            continue
+        try:
+            value = float(value)
+        except (TypeError, ValueError):
+            continue
+        rows.append((country_iso2, name, period, freq, value, d.get("unit"), d.get("source")))
+
+    if not rows:
+        return
+
+    conn = psycopg2.connect(DB_URL)
+    try:
+        conn.autocommit = False
+        with conn.cursor() as cur:
+            cur.execute(_RECENT_INDICATOR_DDL)
+            extras.execute_values(
+                cur,
+                """
+                INSERT INTO recent_indicator
+                  (country_iso2, indicator, period, freq, value, unit, source)
+                VALUES %s
+                ON CONFLICT (country_iso2, indicator)
+                DO UPDATE SET
+                  period     = EXCLUDED.period,
+                  freq       = EXCLUDED.freq,
+                  value      = EXCLUDED.value,
+                  unit       = EXCLUDED.unit,
+                  source     = EXCLUDED.source,
+                  updated_at = now()
+                """,
+                rows,
+                page_size=100,
+            )
+        conn.commit()
+    except Exception:
+        conn.rollback()
+        raise
+    finally:
+        conn.close()
+
+
 _ECON_EVENT_DDL = """
 CREATE TABLE IF NOT EXISTS economic_calendar_event (
     id           BIGSERIAL PRIMARY KEY,

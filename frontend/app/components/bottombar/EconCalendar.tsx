@@ -115,7 +115,7 @@ export default function EconCalendar() {
           min-width: 0;
         }
         .cal-evt {
-          font-size: 11.5px;
+          font-size: 12px;
           color: #e7e3d6;
           white-space: nowrap;
           overflow: hidden;
