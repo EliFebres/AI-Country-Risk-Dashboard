@@ -173,18 +173,16 @@ function MoverRow({
 /** Right-hand "World Risk Index" rail: global-average trend, top movers, and per-country rows. */
 export default function WorldRiskIndexRail({ rows, onSelectCountry, onMeasure }: Props) {
   const asideRef = useRef<HTMLElement>(null);
-  const stripRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
   const onMeasureRef = useRef(onMeasure);
   onMeasureRef.current = onMeasure;
 
   // Drive the bottom bar's height so its top edge meets the rail's content end.
-  // bottomH = viewportH − rail top − strip − natural content height.
+  // bottomH = viewportH − rail top − natural content height.
   useEffect(() => {
     const aside = asideRef.current;
-    const strip = stripRef.current;
     const content = contentRef.current;
-    if (!aside || !strip || !content) return;
+    if (!aside || !content) return;
 
     const measure = () => {
       const ch = content.offsetHeight;
@@ -194,14 +192,18 @@ export default function WorldRiskIndexRail({ rows, onSelectCountry, onMeasure }:
         return;
       }
       const top = aside.getBoundingClientRect().top;
-      const fit = window.innerHeight - top - strip.offsetHeight - ch;
-      const bottomH = Math.round(Math.max(140, Math.min(window.innerHeight * 0.72, fit)));
+      const fit = window.innerHeight - top - ch;
+      // Floor the bar so short screens keep a generous, usable bar and let the
+      // rail scroll, but never let the bar exceed 50% of a very short viewport
+      // (so the map stays visible on landscape phones / split windows). The 0.72
+      // cap preserves the "bar top meets rail content" fit on tall screens.
+      const floor = Math.min(334, Math.round(window.innerHeight * 0.5));
+      const bottomH = Math.round(Math.max(floor, Math.min(window.innerHeight * 0.72, fit)));
       onMeasureRef.current?.(bottomH);
     };
 
     const ro = new ResizeObserver(measure);
     ro.observe(content);
-    ro.observe(strip);
     window.addEventListener('resize', measure);
     measure();
     return () => {
@@ -352,9 +354,6 @@ export default function WorldRiskIndexRail({ rows, onSelectCountry, onMeasure }:
 
   return (
     <aside className="sidebar-right" aria-label="World risk index" ref={asideRef}>
-      <div className="rs-strip" ref={stripRef}>
-        <span className="rs-tag">World Risk Index</span>
-      </div>
       <div className="rs-scroll">
         <div ref={contentRef}>
         {!model ? (
