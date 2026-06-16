@@ -29,7 +29,7 @@
   /* Layout vars */
   --top-h: 46px;
   --right-w: min(360px, 26vw);
-  --bottom-h-base: clamp(208px, 23.5vh, 307px);
+  --bottom-h-base: clamp(min(334px, 50vh), 23.5vh, 614px);
   --bottom-h: var(--bottom-h-base);
   --vid-head: 36px;
   --w-risk: min(600px, 40vw);
@@ -566,6 +566,48 @@ table.mini.tracker tbody td:last-child {
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
+}
+
+/* ===================================================================== */
+/* Narrow-screen tiers — progressively drop lower-priority bottom-bar     */
+/* columns so Live TV + AI Alerts never get crammed. Order: World Markets */
+/* (static), then Econ Calendar, then Prices. Live TV + AI Alerts stay.   */
+/* ===================================================================== */
+
+/* Tier A: ≤1680px — drop World Markets (static market-hours, rigid width). */
+@media (max-width: 1680px) {
+  .mini-table.markets-col {
+    display: none;
+  }
+  .mini-table.calendar-col {
+    flex: 0 0 26%;
+  }
+  .mini-table.tracker-col {
+    flex: 0 0 28%;
+  }
+}
+
+/* Tier B: ≤1500px — also drop Econ Calendar, and decouple Live TV's width
+   from the bar height so a taller bar doesn't crowd out AI Alerts. */
+@media (max-width: 1500px) {
+  .mini-table.calendar-col {
+    display: none;
+  }
+  .mini-table.tracker-col {
+    flex: 0 0 34%;
+  }
+  .stream-pane {
+    width: auto;
+    aspect-ratio: 16 / 9;
+    max-width: 40vw;
+  }
+}
+
+/* Tier C: ≤1280px — also drop Prices; Live TV + AI Alerts only. */
+@media (max-width: 1280px) {
+  .mini-table.tracker-col {
+    display: none;
+  }
 }
 
 @media (max-width: 768px) {

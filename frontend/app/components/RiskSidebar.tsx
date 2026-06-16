@@ -481,7 +481,10 @@ export default function RiskSidebar({
            to fit so the content reaches the panel's bottom edge. */
         .aiCard {
           flex: 1 1 auto;
-          min-height: 0;
+          /* Floor the card so it can't be squeezed to nothing on short panels:
+             below this, the panel scrolls (via .content) instead of the AI
+             summary collapsing. On tall panels flex-grow still fills past it. */
+          min-height: 168px;
           display: flex;
           flex-direction: column;
         }

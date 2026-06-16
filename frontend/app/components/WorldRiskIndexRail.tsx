@@ -193,7 +193,12 @@ export default function WorldRiskIndexRail({ rows, onSelectCountry, onMeasure }:
       }
       const top = aside.getBoundingClientRect().top;
       const fit = window.innerHeight - top - ch;
-      const bottomH = Math.round(Math.max(140, Math.min(window.innerHeight * 0.72, fit)));
+      // Floor the bar so short screens keep a generous, usable bar and let the
+      // rail scroll, but never let the bar exceed 50% of a very short viewport
+      // (so the map stays visible on landscape phones / split windows). The 0.72
+      // cap preserves the "bar top meets rail content" fit on tall screens.
+      const floor = Math.min(334, Math.round(window.innerHeight * 0.5));
+      const bottomH = Math.round(Math.max(floor, Math.min(window.innerHeight * 0.72, fit)));
       onMeasureRef.current?.(bottomH);
     };
 
